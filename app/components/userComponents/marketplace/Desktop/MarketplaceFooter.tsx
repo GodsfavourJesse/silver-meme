@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { CarFront, FaceAngry, Mail, Table } from "lucide-react";
-import { CurrentYear } from "@/app/components/auth/CurrentYear";
+import { CurrentYear } from "@/app/utils/current-year";
 
 const footerLinks = [
     {

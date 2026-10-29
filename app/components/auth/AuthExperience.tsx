@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { AuthBrandVisual } from "./AuthBrandVisual";
 import { AuthFormHeader } from "./AuthFormHeader";
+import { CurrentYear } from "@/app/utils/current-year";
 
 interface AuthExperienceProps {
     mode: "register" | "login";
@@ -83,7 +84,7 @@ export function AuthExperience({
                             {/* Footer */}
                             <footer className="mt-8 shrink-0 border-t border-slate-100 py-5 text-center text-[11px] text-slate-400">
                                 <p>
-                                    © {new Date().getFullYear()} KARMASS.
+                                    © <CurrentYear /> KARMASS.
                                     All rights reserved.
                                 </p>
                             </footer>

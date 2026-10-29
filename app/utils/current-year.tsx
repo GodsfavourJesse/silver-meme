@@ -9,5 +9,9 @@ export function CurrentYear() {
         setYear(new Date().getFullYear());
     }, []);
 
-    return <>{year ?? "2026"}</>;
+    if (year === null) {
+        return <span>2026</span>;
+    }
+
+    return <>{year}</>;
 }

@@ -2,7 +2,7 @@
 
 import { AdminLoginForm } from "@/app/components/adminComponents/admin-login/admin-login-form";
 import { KarmassAdminLogo } from "@/app/components/adminComponents/admin-login/karmass-admin-login";
-import { CurrentYear } from "@/app/utils/adminUtils/current-year";
+import { CurrentYear } from "@/app/utils/current-year";
 import {
     motion,
 } from "framer-motion";

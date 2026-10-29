@@ -1,7 +1,7 @@
 import { ScrollText, ShieldCheck, UsersRound } from "lucide-react";
 
 import { KarmassAdminLogo } from "./karmass-admin-logo";
-import { CurrentYear } from "./current-year";
+import { CurrentYear } from "../current-year";
 
 const FEATURES = [
     {

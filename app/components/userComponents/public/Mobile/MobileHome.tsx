@@ -13,14 +13,13 @@ import { useRouter } from "next/navigation";
 import {
     ArrowDownRight,
     ArrowRight,
-    Bell,
+    CarFront,
+    Check,
     CheckCircle2,
     ChevronRight,
-    CarFront,
-    Gauge,
+    Filter,
     MapPin,
     Search,
-    SlidersHorizontal,
     Sparkles,
     Zap,
 } from "lucide-react";
@@ -44,8 +43,6 @@ import HomeMobileNav from "./HomeMobileNav";
 
 const BRAND = "#1491FF";
 const BRAND_HOVER = "#0877D9";
-const BRAND_LIGHT = "#EAF5FF";
-const BRAND_BORDER = "#B9DEFF";
 
 /*
 |--------------------------------------------------------------------------
@@ -74,9 +71,7 @@ function formatPrice(
     currency: string,
 ): string {
     const numericPrice =
-        typeof price === "number"
-            ? price
-            : Number(price);
+        typeof price === "number" ? price : Number(price);
 
     if (!Number.isFinite(numericPrice)) {
         return "Price on request";
@@ -138,17 +133,9 @@ function getVehicleDetails(
     const mileage = formatMileage(result.listing.mileage);
     const transmission = result.variant?.transmission;
 
-    if (year) {
-        details.push(year);
-    }
-
-    if (mileage) {
-        details.push(mileage);
-    }
-
-    if (transmission) {
-        details.push(transmission);
-    }
+    if (year) details.push(year);
+    if (mileage) details.push(mileage);
+    if (transmission) details.push(transmission);
 
     return details;
 }
@@ -169,24 +156,16 @@ function getCategoryFilters(
 ): Partial<MarketplaceSearchParams> {
     switch (category) {
         case "SUV":
-            return {
-                bodyStyle: "SUV",
-            };
+            return { bodyStyle: "SUV" };
 
         case "Sedan":
-            return {
-                bodyStyle: "SEDAN",
-            };
+            return { bodyStyle: "SEDAN" };
 
         case "Electric":
-            return {
-                fuelType: "ELECTRIC",
-            };
+            return { fuelType: "ELECTRIC" };
 
         case "Luxury":
-            return {
-                sort: "price_desc",
-            };
+            return { sort: "price_desc" };
 
         default:
             return {};
@@ -197,11 +176,6 @@ function getCategoryFilters(
 |--------------------------------------------------------------------------
 | VEHICLE IMAGE FALLBACK
 |--------------------------------------------------------------------------
-|
-| The supplied marketplace result type does not establish the
-| actual listing image field. This component provides a polished
-| fallback without guessing the backend schema.
-|
 */
 
 function ListingImagePlaceholder() {
@@ -211,15 +185,15 @@ function ListingImagePlaceholder() {
             className="
                 relative flex h-full w-full
                 items-center justify-center overflow-hidden
-                bg-gradient-to-br from-[#F5F9FF]
-                via-[#EAF3FF] to-[#DCEBFC]
+                bg-gradient-to-br from-[#F4F9FF]
+                via-[#E8F3FF] to-[#D8EAFE]
             "
         >
             <div
                 aria-hidden="true"
                 className="
                     absolute -right-8 -top-10
-                    h-36 w-36 rounded-full
+                    h-40 w-40 rounded-full
                     border border-white/80
                 "
             />
@@ -228,31 +202,36 @@ function ListingImagePlaceholder() {
                 aria-hidden="true"
                 className="
                     absolute -bottom-16 -left-8
-                    h-40 w-40 rounded-full
+                    h-44 w-44 rounded-full
                     border border-white/80
+                "
+            />
+
+            <div
+                aria-hidden="true"
+                className="
+                    absolute inset-x-0 bottom-0 h-20
+                    bg-gradient-to-t from-[#C9E2FF]/40 to-transparent
                 "
             />
 
             <div className="relative flex flex-col items-center">
                 <div
                     className="
-                        flex h-16 w-16 items-center
-                        justify-center rounded-[22px]
-                        border border-white/80
-                        bg-white/70 text-[#1491FF]
-                        shadow-[0_8px_24px_rgba(20,145,255,0.08)]
+                        flex h-[68px] w-[68px]
+                        items-center justify-center
+                        rounded-[23px] border border-white/90
+                        bg-white/75 text-[#1491FF]
+                        shadow-[0_12px_35px_rgba(20,145,255,0.12)]
                     "
                 >
-                    <CarFront
-                        size={34}
-                        strokeWidth={1.35}
-                    />
+                    <CarFront size={36} strokeWidth={1.35} />
                 </div>
 
                 <span
                     className="
                         mt-3 text-[9px] font-bold
-                        uppercase tracking-[0.2em]
+                        uppercase tracking-[0.22em]
                         text-[#7192B8]
                     "
                 >
@@ -265,7 +244,7 @@ function ListingImagePlaceholder() {
 
 /*
 |--------------------------------------------------------------------------
-| SKELETON
+| LISTING SKELETON
 |--------------------------------------------------------------------------
 */
 
@@ -274,21 +253,17 @@ function ListingSkeleton() {
         <article
             aria-hidden="true"
             className="
-                overflow-hidden rounded-[22px]
+                overflow-hidden rounded-[24px]
                 border border-[#E8EDF4] bg-white
             "
         >
-            <div className="h-48 animate-pulse bg-[#EEF2F7]" />
+            <div className="h-[210px] animate-pulse bg-[#EEF3F9]" />
 
             <div className="space-y-4 p-4">
                 <div className="h-4 w-3/5 animate-pulse rounded-full bg-[#E8EDF4]" />
-
                 <div className="h-3 w-2/5 animate-pulse rounded-full bg-[#F0F3F7]" />
-
-                <div className="h-5 w-2/5 animate-pulse rounded-full bg-[#E8EDF4]" />
-
+                <div className="h-6 w-2/5 animate-pulse rounded-lg bg-[#E8EDF4]" />
                 <div className="h-px bg-[#EEF2F7]" />
-
                 <div className="h-3 w-1/2 animate-pulse rounded-full bg-[#F0F3F7]" />
             </div>
         </article>
@@ -313,7 +288,7 @@ function SectionHeading({
     action?: React.ReactNode;
 }) {
     return (
-        <div className="flex items-end justify-between gap-4">
+        <div className="flex items-end justify-between gap-3">
             <div className="min-w-0">
                 {eyebrow && (
                     <p
@@ -372,18 +347,20 @@ function FeaturedCarCard({
     return (
         <article
             className="
-                group overflow-hidden rounded-[22px]
+                group overflow-hidden rounded-[24px]
                 border border-[#E6ECF3] bg-white
                 transition-all duration-300
                 hover:border-[#C8E2FF]
-                hover:shadow-[0_12px_35px_rgba(15,45,85,0.07)]
+                hover:shadow-[0_14px_38px_rgba(15,45,85,0.07)]
             "
         >
-            {/* Image */}
             <Link
                 href={listingHref}
                 aria-label={`View ${title}`}
-                className="relative block h-[205px] overflow-hidden bg-[#F1F5F9]"
+                className="
+                    relative block h-[210px]
+                    overflow-hidden bg-[#F1F5F9]
+                "
             >
                 <ListingImagePlaceholder />
 
@@ -392,42 +369,36 @@ function FeaturedCarCard({
                         <span
                             className="
                                 inline-flex items-center gap-1.5
-                                rounded-full border border-white/70
+                                rounded-full border border-white/80
                                 bg-white/95 px-3 py-1.5
                                 text-[10px] font-bold
                                 text-[#24354B] shadow-sm
                             "
                         >
-                            <Sparkles
-                                size={12}
-                                style={{ color: BRAND }}
-                            />
-
+                            <Sparkles size={12} style={{ color: BRAND }} />
                             Featured
                         </span>
                     ) : (
                         <span
                             className="
                                 inline-flex items-center gap-1.5
-                                rounded-full border border-white/70
+                                rounded-full border border-white/80
                                 bg-white/95 px-3 py-1.5
                                 text-[10px] font-semibold
                                 text-[#344256] shadow-sm
                             "
                         >
                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-
                             Available
                         </span>
                     )}
 
                     <span
                         className="
-                            flex h-9 w-9 items-center
-                            justify-center rounded-full
-                            border border-white/80 bg-white/95
-                            text-[#64748B] shadow-sm
-                            transition-colors hover:text-[#1491FF]
+                            flex h-9 w-9 items-center justify-center
+                            rounded-full border border-white/80
+                            bg-white/95 text-[#64748B] shadow-sm
+                            transition-colors group-hover:text-[#1491FF]
                         "
                         aria-hidden="true"
                     >
@@ -436,42 +407,32 @@ function FeaturedCarCard({
                 </div>
             </Link>
 
-            {/* Details */}
             <div className="p-4">
-                <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                        <Link
-                            href={listingHref}
-                            className="
-                                line-clamp-2 text-[15px]
-                                font-bold leading-6
-                                tracking-[-0.025em]
-                                text-[#172337]
-                                transition-colors
-                                hover:text-[#0877D9]
-                            "
-                        >
-                            {title}
-                        </Link>
+                <Link
+                    href={listingHref}
+                    className="
+                        line-clamp-2 block text-[15px]
+                        font-bold leading-6 tracking-[-0.025em]
+                        text-[#172337] transition-colors
+                        hover:text-[#0877D9]
+                    "
+                >
+                    {title}
+                </Link>
 
-                        {details.length > 0 && (
-                            <p className="mt-1.5 text-[11px] leading-5 text-[#8491A3]">
-                                {details.join(" · ")}
-                            </p>
-                        )}
-                    </div>
-                </div>
+                {details.length > 0 && (
+                    <p className="mt-1.5 text-[11px] leading-5 text-[#8491A3]">
+                        {details.join(" · ")}
+                    </p>
+                )}
 
                 <div className="mt-4">
-                    <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-[#8491A3]">
+                    <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-[#8491A3]">
                         Asking price
                     </p>
 
-                    <p className="mt-1 text-[19px] font-bold tracking-[-0.045em] text-[#172337]">
-                        {formatPrice(
-                            listing.price,
-                            listing.currency,
-                        )}
+                    <p className="mt-1 text-[20px] font-bold tracking-[-0.045em] text-[#172337]">
+                        {formatPrice(listing.price, listing.currency)}
                     </p>
                 </div>
 
@@ -485,23 +446,18 @@ function FeaturedCarCard({
                             style={{ color: BRAND }}
                         />
 
-                        <span className="truncate">
-                            {location}
-                        </span>
+                        <span className="truncate">{location}</span>
                     </p>
 
                     <Link
                         href={listingHref}
                         aria-label={`Explore ${title}`}
                         className="
-                            inline-flex shrink-0
-                            items-center gap-1
-                            text-[11px] font-bold
-                            text-[#0877D9]
+                            inline-flex shrink-0 items-center gap-1
+                            text-[11px] font-bold text-[#0877D9]
                         "
                     >
                         View
-
                         <ChevronRight size={14} />
                     </Link>
                 </div>
@@ -554,28 +510,20 @@ export function MobileHome() {
                     ...getCategoryFilters(category),
                 };
 
-                const response =
-                    await searchMarketplace(filters);
+                const response = await searchMarketplace(filters);
 
-                if (!isActive) {
-                    return;
-                }
+                if (!isActive) return;
 
                 setCars(response.data.listings);
             } catch {
-                if (!isActive) {
-                    return;
-                }
+                if (!isActive) return;
 
                 setCars([]);
-
                 setError(
                     "We couldn't load vehicles right now. Please try again.",
                 );
             } finally {
-                if (isActive) {
-                    setIsLoading(false);
-                }
+                if (isActive) setIsLoading(false);
             }
         }
 
@@ -598,14 +546,18 @@ export function MobileHome() {
 
             const trimmedQuery = query.trim();
 
-            const destination = trimmedQuery
-                ? `/marketplace?q=${encodeURIComponent(trimmedQuery)}`
-                : "/marketplace";
-
-            router.push(destination);
+            router.push(
+                trimmedQuery
+                    ? `/marketplace?q=${encodeURIComponent(trimmedQuery)}`
+                    : "/marketplace",
+            );
         },
         [query, router],
     );
+
+    const openMarketplaceFilters = useCallback(() => {
+        router.push("/marketplace");
+    }, [router]);
 
     /*
     |--------------------------------------------------------------------------
@@ -614,12 +566,10 @@ export function MobileHome() {
     */
 
     return (
-        <main className="min-h-dvh overflow-x-hidden bg-[#F7F9FC] pb-28 text-[#172337] md:hidden">
-            {/* ====================================================
-                HEADER
-            ==================================================== */}
-            <header className="border-b border-[#EDF1F6] bg-white">
-                <div className="flex items-center justify-between gap-3 px-5 pb-4 pt-[max(16px,env(safe-area-inset-top))]">
+        <main className="min-h-dvh overflow-x-clip bg-[#F7F9FC] pb-32 text-[#172337] md:hidden">
+            {/* HEADER */}
+            <header className="sticky top-0 z-30 border-b border-[#EDF1F6] bg-white/95 backdrop-blur-xl">
+                <div className="flex items-center justify-between gap-3 px-5 pb-3.5 pt-[max(12px,env(safe-area-inset-top))]">
                     <Link
                         href="/"
                         aria-label="KARMASS home"
@@ -627,63 +577,72 @@ export function MobileHome() {
                     >
                         <span
                             className="
-                                flex h-10 w-10 shrink-0
-                                items-center justify-center
-                                border border-[#E6EDF5] bg-white
-                                text-[16px] font-semibold
-                                tracking-[-0.08em]
-                                text-[#1491FF]
-                                transition-colors
-                                group-hover:border-[#1491FF]
+                                flex h-10 w-10 shrink-0 items-center
+                                justify-center rounded-[14px]
+                                bg-[#1491FF] text-[17px] font-bold
+                                tracking-[-0.08em] text-white
+                                shadow-[0_5px_14px_rgba(20,145,255,0.22)]
+                                transition-transform group-hover:scale-[1.03]
                             "
                         >
                             K.
                         </span>
 
                         <span className="min-w-0">
-                            <span className="block text-[15px] font-semibold leading-5 tracking-[0.15em] text-[#20201F]">
+                            <span className="block text-[14px] font-extrabold leading-5 tracking-[0.13em] text-[#202D40]">
                                 KARMASS
                             </span>
 
-                            <span className="mt-0.5 block text-[8px] font-medium uppercase tracking-[0.17em] text-[#8491A3]">
+                            <span className="mt-0.5 block text-[8px] font-semibold uppercase tracking-[0.16em] text-[#8491A3]">
                                 Find your drive
                             </span>
                         </span>
                     </Link>
+
+                    <Link
+                        href="/sell"
+                        className="
+                            inline-flex min-h-10 shrink-0 items-center
+                            gap-1.5 rounded-xl bg-[#EAF5FF]
+                            px-3.5 text-[11px] font-bold
+                            text-[#0877D9] transition-colors
+                            hover:bg-[#DCEEFF] active:scale-[0.98]
+                        "
+                    >
+                        <CarFront size={15} />
+                        Sell a car
+                    </Link>
                 </div>
             </header>
 
-            {/* ====================================================
-                HERO
-            ==================================================== */}
-            <section className="px-4 pt-5">
-                <div className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#168FFF] via-[#087FE8] to-[#0866C7] px-5 pb-5 pt-6 text-white shadow-[0_16px_36px_rgba(20,145,255,0.16)]">
-                    {/* Decorative background elements */}
+            {/* HERO */}
+            <section className="px-4 pt-4">
+                <div className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#168FFF] via-[#087FE8] to-[#075FB9] px-5 pb-5 pt-5 text-white shadow-[0_18px_40px_rgba(20,145,255,0.18)]">
                     <div
                         aria-hidden="true"
-                        className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full border border-white/15"
+                        className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full border border-white/15"
                     />
 
                     <div
                         aria-hidden="true"
-                        className="pointer-events-none absolute -right-6 top-4 h-36 w-36 rounded-full border border-white/10"
+                        className="pointer-events-none absolute -right-5 top-7 h-36 w-36 rounded-full border border-white/10"
                     />
 
                     <div
                         aria-hidden="true"
-                        className="pointer-events-none absolute bottom-12 right-0 h-40 w-40 rounded-full bg-white/[0.06] blur-2xl"
+                        className="pointer-events-none absolute bottom-10 right-0 h-36 w-36 rounded-full bg-white/[0.07] blur-3xl"
                     />
 
                     <div className="relative">
-                        <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5">
+                        <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 backdrop-blur-sm">
                             <Sparkles size={13} />
 
-                            <span className="text-[9px] font-bold uppercase tracking-[0.16em]">
+                            <span className="text-[9px] font-bold uppercase tracking-[0.15em]">
                                 Your next drive starts here
                             </span>
                         </div>
 
-                        <h1 className="mt-6 max-w-[310px] text-[37px] font-semibold leading-[1.07] tracking-[-0.065em]">
+                        <h1 className="mt-5 max-w-[310px] text-[36px] font-bold leading-[1.06] tracking-[-0.065em]">
                             The right car.
                             <br />
 
@@ -692,40 +651,35 @@ export function MobileHome() {
                             </span>
                         </h1>
 
-                        <p className="mt-3 max-w-[285px] text-[12px] leading-[1.9] text-white/85">
-                            Discover vehicles from sellers across
-                            Nigeria and find the one that fits your
-                            lifestyle.
+                        <p className="mt-3 max-w-[285px] text-[12px] leading-[1.85] text-white/85">
+                            Discover vehicles from sellers across Nigeria
+                            and find the one that fits your lifestyle.
                         </p>
 
                         <div className="mt-5 flex flex-wrap items-center gap-2.5">
                             <Link
                                 href="/marketplace"
                                 className="
-                                    inline-flex min-h-11
-                                    items-center justify-center gap-2
-                                    rounded-xl bg-white px-4
-                                    text-[12px] font-bold
-                                    text-[#0877D9]
-                                    shadow-sm transition
-                                    hover:bg-[#F1F7FF]
+                                    inline-flex min-h-11 items-center
+                                    justify-center gap-2 rounded-xl
+                                    bg-white px-4 text-[12px] font-bold
+                                    text-[#0877D9] shadow-sm
+                                    transition hover:bg-[#F1F7FF]
                                     active:scale-[0.98]
                                 "
                             >
                                 Explore vehicles
-
                                 <ArrowRight size={15} />
                             </Link>
 
                             <Link
-                                href="/login"
+                                href="/sell"
                                 className="
-                                    inline-flex min-h-11
-                                    items-center justify-center
-                                    rounded-xl border border-white/30
-                                    bg-white/10 px-4
-                                    text-[12px] font-semibold text-white
-                                    transition hover:bg-white/15
+                                    inline-flex min-h-11 items-center
+                                    justify-center gap-2 rounded-xl
+                                    border border-white/30 bg-white/10
+                                    px-4 text-[12px] font-semibold
+                                    text-white transition hover:bg-white/15
                                     active:scale-[0.98]
                                 "
                             >
@@ -734,8 +688,7 @@ export function MobileHome() {
                         </div>
                     </div>
 
-                    {/* Hero visual */}
-                    <div className="relative mt-6 overflow-hidden rounded-[20px] border border-white/15 bg-white/[0.09] px-4 py-5">
+                    <div className="relative mt-6 overflow-hidden rounded-[20px] border border-white/15 bg-white/[0.09] px-4 py-4 backdrop-blur-sm">
                         <div className="flex items-center justify-between gap-3">
                             <div>
                                 <p className="text-[9px] font-semibold uppercase tracking-[0.17em] text-white/65">
@@ -748,10 +701,7 @@ export function MobileHome() {
                             </div>
 
                             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-white/10">
-                                <CarFront
-                                    size={26}
-                                    strokeWidth={1.5}
-                                />
+                                <CarFront size={26} strokeWidth={1.5} />
                             </div>
                         </div>
 
@@ -764,9 +714,7 @@ export function MobileHome() {
                 </div>
             </section>
 
-            {/* ====================================================
-                SEARCH
-            ==================================================== */}
+            {/* SEARCH */}
             <section className="px-4 pt-5">
                 <div className="mb-3 flex items-center justify-between">
                     <h2 className="text-[13px] font-bold text-[#243247]">
@@ -784,11 +732,9 @@ export function MobileHome() {
                         flex min-h-[58px] items-center gap-3
                         rounded-2xl border border-[#E3EAF3]
                         bg-white p-2 pl-4
-                        shadow-[0_3px_12px_rgba(15,23,42,0.025)]
-                        transition-all
-                        focus-within:border-[#B9DEFF]
-                        focus-within:ring-4
-                        focus-within:ring-[#1491FF]/[0.06]
+                        shadow-[0_5px_18px_rgba(15,23,42,0.035)]
+                        transition-all focus-within:border-[#B9DEFF]
+                        focus-within:ring-4 focus-within:ring-[#1491FF]/[0.06]
                     "
                 >
                     <Search
@@ -798,15 +744,12 @@ export function MobileHome() {
 
                     <input
                         value={query}
-                        onChange={(event) =>
-                            setQuery(event.target.value)
-                        }
+                        onChange={(event) => setQuery(event.target.value)}
                         placeholder="Make, model or keyword"
                         aria-label="Search vehicles"
                         className="
-                            min-w-0 flex-1 bg-transparent
-                            py-2 text-[12px] text-[#243247]
-                            outline-none
+                            min-w-0 flex-1 bg-transparent py-2
+                            text-[12px] text-[#243247] outline-none
                             placeholder:text-[#9AA5B4]
                         "
                     />
@@ -815,15 +758,13 @@ export function MobileHome() {
                         type="submit"
                         aria-label="Search vehicles"
                         className="
-                            flex h-10 w-10 shrink-0
-                            items-center justify-center
-                            rounded-xl text-white
-                            transition-all hover:brightness-95
-                            active:scale-95
+                            flex h-10 w-10 shrink-0 items-center
+                            justify-center rounded-xl text-white
+                            transition hover:brightness-95 active:scale-95
                         "
                         style={{ backgroundColor: BRAND }}
                     >
-                        <SlidersHorizontal size={17} />
+                        <ArrowRight size={17} />
                     </button>
                 </form>
 
@@ -839,9 +780,7 @@ export function MobileHome() {
                 </div>
             </section>
 
-            {/* ====================================================
-                CATEGORIES
-            ==================================================== */}
+            {/* CATEGORIES */}
             <section className="pt-6">
                 <div className="px-4">
                     <SectionHeading
@@ -854,8 +793,7 @@ export function MobileHome() {
                     aria-label="Vehicle categories"
                     className="
                         mt-4 flex gap-2 overflow-x-auto
-                        px-4 pb-2
-                        [scrollbar-width:none]
+                        px-4 pb-2 [scrollbar-width:none]
                         [&::-webkit-scrollbar]:hidden
                     "
                 >
@@ -871,20 +809,17 @@ export function MobileHome() {
                                 className={`
                                     inline-flex min-h-10 shrink-0
                                     items-center justify-center gap-1.5
-                                    rounded-xl border px-4
-                                    text-[11px] font-semibold
-                                    transition-all duration-200
+                                    rounded-xl border px-4 text-[11px]
+                                    font-semibold transition-all duration-200
                                     active:scale-[0.97]
                                     ${
                                         active
-                                            ? "border-[#1491FF] bg-[#1491FF] text-white shadow-[0_4px_12px_rgba(20,145,255,0.16)]"
+                                            ? "border-[#1491FF] bg-[#1491FF] text-white shadow-[0_5px_14px_rgba(20,145,255,0.18)]"
                                             : "border-[#E4EAF2] bg-white text-[#64748B] hover:border-[#B9DEFF] hover:bg-[#F8FBFF]"
                                     }
                                 `}
                             >
-                                {item === "Electric" && (
-                                    <Zap size={13} />
-                                )}
+                                {item === "Electric" && <Zap size={13} />}
 
                                 {item}
                             </button>
@@ -893,9 +828,7 @@ export function MobileHome() {
                 </div>
             </section>
 
-            {/* ====================================================
-                FEATURED VEHICLES
-            ==================================================== */}
+            {/* FEATURED VEHICLES */}
             <section className="mt-7 px-4">
                 <SectionHeading
                     eyebrow="Discover your next drive"
@@ -906,13 +839,11 @@ export function MobileHome() {
                             href="/marketplace"
                             className="
                                 mb-0.5 inline-flex shrink-0
-                                items-center gap-1
-                                text-[11px] font-bold
-                                text-[#0877D9]
+                                items-center gap-1 text-[11px]
+                                font-bold text-[#0877D9]
                             "
                         >
                             View all
-
                             <ChevronRight size={15} />
                         </Link>
                     }
@@ -920,23 +851,15 @@ export function MobileHome() {
 
                 <div className="mt-5">
                     {isLoading ? (
-                        <div
-                            aria-label="Loading vehicles"
-                            className="space-y-4"
-                        >
-                            {Array.from({ length: 3 }).map(
-                                (_, index) => (
-                                    <ListingSkeleton key={index} />
-                                ),
-                            )}
+                        <div aria-label="Loading vehicles" className="space-y-4">
+                            {Array.from({ length: 3 }).map((_, index) => (
+                                <ListingSkeleton key={index} />
+                            ))}
                         </div>
                     ) : error ? (
                         <div
                             role="alert"
-                            className="
-                                rounded-[22px] border
-                                border-[#E6ECF3] bg-white p-5
-                            "
+                            className="rounded-[24px] border border-[#E6ECF3] bg-white p-5"
                         >
                             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#EAF5FF] text-[#1491FF]">
                                 <CarFront size={23} />
@@ -952,28 +875,21 @@ export function MobileHome() {
 
                             <button
                                 type="button"
-                                onClick={() =>
-                                    setRetryCount((count) => count + 1)
-                                }
+                                onClick={() => setRetryCount((count) => count + 1)}
                                 className="
-                                    mt-4 inline-flex min-h-10
-                                    items-center justify-center gap-2
-                                    rounded-xl px-4
+                                    mt-4 inline-flex min-h-10 items-center
+                                    justify-center gap-2 rounded-xl px-4
                                     text-[12px] font-bold text-white
-                                    transition hover:brightness-95
-                                    active:scale-[0.98]
+                                    transition hover:brightness-95 active:scale-[0.98]
                                 "
-                                style={{
-                                    backgroundColor: BRAND,
-                                }}
+                                style={{ backgroundColor: BRAND }}
                             >
                                 Try again
-
                                 <ArrowRight size={14} />
                             </button>
                         </div>
                     ) : cars.length === 0 ? (
-                        <div className="rounded-[22px] border border-[#E6ECF3] bg-white px-5 py-8 text-center">
+                        <div className="rounded-[24px] border border-[#E6ECF3] bg-white px-5 py-8 text-center">
                             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EAF5FF] text-[#1491FF]">
                                 <CarFront size={27} />
                             </div>
@@ -983,9 +899,8 @@ export function MobileHome() {
                             </h3>
 
                             <p className="mx-auto mt-2 max-w-[260px] text-[12px] leading-6 text-[#8491A3]">
-                                There are no vehicles in this category
-                                right now. Explore all available listings
-                                or try another category.
+                                There are no vehicles in this category right now.
+                                Explore all available listings or try another category.
                             </p>
 
                             <button
@@ -993,10 +908,8 @@ export function MobileHome() {
                                 onClick={() => setCategory("All cars")}
                                 className="
                                     mt-4 min-h-10 rounded-xl
-                                    border border-[#B9DEFF]
-                                    bg-[#EAF5FF] px-4
-                                    text-[12px] font-bold
-                                    text-[#0877D9]
+                                    border border-[#B9DEFF] bg-[#EAF5FF]
+                                    px-4 text-[12px] font-bold text-[#0877D9]
                                     transition hover:bg-[#DFF0FF]
                                 "
                             >
@@ -1019,42 +932,34 @@ export function MobileHome() {
                     <Link
                         href="/marketplace"
                         className="
-                            mt-5 flex min-h-12 w-full
-                            items-center justify-center gap-2
-                            rounded-xl border border-[#B9DEFF]
-                            bg-white text-[12px] font-bold
-                            text-[#0877D9]
-                            transition hover:bg-[#F3F9FF]
-                            active:scale-[0.99]
+                            mt-5 flex min-h-12 w-full items-center
+                            justify-center gap-2 rounded-xl
+                            border border-[#B9DEFF] bg-white
+                            text-[12px] font-bold text-[#0877D9]
+                            transition hover:bg-[#F3F9FF] active:scale-[0.99]
                         "
                     >
                         Explore all vehicles
-
                         <ArrowRight size={15} />
                     </Link>
                 )}
             </section>
 
-            {/* ====================================================
-                SELLER CTA
-            ==================================================== */}
+            {/* SELLER CTA */}
             <section className="mx-4 mt-8">
                 <div className="relative overflow-hidden rounded-[26px] border border-[#DCEBFA] bg-[#EAF5FF] p-5">
                     <div
                         aria-hidden="true"
                         className="
-                            pointer-events-none absolute
-                            -right-10 -top-12 h-40 w-40
-                            rounded-full border border-[#B9DEFF]/70
+                            pointer-events-none absolute -right-10
+                            -top-12 h-40 w-40 rounded-full
+                            border border-[#B9DEFF]/70
                         "
                     />
 
                     <div className="relative">
                         <div className="inline-flex items-center gap-1.5 rounded-full border border-[#CFE5FC] bg-white/80 px-3 py-1.5">
-                            <CarFront
-                                size={13}
-                                className="text-[#1491FF]"
-                            />
+                            <CarFront size={13} className="text-[#1491FF]" />
 
                             <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-[#0877D9]">
                                 For car owners
@@ -1066,40 +971,32 @@ export function MobileHome() {
                         </h2>
 
                         <p className="mt-2 max-w-[290px] text-[12px] leading-6 text-[#64748B]">
-                            Create a listing and connect with people
-                            searching for their next vehicle.
+                            Create a listing and connect with people searching
+                            for their next vehicle.
                         </p>
 
                         <Link
                             href="/sell"
                             className="
-                                mt-5 inline-flex min-h-11
-                                items-center justify-center gap-2
-                                rounded-xl bg-[#1491FF] px-4
-                                text-[12px] font-bold text-white
-                                shadow-[0_5px_14px_rgba(20,145,255,0.17)]
-                                transition hover:bg-[#0877D9]
-                                active:scale-[0.98]
+                                mt-5 inline-flex min-h-11 items-center
+                                justify-center gap-2 rounded-xl
+                                bg-[#1491FF] px-4 text-[12px] font-bold
+                                text-white shadow-[0_5px_14px_rgba(20,145,255,0.17)]
+                                transition hover:bg-[#0877D9] active:scale-[0.98]
                             "
                         >
                             List your vehicle
-
                             <ArrowRight size={15} />
                         </Link>
                     </div>
                 </div>
             </section>
 
-            {/* ====================================================
-                TRUST NOTE
-            ==================================================== */}
+            {/* TRUST NOTE */}
             <section className="px-5 pb-5 pt-7">
                 <div className="flex items-start gap-3">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#E6EDF5] bg-white text-[#1491FF]">
-                        <CheckCircle2
-                            size={19}
-                            strokeWidth={1.8}
-                        />
+                        <CheckCircle2 size={19} strokeWidth={1.8} />
                     </div>
 
                     <div>
@@ -1115,10 +1012,8 @@ export function MobileHome() {
                 </div>
             </section>
 
-            {/* ====================================================
-                FOOTER
-            ==================================================== */}
-            <footer className="border-t border-[#E8EDF4] px-5 pb-6 pt-5">
+            {/* FOOTER */}
+            <footer className="border-t border-[#E8EDF4] px-5 pb-8 pt-5">
                 <div className="flex items-center justify-between gap-3">
                     <div>
                         <p className="text-[11px] font-bold tracking-[0.14em] text-[#344256]">
@@ -1135,7 +1030,6 @@ export function MobileHome() {
                         className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0877D9]"
                     >
                         Explore marketplace
-
                         <ArrowRight size={13} />
                     </Link>
                 </div>
@@ -1145,9 +1039,7 @@ export function MobileHome() {
                 </p>
             </footer>
 
-            {/* ====================================================
-                MOBILE NAVIGATION
-            ==================================================== */}
+            {/* MOBILE NAVIGATION */}
             <HomeMobileNav />
         </main>
     );

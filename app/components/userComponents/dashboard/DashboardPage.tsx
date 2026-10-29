@@ -37,8 +37,8 @@ import { useAuth } from "@/app/hooks/user/auth/useAuth";
 import { authService } from "@/app/services/user/auth/auth.service";
 
 import { queryKeys } from "@/app/lib/query/query-keys";
-import { CurrentYear } from "../../auth/CurrentYear";
 import DashboardMobile from "./DashboardMobile";
+import { CurrentYear } from "@/app/utils/current-year";
 
 const BRAND = "#1491FF";
 const BRAND_HOVER = "#0877D9";

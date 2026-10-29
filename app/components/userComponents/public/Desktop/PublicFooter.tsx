@@ -11,8 +11,7 @@ import {
     MoveUpRight,
 } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
-
-import { CurrentYear } from "@/app/components/auth/CurrentYear";
+import { CurrentYear } from "@/app/utils/current-year";
 
 const BRAND = "#1491FF";
 
