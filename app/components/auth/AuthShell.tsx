@@ -4,6 +4,7 @@ import Link from "next/link";
 import {
     ArrowLeft,
 } from "lucide-react";
+import { CurrentYear } from "@/app/utils/current-year";
 
 interface AuthShellProps {
     children: ReactNode;
@@ -91,7 +92,7 @@ export function AuthShell({
 
                 <div className="relative z-10 flex items-center justify-between gap-4 border-t border-[#e9dff5] pt-6 text-xs text-[#897c98]">
                     <p>
-                        © {new Date().getFullYear()} KARMASS
+                        © <CurrentYear /> KARMASS
                     </p>
 
                     <p>

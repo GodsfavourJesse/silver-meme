@@ -37,6 +37,7 @@ import {
     Store,
     TrendingUp,
 } from "lucide-react";
+import { CurrentYear } from "@/app/utils/current-year";
 
 // ============================================================
 // KARMASS BRAND COLORS
@@ -1165,7 +1166,7 @@ export default function VerifiedDealerProfile({
                 </MotionSection>
 
                 <footer className="pb-3 pt-1 text-center text-[9px] text-[#8C9AAA] sm:pb-0 sm:text-[10px]">
-                    © {new Date().getFullYear()} KARMASS
+                    © <CurrentYear /> KARMASS
                     <span className="mx-1.5">·</span>
                     Built for your automotive business.
                 </footer>

@@ -34,6 +34,7 @@ import type {
 } from "@/app/types/user/marketplace.types";
 
 import HomeMobileNav from "./HomeMobileNav";
+import { CurrentYear } from "@/app/utils/current-year";
 
 /*
 |--------------------------------------------------------------------------
@@ -1035,7 +1036,7 @@ export function MobileHome() {
                 </div>
 
                 <p className="mt-5 text-[10px] text-[#9AA5B4]">
-                    © {new Date().getFullYear()} KARMASS. All rights reserved.
+                    © <CurrentYear /> KARMASS. All rights reserved.
                 </p>
             </footer>
 

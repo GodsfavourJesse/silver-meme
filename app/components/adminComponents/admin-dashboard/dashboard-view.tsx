@@ -29,6 +29,7 @@ import { KpiGrid } from "./kpi-grid";
 import { ListingPipeline } from "./listing-pipeline";
 import { RevenuePanel } from "./revenue-panel";
 import { RecentSignups } from "./recent-signups";
+import { CurrentYear } from "@/app/utils/current-year";
 
 function getGreeting(): string {
     const hour = new Date().getHours();
@@ -352,7 +353,7 @@ export function DashboardView() {
                         {/* Dashboard footer */}
                         <footer className="flex flex-col gap-3 border-t border-slate-200 pt-5 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
                             <p>
-                                © {new Date().getFullYear()} KARMASS
+                                © <CurrentYear /> KARMASS
                                 Administration
                             </p>
 

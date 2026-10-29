@@ -27,6 +27,7 @@ import {
     Users,
     type LucideIcon,
 } from "lucide-react";
+import { CurrentYear } from "@/app/utils/current-year";
 
 const BRAND = "#1491FF";
 const BRAND_HOVER = "#0876D1";
@@ -1814,7 +1815,7 @@ export default function DealerApplicationLandingPage() {
                                 text-[10px] text-[#91A1B5]
                             "
                         >
-                            © {new Date().getFullYear()} KARMASS
+                            © <CurrentYear /> KARMASS
                         </span>
                     </div>
                 </footer>

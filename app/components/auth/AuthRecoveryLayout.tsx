@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { CurrentYear } from "@/app/utils/current-year";
 
 interface AuthRecoveryLayoutProps {
     children: ReactNode;
@@ -71,7 +72,7 @@ export function AuthRecoveryLayout({
                     </div>
 
                     <p className="mt-6 text-center text-xs text-[#96918B]">
-                        &copy; {new Date().getFullYear()} KARMASS. All rights reserved.
+                        &copy; <CurrentYear /> KARMASS. All rights reserved.
                     </p>
                 </div>
             </section>

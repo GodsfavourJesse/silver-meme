@@ -22,6 +22,7 @@ import {
     Store,
     type LucideIcon,
 } from "lucide-react";
+import { CurrentYear } from "@/app/utils/current-year";
 
 interface DashboardUser {
     firstName?: string | null;
@@ -617,7 +618,7 @@ export default function DashboardMobile(
 
                 <footer className="px-5 pt-1 text-center">
                     <p className="text-[10px] font-medium tracking-wide text-[#9AA6B5]">
-                        © {new Date().getFullYear()} KARMASS
+                        © <CurrentYear /> KARMASS
                     </p>
 
                     <p className="mt-1 text-[9px] text-[#A1ADBC]">

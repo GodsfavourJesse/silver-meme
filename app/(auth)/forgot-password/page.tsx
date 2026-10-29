@@ -36,6 +36,7 @@ import { ApiError } from "@/app/lib/api/api-error";
 import { authService } from "@/app/services/user/auth/auth.service";
 
 import { forgotPasswordSchema } from "@/app/schema/auth/auth.schema";
+import { CurrentYear } from "@/app/utils/current-year";
 
 type ForgotPasswordFormValues = z.infer<
     typeof forgotPasswordSchema
@@ -1057,7 +1058,7 @@ export default function ForgotPasswordPage() {
 
                     <span className="text-slate-300">·</span>
 
-                    <span>© {new Date().getFullYear()} KARMASS</span>
+                    <span>© <CurrentYear /> KARMASS</span>
                 </motion.div>
             </div>
         </main>

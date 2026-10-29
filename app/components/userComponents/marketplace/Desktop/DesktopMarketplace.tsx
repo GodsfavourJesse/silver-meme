@@ -14,6 +14,7 @@ import { useSharedMarketplaceSearch } from "@/app/context/user/MarketplaceSearch
 import { MarketplaceFilters } from "../MarketplaceFilters";
 import { MarketplaceResultsPanel } from "../MarketplaceResultsPanel";
 import { DesktopNavbar } from "../../public/Desktop/DesktopNavbar";
+import { CurrentYear } from "@/app/utils/current-year";
 
 export function DesktopMarketplace() {
     const {
@@ -201,7 +202,7 @@ export function DesktopMarketplace() {
                 <footer className="mt-12 border-t border-slate-200 pt-5 sm:mt-16 sm:pt-6">
                     <div className="flex flex-col gap-3 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
                         <p>
-                            © {new Date().getFullYear()} KARMASS. Find your
+                            © <CurrentYear /> KARMASS. Find your
                             next drive.
                         </p>
 

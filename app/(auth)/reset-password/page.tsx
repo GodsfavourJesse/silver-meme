@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 
 import { ResetPasswordForm } from "@/app/components/auth/ResetPasswordForm";
+import { CurrentYear } from "@/app/utils/current-year";
 
 function ResetPasswordLoading() {
     return (
@@ -157,7 +158,7 @@ export default function ResetPasswordPage() {
                     <span className="text-slate-300">·</span>
 
                     <span>
-                        © {new Date().getFullYear()} KARMASS
+                        © <CurrentYear /> KARMASS
                     </span>
                 </div>
             </div>

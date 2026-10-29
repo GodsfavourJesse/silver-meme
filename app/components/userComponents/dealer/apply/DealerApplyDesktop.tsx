@@ -26,6 +26,7 @@ import { toast } from "sonner";
 
 import { dealerService } from "@/app/services/user/dealer/dealer.service";
 import type { ApplyAsDealerInput } from "@/app/types/user/dealer/dealer.types";
+import { CurrentYear } from "@/app/utils/current-year";
 
 const BRAND = "#1491FF";
 
@@ -798,7 +799,7 @@ export default function DealerApplyDesktop() {
                 <footer className="mt-8 border-t border-slate-200 pt-5 sm:mt-10 sm:pt-6">
                     <div className="flex flex-col gap-2 text-center text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between sm:text-left">
                         <p>
-                            © {new Date().getFullYear()} KARMASS. All rights
+                            © <CurrentYear /> KARMASS. All rights
                             reserved.
                         </p>
 

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
-import MyListingsDashboard from
-    "@/app/components/userComponents/listings/dashboard/MyListingsDashboard";
+import MyListingsDashboard from "@/app/components/userComponents/listings/dashboard/MyListingsDashboard";
 import MobileMyListingsDashboard from "@/app/components/userComponents/listings/dashboard/MobileMyListingsDashboard";
 
 export const metadata: Metadata = {
