@@ -1388,7 +1388,7 @@ export default function AdminDealersPage() {
     --------------------------------------------------------- */
 
     return (
-        <div className="min-h-screen bg-slate-50 pb-10">
+        <div className="min-h-screen bg-slate-50 pb-10 md:py-20">
             {/* Page header */}
             <div className="border-b border-slate-200 bg-white">
                 <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">

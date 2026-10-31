@@ -653,7 +653,7 @@ export function MobileHome() {
                         </h1>
 
                         <p className="mt-3 max-w-[285px] text-[12px] leading-[1.85] text-white/85">
-                            Discover vehicles from sellers across Nigeria
+                            Discover vehicles from dealers across Nigeria
                             and find the one that fits your lifestyle.
                         </p>
 
@@ -674,7 +674,7 @@ export function MobileHome() {
                             </Link>
 
                             <Link
-                                href="/sell"
+                                href="/login"
                                 className="
                                     inline-flex min-h-11 items-center
                                     justify-center gap-2 rounded-xl
@@ -686,30 +686,6 @@ export function MobileHome() {
                             >
                                 Sell your car
                             </Link>
-                        </div>
-                    </div>
-
-                    <div className="relative mt-6 overflow-hidden rounded-[20px] border border-white/15 bg-white/[0.09] px-4 py-4 backdrop-blur-sm">
-                        <div className="flex items-center justify-between gap-3">
-                            <div>
-                                <p className="text-[9px] font-semibold uppercase tracking-[0.17em] text-white/65">
-                                    Your journey
-                                </p>
-
-                                <p className="mt-1 text-[13px] font-semibold">
-                                    Starts with the right choice.
-                                </p>
-                            </div>
-
-                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-white/10">
-                                <CarFront size={26} strokeWidth={1.5} />
-                            </div>
-                        </div>
-
-                        <div className="mt-4 flex items-center gap-2">
-                            <span className="h-1 flex-1 rounded-full bg-white/90" />
-                            <span className="h-1 flex-1 rounded-full bg-white/35" />
-                            <span className="h-1 flex-1 rounded-full bg-white/20" />
                         </div>
                     </div>
                 </div>
@@ -768,17 +744,6 @@ export function MobileHome() {
                         <ArrowRight size={17} />
                     </button>
                 </form>
-
-                <div className="mt-3 flex items-center gap-2 px-1">
-                    <CheckCircle2
-                        size={13}
-                        className="shrink-0 text-emerald-600"
-                    />
-
-                    <p className="text-[10px] leading-5 text-[#8491A3]">
-                        Browse listings and compare vehicles in one place.
-                    </p>
-                </div>
             </section>
 
             {/* CATEGORIES */}
@@ -977,7 +942,7 @@ export function MobileHome() {
                         </p>
 
                         <Link
-                            href="/sell"
+                            href="/login"
                             className="
                                 mt-5 inline-flex min-h-11 items-center
                                 justify-center gap-2 rounded-xl
@@ -989,26 +954,6 @@ export function MobileHome() {
                             List your vehicle
                             <ArrowRight size={15} />
                         </Link>
-                    </div>
-                </div>
-            </section>
-
-            {/* TRUST NOTE */}
-            <section className="px-5 pb-5 pt-7">
-                <div className="flex items-start gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#E6EDF5] bg-white text-[#1491FF]">
-                        <CheckCircle2 size={19} strokeWidth={1.8} />
-                    </div>
-
-                    <div>
-                        <h3 className="text-[12px] font-bold text-[#344256]">
-                            Make informed vehicle decisions
-                        </h3>
-
-                        <p className="mt-1 text-[11px] leading-5 text-[#8491A3]">
-                            Review listing details, ask sellers questions,
-                            and inspect vehicles before making payment.
-                        </p>
                     </div>
                 </div>
             </section>

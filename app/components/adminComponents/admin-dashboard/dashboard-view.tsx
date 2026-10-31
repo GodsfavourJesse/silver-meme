@@ -130,7 +130,7 @@ export function DashboardView() {
 
     return (
         <AdminAuthGuard>
-            <main className="min-w-0 space-y-6 p-6 md:10 sm:space-y-7">
+            <main className="min-w-0 space-y-6 p-6 md:px-20 md:10 sm:space-y-7">
                 {/* Dashboard header */}
                 <header className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                     <div className="relative p-5 sm:p-7 lg:p-8">

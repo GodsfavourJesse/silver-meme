@@ -235,7 +235,7 @@ export function AdminListingsView() {
 
     return (
         <AdminAuthGuard>
-            <div className="min-w-0">
+            <div className="min-w-0 md:px-20">
                 <div className="hidden lg:block">
                     <AdminListingsDesktop {...props} />
                 </div>

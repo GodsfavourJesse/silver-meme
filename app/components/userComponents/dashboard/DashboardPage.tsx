@@ -65,7 +65,7 @@ const primaryActions: DashboardAction[] = [
         title: "Saved vehicles",
         shortLabel: "Saved",
         description: "Return to vehicles you have bookmarked.",
-        href: "/saved-vehicles",
+        href: "/dashboard/saved-vehicles",
         icon: Bookmark,
     },
     {
@@ -79,7 +79,7 @@ const primaryActions: DashboardAction[] = [
         title: "Notifications",
         shortLabel: "Updates",
         description: "Review updates about your account.",
-        href: "/dashbard/notifications",
+        href: "/dashboard/notifications",
         icon: Bell,
     },
 ];
@@ -1184,64 +1184,62 @@ function DashboardDesktop() {
 
 export default function DashboardPage() {
 const { user } = useAuth();
-const router = useRouter();
-const queryClient = useQueryClient();
+    const router = useRouter();
+    const queryClient = useQueryClient();
 
-const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-async function handleLogout(): Promise<void> {
-    if (isLoggingOut) {
-        return;
+    async function handleLogout(): Promise<void> {
+        if (isLoggingOut) {
+            return;
+        }
+
+        setIsLoggingOut(true);
+
+        try {
+            await authService.logout();
+        } catch {
+            // Continue clearing local authentication state even if
+            // the logout request fails.
+        } finally {
+            await queryClient.cancelQueries({
+                queryKey: queryKeys.auth.all,
+            });
+
+            queryClient.removeQueries({
+                queryKey: queryKeys.auth.all,
+            });
+
+            queryClient.clear();
+
+            router.replace("/login");
+            router.refresh();
+        }
     }
 
-    setIsLoggingOut(true);
+    const dashboardUser = {
+        firstName: user?.firstName ?? null,
+        lastName: user?.lastName ?? null,
+        email: user?.email ?? null,
+        accountType: user?.accountType ?? null,
+    };
 
-    try {
-        await authService.logout();
-    } catch {
-        // Continue clearing local authentication state even if
-        // the logout request fails.
-    } finally {
-        await queryClient.cancelQueries({
-            queryKey: queryKeys.auth.all,
-        });
-
-        queryClient.removeQueries({
-            queryKey: queryKeys.auth.all,
-        });
-
-        queryClient.clear();
-
-        router.replace("/login");
-        router.refresh();
+    if (!user) {
+        return <SignInPrompt />;
     }
-}
 
-const dashboardUser = {
-    firstName: user?.firstName ?? null,
-    lastName: user?.lastName ?? null,
-    email: user?.email ?? null,
-};
+    return (
+        <>
+            <DashboardDesktop />
 
-if (!user) {
-    return <SignInPrompt />;
-}
-
-return (
-    <>
-        <DashboardDesktop />
-
-        <div className="xl:hidden">
-            <DashboardMobile
-                user={dashboardUser}
-                onLogout={handleLogout}
-                isLoggingOut={isLoggingOut}
-            />
-        </div>
-    </>
-);
+            <div className="xl:hidden">
+                <DashboardMobile
+                    user={dashboardUser}
+                    onLogout={handleLogout}
+                    isLoggingOut={isLoggingOut}
+                />
+            </div>
+        </>
+    );
 
 }
-
-
-

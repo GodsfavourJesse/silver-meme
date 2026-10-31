@@ -11,7 +11,10 @@ import Image from "next/image";
 
 import {
     AlertCircle,
+    Check,
+    CheckCircle2,
     Clock3,
+    FileImage,
     ImagePlus,
     LoaderCircle,
     RefreshCw,
@@ -20,7 +23,17 @@ import {
     Trash2,
     UploadCloud,
     X,
+    ChevronDown,
+    Images,
+    Info,
+    RotateCw,
 } from "lucide-react";
+
+import {
+    AnimatePresence,
+    motion,
+    useReducedMotion,
+} from "framer-motion";
 
 import {
     getListingImageAnalysis,
@@ -68,7 +81,7 @@ interface LocalImage {
 // CONSTANTS
 // ============================================================
 
-const BRAND_PURPLE = "#7008E7";
+const BRAND_BLUE = "#1491FF";
 
 const ACCEPTED_IMAGE_TYPES = [
     "image/jpeg",
@@ -98,11 +111,8 @@ function formatBytes(bytes: number): string {
 function getAnalysisDecision(
     analysis: ImageAnalysisStatusResponse["data"] | undefined,
 ): ImageAnalysisDecision | null {
-    if (!analysis) {
-        return null;
-    }
+    if (!analysis) return null;
 
-    // Prefer the normalized state returned by the backend.
     if (
         analysis.analysisState === "PASSED" ||
         analysis.analysisState === "REVIEW" ||
@@ -111,8 +121,6 @@ function getAnalysisDecision(
         return analysis.analysisState;
     }
 
-    // Fallback for responses where the run has a decision,
-    // but the normalized state is not yet available.
     return analysis.run?.decision ?? null;
 }
 
@@ -120,38 +128,37 @@ function getAnalysisLabel(
     analysis: ImageAnalysisStatusResponse["data"] | undefined,
 ): string {
     if (!analysis) {
-        return "Analysis status unavailable";
+        return "Status unavailable";
     }
 
     switch (analysis.analysisState) {
         case "PENDING":
-            return "Preparing image checks";
+            return "Preparing checks";
 
         case "QUEUED":
-            return "Waiting for image checks";
+            return "Queued for review";
 
         case "PROCESSING":
             return "Checking image";
 
         case "PASSED":
-            return "Image checks passed";
+            return "Checks passed";
 
         case "REVIEW":
-            return "Additional review required";
+            return "Needs review";
 
         case "FAILED":
-            return "Image checks failed";
+            return "Checks failed";
 
         case "CANCELLED":
-            return "Image checks cancelled";
+            return "Checks cancelled";
 
         default:
             break;
     }
 
-    // Compatibility fallback while the API rollout is completed.
     if (analysis.job?.status === "QUEUED") {
-        return "Waiting for image checks";
+        return "Queued for review";
     }
 
     if (
@@ -165,39 +172,29 @@ function getAnalysisLabel(
         analysis.job?.status === "FAILED" ||
         analysis.run?.status === "FAILED"
     ) {
-        return "Image checks failed";
+        return "Checks failed";
     }
 
     if (
         analysis.job?.status === "CANCELLED" ||
         analysis.run?.status === "CANCELLED"
     ) {
-        return "Image checks cancelled";
+        return "Checks cancelled";
     }
 
     const decision = getAnalysisDecision(analysis);
 
-    if (decision === "PASSED") {
-        return "Image checks passed";
-    }
+    if (decision === "PASSED") return "Checks passed";
+    if (decision === "REVIEW") return "Needs review";
+    if (decision === "FAILED") return "Checks failed";
 
-    if (decision === "REVIEW") {
-        return "Additional review required";
-    }
-
-    if (decision === "FAILED") {
-        return "Image checks failed";
-    }
-
-    return "Analysis status unavailable";
+    return "Status unavailable";
 }
 
 function getAnalysisDescription(
     analysis: ImageAnalysisStatusResponse["data"] | undefined,
 ): string | null {
-    if (!analysis) {
-        return null;
-    }
+    if (!analysis) return null;
 
     const state = analysis.analysisState;
     const decision = getAnalysisDecision(analysis);
@@ -219,18 +216,18 @@ function getAnalysisDescription(
     }
 
     if (state === "QUEUED") {
-        return "Your image has been received and is waiting to be checked.";
+        return "Your photo has been received and is waiting to be checked.";
     }
 
     if (state === "PROCESSING") {
-        return "We're checking your image. This may take a short while.";
+        return "Your photo is being checked. This may take a short while.";
     }
 
     if (state === "PASSED" || decision === "PASSED") {
         return (
             analysis.image?.checkReason ??
             analysis.run?.decisionReason ??
-            "Your image passed the initial checks."
+            "Your photo passed the initial checks."
         );
     }
 
@@ -238,7 +235,7 @@ function getAnalysisDescription(
         return (
             analysis.image?.checkReason ??
             analysis.run?.decisionReason ??
-            "Your image needs additional review before it can be approved."
+            "Your photo needs additional review."
         );
     }
 
@@ -247,7 +244,7 @@ function getAnalysisDescription(
             analysis.failureReason ??
             analysis.image?.checkReason ??
             analysis.run?.decisionReason ??
-            "Your image did not pass the initial checks."
+            "Your photo did not pass the initial checks."
         );
     }
 
@@ -257,11 +254,8 @@ function getAnalysisDescription(
 function isAnalysisTerminal(
     analysis: ImageAnalysisStatusResponse["data"] | undefined,
 ): boolean {
-    if (!analysis) {
-        return false;
-    }
+    if (!analysis) return false;
 
-    // The normalized backend state is the primary source of truth.
     switch (analysis.analysisState) {
         case "PASSED":
         case "REVIEW":
@@ -275,7 +269,6 @@ function isAnalysisTerminal(
             return false;
     }
 
-    // Compatibility fallback for older API responses.
     if (
         analysis.job?.status === "FAILED" ||
         analysis.job?.status === "CANCELLED"
@@ -300,19 +293,37 @@ function isAnalysisTerminal(
 function getDecisionStyles(
     decision: ImageAnalysisDecision | null,
 ): string {
-    if (decision === "PASSED") {
-        return "border-emerald-200 bg-emerald-50 text-emerald-700";
-    }
+    switch (decision) {
+        case "PASSED":
+            return "border-emerald-200 bg-emerald-50 text-emerald-700";
 
-    if (decision === "REVIEW") {
-        return "border-amber-200 bg-amber-50 text-amber-700";
-    }
+        case "REVIEW":
+            return "border-amber-200 bg-amber-50 text-amber-700";
 
-    if (decision === "FAILED") {
-        return "border-red-200 bg-red-50 text-red-700";
-    }
+        case "FAILED":
+            return "border-red-200 bg-red-50 text-red-700";
 
-    return "border-slate-200 bg-slate-50 text-slate-500";
+        default:
+            return "border-slate-200 bg-slate-50 text-slate-500";
+    }
+}
+
+function getDecisionDot(
+    decision: ImageAnalysisDecision | null,
+): string {
+    switch (decision) {
+        case "PASSED":
+            return "bg-emerald-500";
+
+        case "REVIEW":
+            return "bg-amber-500";
+
+        case "FAILED":
+            return "bg-red-500";
+
+        default:
+            return "bg-slate-400";
+    }
 }
 
 function DecisionIcon({
@@ -321,18 +332,18 @@ function DecisionIcon({
     decision: ImageAnalysisDecision | null;
 }) {
     if (decision === "PASSED") {
-        return <ShieldCheck size={14} />;
+        return <ShieldCheck size={13} />;
     }
 
     if (decision === "REVIEW") {
-        return <ShieldAlert size={14} />;
+        return <ShieldAlert size={13} />;
     }
 
     if (decision === "FAILED") {
-        return <AlertCircle size={14} />;
+        return <AlertCircle size={13} />;
     }
 
-    return <Clock3 size={14} />;
+    return <Clock3 size={13} />;
 }
 
 function getResultLabel(resultType: string): string {
@@ -350,7 +361,7 @@ function getResultLabel(resultType: string): string {
 }
 
 // ============================================================
-// COMPONENT
+// MAIN COMPONENT
 // ============================================================
 
 export default function ListingImageUploader({
@@ -364,6 +375,8 @@ export default function ListingImageUploader({
     const inputRef = useRef<HTMLInputElement>(null);
     const mountedRef = useRef(true);
 
+    const serverImagesRef = useRef<ListingImageRecord[]>(images);
+
     const [localImages, setLocalImages] = useState<LocalImage[]>([]);
 
     const [serverImages, setServerImages] =
@@ -375,10 +388,24 @@ export default function ListingImageUploader({
     const [globalError, setGlobalError] =
         useState<string | null>(null);
 
+    const shouldReduceMotion = useReducedMotion();
+
     const maxFileSizeBytes =
         maxFileSizeMb * 1024 * 1024;
 
     const uploadedCount = serverImages.length;
+
+    const readyCount = localImages.filter(
+        (image) => image.status === "READY",
+    ).length;
+
+    const uploadingCount = localImages.filter(
+        (image) => image.status === "UPLOADING",
+    ).length;
+
+    const failedCount = localImages.filter(
+        (image) => image.status === "FAILED",
+    ).length;
 
     const pendingCount = localImages.filter(
         (image) =>
@@ -391,12 +418,26 @@ export default function ListingImageUploader({
         maxImages - uploadedCount - pendingCount,
     );
 
-    const failedCount = localImages.filter(
-        (image) => image.status === "FAILED",
-    ).length;
+    const hasSelectedImages = localImages.length > 0;
+
+    const allImagesCount = uploadedCount + pendingCount;
 
     // ========================================================
-    // CLEANUP PREVIEW URLS
+    // ANIMATION SETTINGS
+    // ========================================================
+
+    const cardAnimation = {
+        initial: shouldReduceMotion
+            ? {}
+            : { opacity: 0, y: 10 },
+        animate: { opacity: 1, y: 0 },
+        transition: {
+            duration: shouldReduceMotion ? 0 : 0.25,
+        },
+    };
+
+    // ========================================================
+    // CLEANUP
     // ========================================================
 
     useEffect(() => {
@@ -410,7 +451,6 @@ export default function ListingImageUploader({
             }
         };
 
-        // Preview URLs are created and owned by this component.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -419,6 +459,7 @@ export default function ListingImageUploader({
     // ========================================================
 
     useEffect(() => {
+        serverImagesRef.current = images;
         setServerImages(images);
     }, [images]);
 
@@ -444,6 +485,7 @@ export default function ListingImageUploader({
 
     const publishServerImages = useCallback(
         (nextImages: ListingImageRecord[]) => {
+            serverImagesRef.current = nextImages;
             setServerImages(nextImages);
             onImagesChange?.(nextImages);
         },
@@ -464,33 +506,33 @@ export default function ListingImageUploader({
 
             event.target.value = "";
 
-            if (selectedFiles.length === 0) {
-                return;
-            }
+            if (selectedFiles.length === 0) return;
 
             const acceptedFiles: File[] = [];
             const errors: string[] = [];
 
+            const currentPendingCount = localImages.filter(
+                (image) => image.status !== "FAILED",
+            ).length;
+
             const availableSlots = Math.max(
                 0,
                 maxImages -
-                    serverImages.length -
-                    localImages.filter(
-                        (image) => image.status !== "FAILED",
-                    ).length,
+                    serverImagesRef.current.length -
+                    currentPendingCount,
             );
 
             for (const file of selectedFiles) {
                 if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
                     errors.push(
-                        `${file.name}: use JPEG, PNG, or WebP.`,
+                        `${file.name}: use JPEG, PNG or WebP.`,
                     );
                     continue;
                 }
 
                 if (file.size > maxFileSizeBytes) {
                     errors.push(
-                        `${file.name}: the maximum file size is ${maxFileSizeMb} MB.`,
+                        `${file.name}: maximum file size is ${maxFileSizeMb} MB.`,
                     );
                     continue;
                 }
@@ -532,7 +574,6 @@ export default function ListingImageUploader({
             maxFileSizeBytes,
             maxFileSizeMb,
             maxImages,
-            serverImages.length,
         ],
     );
 
@@ -544,23 +585,15 @@ export default function ListingImageUploader({
         async (localImage: LocalImage) => {
             updateLocalImage(localImage.id, {
                 status: "UPLOADING",
-                progress: 15,
+                progress: 20,
                 error: undefined,
                 analysisError: undefined,
             });
 
             try {
-                const nextSortOrder = serverImages.length;
+                const nextSortOrder =
+                    serverImagesRef.current.length;
 
-                /*
-                * The backend now:
-                * 1. Validates the image.
-                * 2. Normalizes and stores it.
-                * 3. Creates the listing image record.
-                * 4. Creates the durable analysis job.
-                *
-                * These database records are committed together.
-                */
                 const response = await uploadListingImage(
                     listingId,
                     localImage.file,
@@ -569,21 +602,13 @@ export default function ListingImageUploader({
 
                 const uploadedImage = response.data.image;
 
-                /*
-                * Update the server image collection.
-                */
-                publishServerImages([
-                    ...serverImages,
+                const nextImages = [
+                    ...serverImagesRef.current,
                     uploadedImage,
-                ]);
+                ];
 
-                /*
-                * Mark the upload as complete.
-                *
-                * This does not mean image analysis has passed.
-                * The analysis worker processes the queued job
-                * asynchronously.
-                */
+                publishServerImages(nextImages);
+
                 updateLocalImage(localImage.id, {
                     status: "UPLOADED",
                     progress: 100,
@@ -603,7 +628,6 @@ export default function ListingImageUploader({
         [
             listingId,
             publishServerImages,
-            serverImages,
             updateLocalImage,
         ],
     );
@@ -613,23 +637,21 @@ export default function ListingImageUploader({
     // ========================================================
 
     const uploadAll = useCallback(async () => {
-        if (isUploadingAll || disabled) {
-            return;
-        }
+        if (isUploadingAll || disabled) return;
 
         const readyImages = localImages.filter(
             (image) => image.status === "READY",
         );
 
-        if (readyImages.length === 0) {
-            return;
-        }
+        if (readyImages.length === 0) return;
 
         setIsUploadingAll(true);
         setGlobalError(null);
 
         try {
             for (const image of readyImages) {
+                if (!mountedRef.current) break;
+
                 await uploadImage(image);
             }
         } finally {
@@ -673,9 +695,7 @@ export default function ListingImageUploader({
 
     const refreshAnalysis = useCallback(
         async (localImage: LocalImage) => {
-            if (!localImage.image) {
-                return;
-            }
+            if (!localImage.image) return;
 
             try {
                 const response =
@@ -697,14 +717,11 @@ export default function ListingImageUploader({
                 });
             }
         },
-        [
-            listingId,
-            updateLocalImage,
-        ],
+        [listingId, updateLocalImage],
     );
 
     // ========================================================
-    // POLL ANALYSIS STATUS
+    // POLL LOCAL IMAGE ANALYSIS
     // ========================================================
 
     useEffect(() => {
@@ -715,9 +732,7 @@ export default function ListingImageUploader({
                 !isAnalysisTerminal(image.analysis),
         );
 
-        if (!needsPolling) {
-            return;
-        }
+        if (!needsPolling) return;
 
         const interval = window.setInterval(() => {
             const candidates = localImages.filter(
@@ -735,18 +750,12 @@ export default function ListingImageUploader({
         return () => {
             window.clearInterval(interval);
         };
-    }, [
-        localImages,
-        refreshAnalysis,
-    ]);
+    }, [localImages, refreshAnalysis]);
 
     // ========================================================
-    // KEEP THE PARENT'S AUTHORITATIVE IMAGE RECORDS IN SYNC
+    // POLL SERVER IMAGE RECORDS
     // ========================================================
-    // The listing editor validates `images`, not this component's
-    // local preview state. Poll server-side PENDING records too, so a
-    // page refresh or an image uploaded in another session cannot leave
-    // the parent form stuck on a stale PENDING status.
+
     useEffect(() => {
         const pendingImages = serverImages.filter(
             (image) => image.imageCheckStatus === "PENDING",
@@ -755,64 +764,106 @@ export default function ListingImageUploader({
         if (pendingImages.length === 0 || disabled) return;
 
         let cancelled = false;
+
         const poll = async () => {
             const updates = await Promise.allSettled(
                 pendingImages.map(async (image) => {
-                    const response = await getListingImageAnalysis(listingId, image.id);
+                    const response =
+                        await getListingImageAnalysis(
+                            listingId,
+                            image.id,
+                        );
+
                     const analysis = response.data;
                     const decision = getAnalysisDecision(analysis);
+
                     if (!decision) return null;
+
                     return {
                         id: image.id,
                         imageCheckStatus: decision,
-                        checkReason: analysis.image?.checkReason ?? analysis.run?.decisionReason ?? null,
-                        checkedAt: analysis.image?.checkedAt ?? null,
+                        checkReason:
+                            analysis.image?.checkReason ??
+                            analysis.run?.decisionReason ??
+                            null,
+                        checkedAt:
+                            analysis.image?.checkedAt ?? null,
                     };
                 }),
             );
 
             if (cancelled) return;
-            const resolved = new Map<string, { imageCheckStatus: ImageAnalysisDecision; checkReason: string | null; checkedAt: string | null }>();
+
+            const resolved = new Map<
+                string,
+                {
+                    imageCheckStatus: ImageAnalysisDecision;
+                    checkReason: string | null;
+                    checkedAt: string | null;
+                }
+            >();
+
             for (const result of updates) {
-                if (result.status === "fulfilled" && result.value) {
-                    resolved.set(result.value.id, result.value);
+                if (
+                    result.status === "fulfilled" &&
+                    result.value
+                ) {
+                    resolved.set(
+                        result.value.id,
+                        result.value,
+                    );
                 }
             }
+
             if (resolved.size === 0) return;
-            publishServerImages(serverImages.map((image) => {
+
+            const currentImages = serverImagesRef.current;
+
+            const nextImages = currentImages.map((image) => {
                 const update = resolved.get(image.id);
-                return update ? { ...image, ...update } : image;
-            }));
+
+                return update
+                    ? { ...image, ...update }
+                    : image;
+            });
+
+            publishServerImages(nextImages);
         };
 
         void poll();
-        const interval = window.setInterval(() => void poll(), 3500);
+
+        const interval = window.setInterval(
+            () => void poll(),
+            3500,
+        );
+
         return () => {
             cancelled = true;
             window.clearInterval(interval);
         };
-    }, [disabled, listingId, publishServerImages, serverImages]);
+    }, [
+        disabled,
+        listingId,
+        publishServerImages,
+        serverImages,
+    ]);
 
     // ========================================================
     // RENDER
     // ========================================================
 
     return (
-        <section id="listing-image-uploader" className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            {/* HEADER */}
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
 
-            <div className="border-b border-slate-100 p-5 sm:p-6">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            {/* ==================================================
+                HEADER
+            ================================================== */}
+
+            <div className="border-b border-slate-100 px-4 py-5 sm:px-6 sm:py-6">
+                <div className="flex items-start justify-between gap-4">
                     <div className="flex min-w-0 items-start gap-3">
-                        <div
-                            className="flex size-11 shrink-0 items-center justify-center rounded-xl"
-                            style={{
-                                backgroundColor:
-                                    "rgba(112, 8, 231, 0.08)",
-                                color: BRAND_PURPLE,
-                            }}
-                        >
-                            <ImagePlus size={21} />
+                        <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#1491FF]/10 text-[#1491FF]">
+                            <Images size={21} />
                         </div>
 
                         <div className="min-w-0">
@@ -820,74 +871,93 @@ export default function ListingImageUploader({
                                 Vehicle photos
                             </h2>
 
-                            <p className="mt-1 text-sm leading-6 text-slate-500">
-                                Upload clear, genuine photos of your
-                                vehicle.
+                            <p className="mt-1 text-xs leading-5 text-slate-500 sm:text-sm">
+                                Upload and manage the photos displayed on your listing.
                             </p>
                         </div>
                     </div>
 
-                    <div className="shrink-0 rounded-xl border border-purple-100 bg-purple-50 px-4 py-2.5 sm:text-right">
-                        <p className="text-xs font-medium text-purple-600">
-                            Uploaded photos
+                    <div className="shrink-0 text-right">
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                            Photo count
                         </p>
 
-                        <p
-                            className="mt-0.5 text-xl font-bold tracking-tight"
-                            style={{
-                                color: BRAND_PURPLE,
-                            }}
-                        >
+                        <p className="mt-0.5 text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
                             {uploadedCount}
-                            <span className="ml-1 text-sm font-medium text-purple-400">
+                            <span className="ml-1 text-sm font-medium text-slate-400">
                                 / {maxImages}
                             </span>
                         </p>
                     </div>
                 </div>
 
-                <p className="mt-4 text-sm leading-6 text-slate-500">
-                    Add exterior, interior, dashboard, engine, and
-                    other relevant photos. Image checks help identify
-                    duplicate images and content that may need
-                    additional review.
-                </p>
+                {/* PHOTO COUNTERS */}
+
+                <div className="mt-5 grid grid-cols-3 gap-2">
+                    <CounterCard
+                        label="Uploaded"
+                        value={uploadedCount}
+                        color="blue"
+                    />
+
+                    <CounterCard
+                        label="Ready"
+                        value={readyCount}
+                        color="slate"
+                    />
+
+                    <CounterCard
+                        label="Failed"
+                        value={failedCount}
+                        color="red"
+                    />
+                </div>
             </div>
 
             <div className="space-y-6 p-4 sm:p-6">
-                {/* GLOBAL ERROR */}
 
-                {globalError && (
-                    <div
-                        role="alert"
-                        className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4"
-                    >
-                        <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-red-100 text-red-600">
-                            <AlertCircle size={18} />
-                        </div>
+                {/* ==================================================
+                    GLOBAL ERROR
+                ================================================== */}
 
-                        <div className="min-w-0 flex-1">
-                            <p className="text-sm font-semibold text-red-800">
-                                Please check your selection
-                            </p>
-
-                            <p className="mt-1 text-sm leading-6 text-red-700">
-                                {globalError}
-                            </p>
-                        </div>
-
-                        <button
-                            type="button"
-                            onClick={() => setGlobalError(null)}
-                            className="flex size-8 shrink-0 items-center justify-center rounded-lg text-red-500 transition hover:bg-red-100 hover:text-red-700"
-                            aria-label="Dismiss error"
+                <AnimatePresence>
+                    {globalError && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -6 }}
+                            role="alert"
+                            className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-3.5"
                         >
-                            <X size={16} />
-                        </button>
-                    </div>
-                )}
+                            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-red-100 text-red-600">
+                                <AlertCircle size={17} />
+                            </div>
 
-                {/* FILE INPUT */}
+                            <div className="min-w-0 flex-1">
+                                <p className="text-xs font-bold text-red-800">
+                                    Unable to add some photos
+                                </p>
+
+                                <p className="mt-1 text-xs leading-5 text-red-700">
+                                    {globalError}
+                                </p>
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={() => setGlobalError(null)}
+                                aria-label="Dismiss error"
+                                className="flex size-7 shrink-0 items-center justify-center rounded-lg text-red-500 transition hover:bg-red-100"
+                            >
+                                <X size={15} />
+                            </button>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* ==================================================
+                    FILE INPUT
+                ================================================== */}
 
                 <input
                     ref={inputRef}
@@ -903,471 +973,271 @@ export default function ListingImageUploader({
                     className="hidden"
                 />
 
-                {/* UPLOAD DROP AREA */}
+                {/* ==================================================
+                    UPLOAD AREA
+                ================================================== */}
 
-                {remainingSlots > 0 && (
+                {remainingSlots > 0 ? (
                     <button
                         type="button"
                         onClick={() => inputRef.current?.click()}
                         disabled={disabled || isUploadingAll}
-                        className="group flex w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/70 px-5 py-8 text-center transition hover:border-purple-300 hover:bg-purple-50/50 focus:outline-none focus:ring-4 focus:ring-purple-100 disabled:cursor-not-allowed disabled:opacity-50 sm:py-10"
+                        className="group relative flex w-full flex-col items-center justify-center overflow-hidden rounded-2xl border border-dashed border-slate-300 bg-[#F8FAFC] px-5 py-8 text-center transition-all duration-200 hover:border-[#1491FF] hover:bg-blue-50/50 focus:outline-none focus:ring-4 focus:ring-[#1491FF]/10 disabled:cursor-not-allowed disabled:opacity-50 sm:py-10"
                     >
-                        <div
-                            className="flex size-14 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 transition group-hover:scale-105"
-                            style={{
-                                color: BRAND_PURPLE,
-                            }}
-                        >
+                        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-[#1491FF]/30 to-transparent opacity-0 transition group-hover:opacity-100" />
+
+                        <div className="flex size-14 items-center justify-center rounded-2xl bg-white text-[#1491FF] shadow-sm ring-1 ring-slate-200 transition duration-200 group-hover:-translate-y-1 group-hover:ring-[#1491FF]/30">
                             <UploadCloud size={25} />
                         </div>
 
-                        <span className="mt-4 text-sm font-bold text-slate-900">
-                            Select vehicle photos
+                        <p className="mt-4 text-sm font-bold text-slate-900">
+                            Add vehicle photos
+                        </p>
+
+                        <p className="mt-1 max-w-xs text-xs leading-5 text-slate-500">
+                            Choose clear photos from your device. You can select multiple images.
+                        </p>
+
+                        <span className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#1491FF] px-4 py-2.5 text-xs font-bold text-white shadow-sm shadow-blue-200 transition group-hover:bg-[#087FE5]">
+                            <ImagePlus size={15} />
+                            Browse photos
                         </span>
 
-                        <span className="mt-1 text-sm text-slate-500">
-                            Choose photos from your device
-                        </span>
+                        <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-[10px] font-medium text-slate-400">
+                            <span>JPEG</span>
+                            <span className="size-1 rounded-full bg-slate-300" />
+                            <span>PNG</span>
+                            <span className="size-1 rounded-full bg-slate-300" />
+                            <span>WebP</span>
+                            <span className="size-1 rounded-full bg-slate-300" />
+                            <span>Max {maxFileSizeMb} MB</span>
+                        </div>
 
-                        <span className="mt-3 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-500">
-                            JPEG, PNG, or WebP · Maximum {maxFileSizeMb} MB per photo
-                        </span>
-
-                        <span
-                            className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold"
-                            style={{
-                                color: BRAND_PURPLE,
-                            }}
-                        >
-                            <ImagePlus size={14} />
-
-                            {remainingSlots} photo slot
-                            {remainingSlots === 1 ? "" : "s"} remaining
+                        <span className="mt-3 text-[10px] font-semibold text-[#1491FF]">
+                            {remainingSlots} photo slot{remainingSlots === 1 ? "" : "s"} remaining
                         </span>
                     </button>
-                )}
-
-                {remainingSlots <= 0 && (
+                ) : (
                     <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
                         <AlertCircle
-                            size={19}
+                            size={18}
                             className="mt-0.5 shrink-0 text-amber-600"
                         />
 
                         <div>
-                            <p className="text-sm font-semibold text-amber-800">
-                                Photo limit reached
+                            <p className="text-xs font-bold text-amber-800">
+                                Maximum photo limit reached
                             </p>
 
-                            <p className="mt-1 text-sm leading-6 text-amber-700">
-                                You have reached the maximum of{" "}
-                                {maxImages} photos for this listing.
+                            <p className="mt-1 text-xs leading-5 text-amber-700">
+                                This listing supports a maximum of {maxImages} photos.
                             </p>
                         </div>
                     </div>
                 )}
 
-                {/* SELECTED IMAGES */}
+                {/* ==================================================
+                    SELECTED PHOTOS
+                ================================================== */}
 
-                {localImages.length > 0 && (
-                    <div>
-                        <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                {hasSelectedImages && (
+                    <motion.div {...cardAnimation}>
+                        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                             <div>
-                                <h3 className="text-sm font-bold text-slate-900">
-                                    Selected photos
-                                </h3>
+                                <div className="flex items-center gap-2">
+                                    <h3 className="text-sm font-bold text-slate-900">
+                                        Selected photos
+                                    </h3>
+
+                                    <span className="rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-[#087FE5]">
+                                        {localImages.length}
+                                    </span>
+                                </div>
 
                                 <p className="mt-1 text-xs text-slate-500">
-                                    Review your selections before
-                                    uploading them.
+                                    Review your images before uploading.
                                 </p>
                             </div>
 
-                            <span className="text-xs font-medium text-slate-500">
-                                {localImages.length} selected
-                            </span>
+                            {readyCount > 0 && (
+                                <span className="text-[11px] font-semibold text-slate-500">
+                                    {readyCount} waiting to upload
+                                </span>
+                            )}
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                            {localImages.map((image, index) => {
-                                const decision =
-                                    getAnalysisDecision(image.analysis);
+                        {/* PHOTO GRID */}
 
-                                const analysisLabel =
-                                    getAnalysisLabel(image.analysis);
-
-                                const analysisDescription =
-                                    getAnalysisDescription(image.analysis);
-
-                                return (
-                                    <article
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+                            <AnimatePresence mode="popLayout">
+                                {localImages.map((image, index) => (
+                                    <PhotoCard
                                         key={image.id}
-                                        className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white transition hover:border-slate-300 hover:shadow-sm"
-                                    >
-                                        {/* IMAGE PREVIEW */}
-
-                                        <div className="relative aspect-[4/3] bg-slate-100">
-                                            <Image
-                                                src={image.previewUrl}
-                                                alt={`Selected vehicle photo ${index + 1}`}
-                                                fill
-                                                unoptimized
-                                                sizes="(max-width: 640px) 50vw, 25vw"
-                                                className="object-cover"
-                                            />
-
-                                            <div className="absolute left-2 top-2 rounded-md bg-black/65 px-2 py-1 text-[10px] font-semibold text-white backdrop-blur-sm">
-                                                Photo {index + 1}
-                                            </div>
-
-                                            {image.status !== "UPLOADING" && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        removeLocalImage(
-                                                            image.id,
-                                                        )
-                                                    }
-                                                    disabled={disabled}
-                                                    aria-label={`Remove selected photo ${index + 1}`}
-                                                    className="absolute right-2 top-2 flex size-8 items-center justify-center rounded-lg bg-white/95 text-slate-600 shadow-sm transition hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
-                                                >
-                                                    <Trash2 size={14} />
-                                                </button>
-                                            )}
-
-                                            {image.status === "UPLOADING" && (
-                                                <div className="absolute inset-0 flex items-center justify-center bg-slate-950/55">
-                                                    <div
-                                                        className="flex size-12 items-center justify-center rounded-xl bg-white shadow-sm"
-                                                        style={{
-                                                            color: BRAND_PURPLE,
-                                                        }}
-                                                    >
-                                                        <LoaderCircle
-                                                            size={25}
-                                                            className="animate-spin"
-                                                        />
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* IMAGE DETAILS */}
-
-                                        <div className="space-y-3 p-3">
-                                            <p
-                                                className="truncate text-xs font-semibold text-slate-800"
-                                                title={image.file.name}
-                                            >
-                                                {image.file.name}
-                                            </p>
-
-                                            <p className="text-[11px] text-slate-400">
-                                                {formatBytes(
-                                                    image.file.size,
-                                                )}
-                                            </p>
-
-                                            {image.status === "READY" && (
-                                                <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-[11px] font-medium text-slate-600">
-                                                    <Clock3 size={13} />
-                                                    Ready to upload
-                                                </span>
-                                            )}
-
-                                            {image.status === "UPLOADING" && (
-                                                <div>
-                                                    <div className="mb-2 flex items-center justify-between gap-2 text-[11px]">
-                                                        <span className="font-medium text-slate-600">
-                                                            Uploading
-                                                        </span>
-
-                                                        <span
-                                                            className="font-semibold"
-                                                            style={{
-                                                                color: BRAND_PURPLE,
-                                                            }}
-                                                        >
-                                                            {image.progress}%
-                                                        </span>
-                                                    </div>
-
-                                                    <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
-                                                        <div
-                                                            className="h-full rounded-full transition-all"
-                                                            style={{
-                                                                width: `${image.progress}%`,
-                                                                backgroundColor:
-                                                                    BRAND_PURPLE,
-                                                            }}
-                                                        />
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {image.status === "UPLOADED" && (
-                                                <div>
-                                                    <span
-                                                        className={`inline-flex max-w-full items-center gap-1.5 rounded-lg border px-2 py-1.5 text-[11px] font-medium ${getDecisionStyles(decision)}`}
-                                                    >
-                                                        <DecisionIcon
-                                                            decision={decision}
-                                                        />
-
-                                                        <span className="truncate">
-                                                            {analysisLabel}
-                                                        </span>
-                                                    </span>
-
-                                                    {analysisDescription && (
-                                                        <p className="mt-2 text-[11px] leading-5 text-slate-500">
-                                                            {analysisDescription}
-                                                        </p>
-                                                    )}
-
-                                                    {image.analysisError && (
-                                                        <p className="mt-2 break-words text-[11px] leading-5 text-amber-700">
-                                                            {image.analysisError}
-                                                        </p>
-                                                    )}
-
-                                                    {image.analysis?.results &&
-                                                        image.analysis.results.length > 0 && (
-                                                            <details className="mt-3">
-                                                                <summary
-                                                                    className="cursor-pointer text-[11px] font-semibold hover:opacity-75"
-                                                                    style={{
-                                                                        color: BRAND_PURPLE,
-                                                                    }}
-                                                                >
-                                                                    View analysis results
-                                                                </summary>
-
-                                                                <div className="mt-2 space-y-2">
-                                                                    {image.analysis.results.map(
-                                                                        (result) => (
-                                                                            <div
-                                                                                key={result.id}
-                                                                                className="rounded-lg border border-slate-200 bg-slate-50 p-2"
-                                                                            >
-                                                                                <p className="text-[11px] font-semibold text-slate-700">
-                                                                                    {getResultLabel(
-                                                                                        result.resultType,
-                                                                                    )}
-                                                                                </p>
-
-                                                                                <p className="mt-1 break-words text-[10px] leading-4 text-slate-500">
-                                                                                    {result.reason ??
-                                                                                        (result.passed === true
-                                                                                            ? "Check passed."
-                                                                                            : result.passed === false
-                                                                                              ? "Check did not pass."
-                                                                                              : "Result recorded.")}
-                                                                                </p>
-
-                                                                                {result.score !== null && (
-                                                                                    <p className="mt-1 text-[10px] text-slate-400">
-                                                                                        Score:{" "}
-                                                                                        {result.score}
-                                                                                    </p>
-                                                                                )}
-                                                                            </div>
-                                                                        ),
-                                                                    )}
-                                                                </div>
-                                                            </details>
-                                                        )}
-
-                                                    {isAnalysisTerminal(
-                                                        image.analysis,
-                                                    ) &&
-                                                        image.analysis?.job?.status === "FAILED" && (
-                                                            <button
-                                                                type="button"
-                                                                onClick={() =>
-                                                                    void refreshAnalysis(
-                                                                        image,
-                                                                    )
-                                                                }
-                                                                className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-semibold hover:opacity-75"
-                                                                style={{
-                                                                    color: BRAND_PURPLE,
-                                                                }}
-                                                            >
-                                                                <RefreshCw
-                                                                    size={12}
-                                                                />
-                                                                Refresh status
-                                                            </button>
-                                                        )}
-                                                </div>
-                                            )}
-
-                                            {image.status === "FAILED" && (
-                                                <div className="rounded-lg border border-red-200 bg-red-50 p-2.5">
-                                                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-700">
-                                                        <AlertCircle
-                                                            size={13}
-                                                        />
-                                                        Upload failed
-                                                    </span>
-
-                                                    <p className="mt-2 break-words text-[11px] leading-5 text-red-600">
-                                                        {image.error}
-                                                    </p>
-
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            updateLocalImage(
-                                                                image.id,
-                                                                {
-                                                                    status: "READY",
-                                                                    error: undefined,
-                                                                },
-                                                            )
-                                                        }
-                                                        disabled={disabled}
-                                                        className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-red-700 hover:text-red-900 disabled:opacity-50"
-                                                    >
-                                                        <RefreshCw size={12} />
-                                                        Try again
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </article>
-                                );
-                            })}
+                                        image={image}
+                                        index={index}
+                                        disabled={disabled}
+                                        onRemove={removeLocalImage}
+                                        onRetry={(id) =>
+                                            updateLocalImage(id, {
+                                                status: "READY",
+                                                error: undefined,
+                                            })
+                                        }
+                                        onRefresh={refreshAnalysis}
+                                    />
+                                ))}
+                            </AnimatePresence>
                         </div>
 
                         {/* UPLOAD ACTIONS */}
 
-                        <div className="mt-5 flex flex-col gap-4 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
-                            <div>
-                                {failedCount > 0 ? (
-                                    <p className="text-xs leading-5 text-red-600">
-                                        {failedCount} photo upload
-                                        {failedCount === 1 ? "" : "s"}{" "}
-                                        failed. Retry before continuing.
-                                    </p>
-                                ) : (
-                                    <p className="text-xs leading-5 text-slate-500">
-                                        {uploadedCount} photo
-                                        {uploadedCount === 1 ? "" : "s"}{" "}
-                                        uploaded successfully.
-                                    </p>
-                                )}
+                        <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="min-w-0">
+                                    {isUploadingAll ? (
+                                        <>
+                                            <p className="text-xs font-bold text-slate-800">
+                                                Uploading your photos
+                                            </p>
 
-                                <p className="mt-1 text-xs text-slate-400">
-                                    Uploads are processed sequentially.
-                                </p>
+                                            <p className="mt-1 text-xs text-slate-500">
+                                                Please keep this page open until the upload finishes.
+                                            </p>
+                                        </>
+                                    ) : failedCount > 0 ? (
+                                        <>
+                                            <p className="text-xs font-bold text-red-700">
+                                                {failedCount} upload{failedCount === 1 ? "" : "s"} need attention
+                                            </p>
+
+                                            <p className="mt-1 text-xs text-slate-500">
+                                                Retry failed photos or remove them.
+                                            </p>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <p className="text-xs font-bold text-slate-800">
+                                                {readyCount > 0
+                                                    ? `${readyCount} photo${readyCount === 1 ? "" : "s"} ready to upload`
+                                                    : "All selected photos uploaded"}
+                                            </p>
+
+                                            <p className="mt-1 text-xs text-slate-500">
+                                                Uploaded photos will undergo separate image checks.
+                                            </p>
+                                        </>
+                                    )}
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={() => void uploadAll()}
+                                    disabled={
+                                        disabled ||
+                                        isUploadingAll ||
+                                        readyCount === 0
+                                    }
+                                    className="inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-[#1491FF] px-5 py-3 text-xs font-bold text-white shadow-sm shadow-blue-200 transition hover:bg-[#087FE5] focus:outline-none focus:ring-4 focus:ring-[#1491FF]/15 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 disabled:shadow-none sm:w-auto"
+                                >
+                                    {isUploadingAll ? (
+                                        <>
+                                            <LoaderCircle
+                                                size={16}
+                                                className="animate-spin"
+                                            />
+                                            Uploading...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <UploadCloud size={16} />
+                                            Upload selected
+                                        </>
+                                    )}
+                                </button>
                             </div>
 
-                            <button
-                                type="button"
-                                onClick={() => void uploadAll()}
-                                disabled={
-                                    disabled ||
-                                    isUploadingAll ||
-                                    localImages.every(
-                                        (image) =>
-                                            image.status !== "READY",
-                                    )
-                                }
-                                className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 focus:outline-none focus:ring-4 focus:ring-purple-100 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 disabled:shadow-none sm:w-auto"
-                                style={{
-                                    backgroundColor:
-                                        !disabled &&
-                                        !isUploadingAll &&
-                                        localImages.some(
-                                            (image) =>
-                                                image.status === "READY",
-                                        )
-                                            ? BRAND_PURPLE
-                                            : undefined,
-                                }}
-                            >
-                                {isUploadingAll ? (
-                                    <>
-                                        <LoaderCircle
-                                            size={17}
-                                            className="animate-spin"
-                                        />
-                                        Uploading photos...
-                                    </>
-                                ) : (
-                                    <>
-                                        <UploadCloud size={17} />
-                                        Upload selected photos
-                                    </>
-                                )}
-                            </button>
+                            {uploadingCount > 0 && (
+                                <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-slate-200">
+                                    <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{
+                                            width: `${(uploadingCount / Math.max(localImages.length, 1)) * 100}%`,
+                                        }}
+                                        className="h-full rounded-full bg-[#1491FF]"
+                                    />
+                                </div>
+                            )}
                         </div>
-                    </div>
+                    </motion.div>
                 )}
 
-                {/* SERVER IMAGE RECORDS */}
+                {/* ==================================================
+                    UPLOADED IMAGE RECORDS
+                ================================================== */}
 
                 {serverImages.length > 0 && (
                     <div className="border-t border-slate-100 pt-6">
-                        <div>
-                            <h3 className="text-sm font-bold text-slate-900">
-                                Uploaded image records
-                            </h3>
+                        <div className="flex items-start justify-between gap-3">
+                            <div>
+                                <div className="flex items-center gap-2">
+                                    <h3 className="text-sm font-bold text-slate-900">
+                                        Uploaded image records
+                                    </h3>
 
-                            <p className="mt-1 text-xs leading-5 text-slate-500">
-                                These images have been accepted by the
-                                upload endpoint. Their final moderation
-                                decisions are determined by the
-                                image-analysis pipeline.
-                            </p>
+                                    <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">
+                                        {serverImages.length}
+                                    </span>
+                                </div>
+
+                                <p className="mt-1 text-xs leading-5 text-slate-500">
+                                    Images received by the server and their current verification status.
+                                </p>
+                            </div>
                         </div>
 
                         <div className="mt-4 space-y-2">
                             {serverImages.map((image, index) => {
-                                const imageDecision:
-                                    ImageAnalysisDecision | null =
+                                const decision: ImageAnalysisDecision | null =
                                     image.imageCheckStatus === "PASSED"
                                         ? "PASSED"
                                         : image.imageCheckStatus === "REVIEW"
-                                          ? "REVIEW"
-                                          : image.imageCheckStatus === "FAILED"
-                                            ? "FAILED"
-                                            : null;
+                                            ? "REVIEW"
+                                            : image.imageCheckStatus === "FAILED"
+                                                ? "FAILED"
+                                                : null;
 
                                 return (
                                     <div
                                         key={image.id}
                                         className="flex min-w-0 items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 transition hover:border-slate-300"
                                     >
-                                        <div
-                                            className="flex size-10 shrink-0 items-center justify-center rounded-xl"
-                                            style={{
-                                                backgroundColor:
-                                                    "rgba(112, 8, 231, 0.07)",
-                                                color: BRAND_PURPLE,
-                                            }}
-                                        >
-                                            <ImagePlus size={17} />
+                                        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#1491FF]">
+                                            <FileImage size={18} />
                                         </div>
 
                                         <div className="min-w-0 flex-1">
-                                            <p className="text-xs font-semibold text-slate-800">
+                                            <p className="text-xs font-bold text-slate-800">
                                                 Vehicle photo {index + 1}
                                             </p>
 
                                             <p className="mt-1 truncate text-[10px] text-slate-400">
                                                 {image.id}
                                             </p>
+
+                                            {image.checkReason && (
+                                                <p className="mt-1 line-clamp-2 text-[10px] leading-4 text-slate-500">
+                                                    {image.checkReason}
+                                                </p>
+                                            )}
                                         </div>
 
                                         <span
-                                            className={`shrink-0 rounded-lg border px-2 py-1 text-[10px] font-semibold ${getDecisionStyles(
-                                                imageDecision,
-                                            )}`}
+                                            className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-2 py-1.5 text-[10px] font-bold ${getDecisionStyles(decision)}`}
                                         >
+                                            <span
+                                                className={`size-1.5 rounded-full ${getDecisionDot(decision)}`}
+                                            />
+
                                             {image.imageCheckStatus}
                                         </span>
                                     </div>
@@ -1377,47 +1247,403 @@ export default function ListingImageUploader({
                     </div>
                 )}
 
-                {/* EMPTY STATE */}
+                {/* ==================================================
+                    EMPTY STATE
+                ================================================== */}
 
                 {localImages.length === 0 &&
                     serverImages.length === 0 && (
-                        <div className="flex flex-col items-center rounded-xl border border-slate-100 bg-slate-50/70 px-5 py-7 text-center">
-                            <div className="flex size-11 items-center justify-center rounded-xl bg-white text-slate-400 shadow-sm ring-1 ring-slate-200">
-                                <ImagePlus size={20} />
+                        <div className="rounded-xl border border-slate-100 bg-slate-50/70 px-5 py-8 text-center">
+                            <div className="mx-auto flex size-12 items-center justify-center rounded-xl bg-white text-slate-400 shadow-sm ring-1 ring-slate-200">
+                                <Images size={21} />
                             </div>
 
-                            <p className="mt-3 text-sm font-semibold text-slate-800">
-                                No photos uploaded yet
+                            <p className="mt-3 text-sm font-bold text-slate-800">
+                                No photos added yet
                             </p>
 
-                            <p className="mt-1 max-w-sm text-xs leading-5 text-slate-500">
-                                Add clear vehicle photos to help buyers
-                                understand the condition of your vehicle.
+                            <p className="mx-auto mt-1 max-w-xs text-xs leading-5 text-slate-500">
+                                Your vehicle photos will appear here after you select and upload them.
                             </p>
                         </div>
                     )}
 
-                {/* FOOTER NOTE */}
+                {/* ==================================================
+                    IMAGE POLICY NOTE
+                ================================================== */}
 
-                <div className="flex items-start gap-3 rounded-xl border border-purple-100 bg-purple-50/60 p-4">
-                    <ShieldCheck
-                        size={18}
-                        className="mt-0.5 shrink-0"
-                        style={{
-                            color: BRAND_PURPLE,
-                        }}
-                    />
+                <div className="flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50/60 p-3.5 sm:p-4">
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white text-[#1491FF] shadow-sm">
+                        <ShieldCheck size={16} />
+                    </div>
 
-                    <p className="text-xs leading-5 text-slate-600">
-                        <span className="font-semibold text-slate-800">
-                            Image verification.
-                        </span>{" "}
-                        Uploaded photos are subject to KARMASS image
-                        checks. A successful upload does not necessarily
-                        mean the image has passed moderation.
-                    </p>
+                    <div className="min-w-0">
+                        <p className="text-xs font-bold text-slate-800">
+                            Image verification
+                        </p>
+
+                        <p className="mt-1 text-[11px] leading-5 text-slate-600">
+                            Every uploaded photo goes through KARMASS image checks.
+                            A successful upload does not automatically mean the
+                            photo has passed moderation.
+                        </p>
+                    </div>
                 </div>
             </div>
         </section>
+    );
+}
+
+// ============================================================
+// COUNTER CARD
+// ============================================================
+
+function CounterCard({
+    label,
+    value,
+    color,
+}: {
+    label: string;
+    value: number;
+    color: "blue" | "slate" | "red";
+}) {
+    const styles = {
+        blue: "bg-blue-50 text-[#087FE5]",
+        slate: "bg-slate-50 text-slate-600",
+        red: "bg-red-50 text-red-600",
+    };
+
+    return (
+        <div className="rounded-xl border border-slate-100 bg-white p-3">
+            <div
+                className={`mb-2 flex size-7 items-center justify-center rounded-lg ${styles[color]}`}
+            >
+                {color === "blue" && <CheckCircle2 size={14} />}
+                {color === "slate" && <Clock3 size={14} />}
+                {color === "red" && <AlertCircle size={14} />}
+            </div>
+
+            <p className="text-lg font-bold leading-none text-slate-900">
+                {value}
+            </p>
+
+            <p className="mt-1 text-[10px] font-medium text-slate-500">
+                {label}
+            </p>
+        </div>
+    );
+}
+
+// ============================================================
+// PHOTO CARD
+// ============================================================
+
+function PhotoCard({
+    image,
+    index,
+    disabled,
+    onRemove,
+    onRetry,
+    onRefresh,
+}: {
+    image: LocalImage;
+    index: number;
+    disabled: boolean;
+    onRemove: (id: string) => void;
+    onRetry: (id: string) => void;
+    onRefresh: (image: LocalImage) => Promise<void>;
+}) {
+    const [showResults, setShowResults] = useState(false);
+
+    const shouldReduceMotion = useReducedMotion();
+
+    const decision = getAnalysisDecision(image.analysis);
+
+    const analysisLabel = getAnalysisLabel(image.analysis);
+
+    const analysisDescription =
+        getAnalysisDescription(image.analysis);
+
+    const isUploading = image.status === "UPLOADING";
+    const isUploaded = image.status === "UPLOADED";
+    const isFailed = image.status === "FAILED";
+
+    return (
+        <motion.article
+            layout={!shouldReduceMotion}
+            initial={
+                shouldReduceMotion
+                    ? false
+                    : { opacity: 0, y: 12, scale: 0.98 }
+            }
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{
+                duration: shouldReduceMotion ? 0 : 0.22,
+            }}
+            className="group min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white transition-all duration-200 hover:border-[#1491FF]/30 hover:shadow-md hover:shadow-slate-200/50"
+        >
+            {/* IMAGE */}
+
+            <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
+                <Image
+                    src={image.previewUrl}
+                    alt={`Vehicle photo ${index + 1}`}
+                    fill
+                    unoptimized
+                    sizes="(max-width: 640px) 50vw, 25vw"
+                    className="object-cover transition duration-500 group-hover:scale-[1.03]"
+                />
+
+                {/* PHOTO NUMBER */}
+
+                <div className="absolute left-2 top-2 rounded-md bg-slate-950/65 px-2 py-1 text-[9px] font-bold text-white backdrop-blur-md">
+                    PHOTO {index + 1}
+                </div>
+
+                {/* REMOVE */}
+
+                {!isUploading && (
+                    <button
+                        type="button"
+                        onClick={() => onRemove(image.id)}
+                        disabled={disabled}
+                        aria-label={`Remove photo ${index + 1}`}
+                        className="absolute right-2 top-2 flex size-8 items-center justify-center rounded-lg bg-white/95 text-slate-600 opacity-100 shadow-sm transition hover:bg-red-50 hover:text-red-600 sm:opacity-0 sm:group-hover:opacity-100 disabled:opacity-40"
+                    >
+                        <Trash2 size={14} />
+                    </button>
+                )}
+
+                {/* UPLOADING OVERLAY */}
+
+                {isUploading && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/55 backdrop-blur-[2px]">
+                        <div className="flex size-11 items-center justify-center rounded-xl bg-white text-[#1491FF] shadow-lg">
+                            <LoaderCircle
+                                size={22}
+                                className="animate-spin"
+                            />
+                        </div>
+
+                        <p className="mt-3 text-[10px] font-bold text-white">
+                            Uploading photo...
+                        </p>
+                    </div>
+                )}
+
+                {/* UPLOADED BADGE */}
+
+                {isUploaded && (
+                    <div className="absolute bottom-2 left-2">
+                        <span className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-2 py-1 text-[9px] font-bold text-white shadow-sm">
+                            <Check size={11} />
+                            UPLOADED
+                        </span>
+                    </div>
+                )}
+
+                {/* FAILED BADGE */}
+
+                {isFailed && (
+                    <div className="absolute bottom-2 left-2">
+                        <span className="inline-flex items-center gap-1 rounded-md bg-red-600 px-2 py-1 text-[9px] font-bold text-white shadow-sm">
+                            <AlertCircle size={11} />
+                            FAILED
+                        </span>
+                    </div>
+                )}
+            </div>
+
+            {/* CONTENT */}
+
+            <div className="space-y-3 p-3">
+                <div className="min-w-0">
+                    <p
+                        className="truncate text-[11px] font-bold text-slate-800"
+                        title={image.file.name}
+                    >
+                        {image.file.name}
+                    </p>
+
+                    <p className="mt-1 text-[10px] text-slate-400">
+                        {formatBytes(image.file.size)}
+                    </p>
+                </div>
+
+                {/* READY */}
+
+                {image.status === "READY" && (
+                    <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2 py-2 text-[10px] font-semibold text-slate-600">
+                        <Clock3 size={12} />
+                        Ready to upload
+                    </div>
+                )}
+
+                {/* UPLOADING */}
+
+                {isUploading && (
+                    <div>
+                        <div className="mb-1.5 flex items-center justify-between text-[10px]">
+                            <span className="font-semibold text-slate-600">
+                                Uploading
+                            </span>
+
+                            <span className="font-bold text-[#1491FF]">
+                                {image.progress}%
+                            </span>
+                        </div>
+
+                        <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
+                            <motion.div
+                                initial={{ width: 0 }}
+                                animate={{
+                                    width: `${image.progress}%`,
+                                }}
+                                className="h-full rounded-full bg-[#1491FF]"
+                            />
+                        </div>
+                    </div>
+                )}
+
+                {/* UPLOADED / ANALYSIS */}
+
+                {isUploaded && (
+                    <div className="space-y-2">
+                        <span
+                            className={`inline-flex max-w-full items-center gap-1.5 rounded-lg border px-2 py-1.5 text-[10px] font-bold ${getDecisionStyles(decision)}`}
+                        >
+                            <DecisionIcon decision={decision} />
+
+                            <span className="truncate">
+                                {analysisLabel}
+                            </span>
+                        </span>
+
+                        {analysisDescription && (
+                            <p className="line-clamp-3 text-[10px] leading-5 text-slate-500">
+                                {analysisDescription}
+                            </p>
+                        )}
+
+                        {image.analysisError && (
+                            <p className="break-words text-[10px] leading-5 text-amber-700">
+                                {image.analysisError}
+                            </p>
+                        )}
+
+                        {/* ANALYSIS RESULTS */}
+
+                        {image.analysis?.results &&
+                            image.analysis.results.length > 0 && (
+                                <div className="overflow-hidden rounded-lg border border-slate-200">
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setShowResults((value) => !value)
+                                        }
+                                        className="flex w-full items-center justify-between gap-2 bg-slate-50 px-2.5 py-2 text-left transition hover:bg-slate-100"
+                                    >
+                                        <span className="text-[10px] font-bold text-slate-600">
+                                            Analysis details
+                                        </span>
+
+                                        <ChevronDown
+                                            size={13}
+                                            className={`shrink-0 text-slate-400 transition-transform ${
+                                                showResults
+                                                    ? "rotate-180"
+                                                    : ""
+                                            }`}
+                                        />
+                                    </button>
+
+                                    <AnimatePresence>
+                                        {showResults && (
+                                            <motion.div
+                                                initial={{ height: 0, opacity: 0 }}
+                                                animate={{ height: "auto", opacity: 1 }}
+                                                exit={{ height: 0, opacity: 0 }}
+                                                className="overflow-hidden"
+                                            >
+                                                <div className="space-y-2 p-2.5">
+                                                    {image.analysis.results.map(
+                                                        (result) => (
+                                                            <div
+                                                                key={result.id}
+                                                                className="border-b border-slate-100 pb-2 last:border-0 last:pb-0"
+                                                            >
+                                                                <p className="text-[10px] font-bold text-slate-700">
+                                                                    {getResultLabel(
+                                                                        result.resultType,
+                                                                    )}
+                                                                </p>
+
+                                                                <p className="mt-1 break-words text-[10px] leading-4 text-slate-500">
+                                                                    {result.reason ??
+                                                                        (result.passed === true
+                                                                            ? "Check passed."
+                                                                            : result.passed === false
+                                                                                ? "Check did not pass."
+                                                                                : "Result recorded.")}
+                                                                </p>
+
+                                                                {result.score != null && (
+                                                                    <p className="mt-1 text-[9px] text-slate-400">
+                                                                        Score: {result.score}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                        ),
+                                                    )}
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+                            )}
+
+                        {isAnalysisTerminal(image.analysis) && (
+                            <button
+                                type="button"
+                                onClick={() => void onRefresh(image)}
+                                className="inline-flex items-center gap-1.5 text-[10px] font-bold text-[#1491FF] transition hover:text-[#087FE5]"
+                            >
+                                <RefreshCw size={11} />
+                                Refresh status
+                            </button>
+                        )}
+                    </div>
+                )}
+
+                {/* UPLOAD FAILED */}
+
+                {isFailed && (
+                    <div className="rounded-lg border border-red-200 bg-red-50 p-2.5">
+                        <div className="flex items-center gap-1.5 text-red-700">
+                            <AlertCircle size={12} />
+
+                            <span className="text-[10px] font-bold">
+                                Upload failed
+                            </span>
+                        </div>
+
+                        <p className="mt-1.5 break-words text-[10px] leading-5 text-red-600">
+                            {image.error}
+                        </p>
+
+                        <button
+                            type="button"
+                            onClick={() => onRetry(image.id)}
+                            disabled={disabled}
+                            className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-white px-2.5 py-1.5 text-[10px] font-bold text-red-700 ring-1 ring-red-200 transition hover:bg-red-100 disabled:opacity-50"
+                        >
+                            <RotateCw size={11} />
+                            Retry upload
+                        </button>
+                    </div>
+                )}
+            </div>
+        </motion.article>
     );
 }

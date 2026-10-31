@@ -1,8 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+    useCallback,
+    useEffect,
+    useMemo,
+    useState,
+} from "react";
 import Link from "next/link";
 import Image from "next/image";
+import {
+    AnimatePresence,
+    motion,
+    useReducedMotion,
+} from "framer-motion";
+
 import {
     AlertCircle,
     ArrowLeft,
@@ -49,10 +60,14 @@ interface DashboardData {
     pagination: ListingPagination;
 }
 
+const BRAND = "#1491FF";
 const PAGE_SIZE = 12;
 const POLLING_INTERVAL = 5000;
 
-const FILTERS: { label: string; value: DashboardFilter }[] = [
+const FILTERS: {
+    label: string;
+    value: DashboardFilter;
+}[] = [
     { label: "All", value: "ALL" },
     { label: "Live", value: "APPROVED" },
     { label: "Pending", value: "PENDING_REVIEW" },
@@ -72,6 +87,44 @@ const STATUS_STYLES: Record<ListingStatus, string> = {
     SOLD: "border-blue-200 bg-blue-50 text-blue-700",
     SUSPENDED: "border-rose-200 bg-rose-50 text-rose-700",
     DELETED: "border-slate-200 bg-slate-100 text-slate-500",
+};
+
+const cardVariants = {
+    hidden: {
+        opacity: 0,
+        y: 12,
+    },
+    visible: {
+        opacity: 1,
+        y: 0,
+    },
+};
+
+const overlayVariants = {
+    hidden: {
+        opacity: 0,
+    },
+    visible: {
+        opacity: 1,
+    },
+    exit: {
+        opacity: 0,
+    },
+};
+
+const sheetVariants = {
+    hidden: {
+        opacity: 0,
+        y: 35,
+    },
+    visible: {
+        opacity: 1,
+        y: 0,
+    },
+    exit: {
+        opacity: 0,
+        y: 35,
+    },
 };
 
 function initialSummary(): ListingSummary {
@@ -204,17 +257,17 @@ function StatusGlyph({
     status: ListingStatus;
 }) {
     if (status === "APPROVED") {
-        return <CheckCircle2 size={12} />;
+        return <CheckCircle2 size={11} />;
     }
 
     if (
         status === "REJECTED" ||
         status === "SUSPENDED"
     ) {
-        return <ShieldAlert size={12} />;
+        return <ShieldAlert size={11} />;
     }
 
-    return <Clock3 size={12} />;
+    return <Clock3 size={11} />;
 }
 
 function getImageStatusLabel(status: string) {
@@ -287,6 +340,8 @@ function getImageAnalysisMessage(item: SellerListingItem) {
 }
 
 export default function MobileMyListingsDashboard() {
+    const prefersReducedMotion = useReducedMotion();
+
     const [data, setData] = useState<DashboardData>({
         summary: initialSummary(),
         items: [],
@@ -361,8 +416,9 @@ export default function MobileMyListingsDashboard() {
     }, [loadListings]);
 
     /*
-     * Poll while any listing on the current page has
-     * image analysis jobs that are still pending.
+     * Poll pending image-analysis jobs.
+     * Each request finishes before the next polling timer starts,
+     * preventing overlapping requests.
      */
     useEffect(() => {
         const hasPendingAnalysis = data.items.some(
@@ -370,18 +426,58 @@ export default function MobileMyListingsDashboard() {
                 (item.imageAnalysis?.pending ?? 0) > 0,
         );
 
-        if (!hasPendingAnalysis) {
-            return;
-        }
+        if (!hasPendingAnalysis) return;
 
-        const intervalId = window.setInterval(() => {
-            void loadListings(true);
-        }, POLLING_INTERVAL);
+        let cancelled = false;
+        let timeoutId: number | undefined;
+
+        const poll = async () => {
+            await loadListings(true);
+
+            if (!cancelled) {
+                timeoutId = window.setTimeout(
+                    poll,
+                    POLLING_INTERVAL,
+                );
+            }
+        };
+
+        timeoutId = window.setTimeout(
+            poll,
+            POLLING_INTERVAL,
+        );
 
         return () => {
-            window.clearInterval(intervalId);
+            cancelled = true;
+
+            if (timeoutId !== undefined) {
+                window.clearTimeout(timeoutId);
+            }
         };
     }, [data.items, loadListings]);
+
+    useEffect(() => {
+        if (!menuListing && !deleteTarget) return;
+
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+
+        const handleEscape = (event: KeyboardEvent) => {
+            if (event.key === "Escape") {
+                if (isDeleting) return;
+
+                setMenuListing(null);
+                setDeleteTarget(null);
+            }
+        };
+
+        window.addEventListener("keydown", handleEscape);
+
+        return () => {
+            document.body.style.overflow = previousOverflow;
+            window.removeEventListener("keydown", handleEscape);
+        };
+    }, [menuListing, deleteTarget, isDeleting]);
 
     const changeFilter = (filter: DashboardFilter) => {
         setActiveFilter(filter);
@@ -494,9 +590,7 @@ export default function MobileMyListingsDashboard() {
     const filteredItems = useMemo(() => {
         const query = searchQuery.trim().toLowerCase();
 
-        if (!query) {
-            return data.items;
-        }
+        if (!query) return data.items;
 
         return data.items.filter((item) =>
             [
@@ -516,26 +610,34 @@ export default function MobileMyListingsDashboard() {
         );
     }, [data.items, searchQuery]);
 
+    const deletedCount =
+        data.summary.deleted ?? data.summary.DELETED;
+
+    const transition = prefersReducedMotion
+        ? { duration: 0 }
+        : { duration: 0.22, ease: "easeOut" as const };
+
     return (
-        <main className="min-h-screen bg-[#F7F7FB] text-slate-900 lg:hidden">
+        <main className="min-h-screen overflow-x-hidden bg-[#F5F8FC] text-slate-900 lg:hidden">
             <div className="mx-auto w-full max-w-xl px-4 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-5">
-                {/* Header */}
+
+                {/* HEADER */}
                 <header className="flex items-center justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-3">
                         <Link
                             href="/dashboard"
                             aria-label="Back to dashboard"
-                            className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-sm transition active:scale-95"
+                            className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-slate-600 shadow-sm transition hover:border-blue-200 hover:text-[#1491FF] active:scale-95"
                         >
                             <ArrowLeft size={18} />
                         </Link>
 
                         <div className="min-w-0">
-                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7008E7]">
+                            <p className="text-[9px] font-extrabold uppercase tracking-[0.2em] text-[#1491FF]">
                                 KARMASS GARAGE
                             </p>
 
-                            <h1 className="mt-0.5 truncate text-xl font-bold tracking-tight">
+                            <h1 className="mt-0.5 truncate text-xl font-extrabold tracking-tight text-slate-900">
                                 My listings
                             </h1>
                         </div>
@@ -546,7 +648,7 @@ export default function MobileMyListingsDashboard() {
                         onClick={() => void loadListings(true)}
                         disabled={isLoading || isRefreshing}
                         aria-label="Refresh listings"
-                        className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-sm transition active:scale-95 disabled:opacity-50"
+                        className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-slate-600 shadow-sm transition hover:border-blue-200 hover:text-[#1491FF] active:scale-95 disabled:opacity-50"
                     >
                         <RefreshCw
                             size={16}
@@ -557,97 +659,112 @@ export default function MobileMyListingsDashboard() {
                     </button>
                 </header>
 
-                {/* Overview */}
-                <section className="relative mt-5 overflow-hidden rounded-[1.7rem] bg-gradient-to-br from-[#7008E7] via-[#6513D2] to-[#40109B] p-5 text-white shadow-[0_16px_36px_rgba(112,8,231,0.2)]">
-                    <div className="pointer-events-none absolute -right-10 -top-12 size-40 rounded-full border border-white/10" />
-                    <div className="pointer-events-none absolute -right-2 -top-4 size-24 rounded-full border border-white/10" />
+                {/* OVERVIEW */}
+                <motion.section
+                    initial={
+                        prefersReducedMotion
+                            ? false
+                            : { opacity: 0, y: 12 }
+                    }
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={transition}
+                    className="relative mt-5 overflow-hidden rounded-[1.6rem] bg-gradient-to-br from-[#1491FF] via-[#0879E5] to-[#0755B5] p-5 text-white shadow-[0_12px_30px_rgba(20,145,255,0.19)]"
+                >
+                    <div className="pointer-events-none absolute -right-12 -top-14 size-44 rounded-full border border-white/10" />
+                    <div className="pointer-events-none absolute -right-3 -top-6 size-28 rounded-full border border-white/10" />
 
                     <div className="relative flex items-start justify-between gap-4">
                         <div>
-                            <div className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[10px] font-semibold tracking-wide text-white/90">
+                            <div className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[9px] font-bold tracking-wider text-white/95 backdrop-blur-sm">
                                 <TrendingUp size={12} />
                                 LISTING OVERVIEW
                             </div>
 
-                            <p className="mt-4 text-sm text-white/75">
+                            <p className="mt-4 text-xs font-medium text-white/75">
                                 Your marketplace inventory
                             </p>
 
-                            <p className="mt-1 text-4xl font-bold tracking-tight">
+                            <p className="mt-1 text-[2.5rem] font-extrabold leading-none tracking-tight">
                                 {data.summary.total}
                             </p>
 
-                            <p className="mt-1 text-xs text-white/65">
+                            <p className="mt-2 text-[10px] font-medium text-white/65">
                                 Total listings created
                             </p>
                         </div>
 
-                        <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-white/10 backdrop-blur-sm">
+                        <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-white/10 shadow-inner backdrop-blur-sm">
                             <SlidersHorizontal size={21} />
                         </div>
                     </div>
 
                     <div className="relative mt-5 grid grid-cols-3 gap-2 border-t border-white/15 pt-4">
                         <div>
-                            <p className="text-[10px] font-medium text-white/65">
-                                Live
+                            <p className="text-[10px] font-medium text-white/70">
+                                Live listings
                             </p>
-                            <p className="mt-1 text-lg font-bold">
+
+                            <p className="mt-1 text-xl font-extrabold">
                                 {data.summary.APPROVED}
                             </p>
                         </div>
 
                         <div className="border-x border-white/15 px-3">
-                            <p className="text-[10px] font-medium text-white/65">
+                            <p className="text-[10px] font-medium text-white/70">
                                 Pending
                             </p>
-                            <p className="mt-1 text-lg font-bold">
+
+                            <p className="mt-1 text-xl font-extrabold">
                                 {data.summary.PENDING_REVIEW}
                             </p>
                         </div>
 
                         <div className="pl-2">
-                            <p className="text-[10px] font-medium text-white/65">
+                            <p className="text-[10px] font-medium text-white/70">
                                 Drafts
                             </p>
-                            <p className="mt-1 text-lg font-bold">
+
+                            <p className="mt-1 text-xl font-extrabold">
                                 {data.summary.DRAFT}
                             </p>
                         </div>
                     </div>
-                </section>
+                </motion.section>
 
-                {/* Recently Deleted */}
+                {/* RECENTLY DELETED */}
                 <Link
                     href="/dashboard/my-listings/recently-deleted"
-                    className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm transition active:scale-[0.99]"
+                    className="group mt-4 flex items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-white p-3 shadow-[0_3px_12px_rgba(15,23,42,0.035)] transition hover:border-blue-200 hover:shadow-md active:scale-[0.99]"
                 >
                     <div className="flex min-w-0 items-center gap-3">
-                        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
+                        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-500 transition group-hover:bg-rose-100">
                             <Trash2 size={17} />
                         </div>
 
                         <div className="min-w-0">
-                            <p className="text-sm font-bold text-slate-800">
+                            <p className="text-xs font-bold text-slate-800">
                                 Recently Deleted
                             </p>
 
-                            <p className="mt-0.5 text-[11px] text-slate-500">
+                            <p className="mt-0.5 text-[10px] text-slate-500">
                                 View or restore deleted listings
                             </p>
                         </div>
                     </div>
 
                     <div className="flex shrink-0 items-center gap-2">
-                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">
-                            {data.summary.deleted ?? data.summary.DELETED}
+                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-600">
+                            {deletedCount}
                         </span>
 
-                        <ArrowRight size={16} className="text-slate-400" />
+                        <ArrowRight
+                            size={15}
+                            className="text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-[#1491FF]"
+                        />
                     </div>
                 </Link>
 
-                {/* Search */}
+                {/* SEARCH */}
                 <div className="mt-5">
                     <label className="relative block">
                         <Search
@@ -662,12 +779,12 @@ export default function MobileMyListingsDashboard() {
                                 setSearchQuery(event.target.value)
                             }
                             placeholder="Search your listings"
-                            className="h-12 w-full rounded-2xl border border-slate-200 bg-white pl-10 pr-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#7008E7]/50 focus:ring-4 focus:ring-[#7008E7]/[0.08]"
+                            className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-xs font-medium text-slate-800 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-[#1491FF]/60 focus:ring-4 focus:ring-[#1491FF]/[0.08]"
                         />
                     </label>
                 </div>
 
-                {/* Filters */}
+                {/* FILTERS */}
                 <div className="-mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                     {FILTERS.map((filter) => {
                         const selected =
@@ -685,20 +802,20 @@ export default function MobileMyListingsDashboard() {
                                 onClick={() =>
                                     changeFilter(filter.value)
                                 }
-                                className={`inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-xs font-semibold transition active:scale-[0.98] ${
+                                className={`inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[10px] font-bold transition active:scale-[0.97] ${
                                     selected
-                                        ? "border-[#7008E7] bg-[#7008E7] text-white shadow-sm shadow-[#7008E7]/20"
-                                        : "border-slate-200 bg-white text-slate-600"
+                                        ? "border-[#1491FF] bg-[#1491FF] text-white shadow-[0_3px_10px_rgba(20,145,255,0.2)]"
+                                        : "border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-[#1491FF]"
                                 }`}
                             >
-                                {selected && <Check size={12} />}
+                                {selected && <Check size={11} />}
 
                                 {filter.label}
 
                                 <span
-                                    className={`rounded-full px-1.5 py-0.5 text-[10px] ${
+                                    className={`rounded-full px-1.5 py-0.5 text-[9px] ${
                                         selected
-                                            ? "bg-white/15 text-white"
+                                            ? "bg-white/20 text-white"
                                             : "bg-slate-100 text-slate-500"
                                     }`}
                                 >
@@ -709,99 +826,117 @@ export default function MobileMyListingsDashboard() {
                     })}
                 </div>
 
-                {/* Inventory heading */}
+                {/* INVENTORY HEADING */}
                 <div className="mb-3 mt-6 flex items-center justify-between gap-3">
                     <div>
-                        <h2 className="text-base font-bold tracking-tight">
+                        <h2 className="text-sm font-extrabold tracking-tight text-slate-900">
                             Your inventory
                         </h2>
 
-                        <p className="mt-0.5 text-xs text-slate-500">
-                            Manage status and listing details
+                        <p className="mt-0.5 text-[10px] text-slate-500">
+                            Manage your vehicle listings
                         </p>
                     </div>
 
-                    <span className="text-xs font-medium text-slate-500">
+                    <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-bold text-[#0879E5]">
                         {filteredItems.length} shown
                     </span>
                 </div>
 
-                {/* Error */}
-                {error && (
-                    <div
-                        role="alert"
-                        className="mb-4 flex items-start gap-2.5 rounded-2xl border border-rose-200 bg-rose-50 p-3.5 text-xs leading-5 text-rose-700"
-                    >
-                        <AlertCircle
-                            size={16}
-                            className="mt-0.5 shrink-0"
-                        />
-
-                        <p className="flex-1">{error}</p>
-
-                        <button
-                            type="button"
-                            onClick={() => setError(null)}
-                            aria-label="Dismiss error"
+                {/* ERROR */}
+                <AnimatePresence>
+                    {error && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -6 }}
+                            className="mb-4 flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs leading-5 text-rose-700"
+                            role="alert"
                         >
-                            <X size={15} />
-                        </button>
-                    </div>
-                )}
+                            <AlertCircle
+                                size={15}
+                                className="mt-0.5 shrink-0"
+                            />
 
-                {/* Success notice */}
-                {notice && (
-                    <div
-                        role="status"
-                        className="mb-4 flex items-start gap-2.5 rounded-2xl border border-emerald-200 bg-emerald-50 p-3.5 text-xs leading-5 text-emerald-700"
-                    >
-                        <CheckCircle2
-                            size={16}
-                            className="mt-0.5 shrink-0"
-                        />
+                            <p className="flex-1">{error}</p>
 
-                        <p className="flex-1">{notice}</p>
+                            <button
+                                type="button"
+                                onClick={() => setError(null)}
+                                aria-label="Dismiss error"
+                            >
+                                <X size={14} />
+                            </button>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
-                        <button
-                            type="button"
-                            onClick={() => setNotice(null)}
-                            aria-label="Dismiss notification"
+                {/* SUCCESS NOTICE */}
+                <AnimatePresence>
+                    {notice && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -6 }}
+                            className="mb-4 flex items-start gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs leading-5 text-emerald-700"
+                            role="status"
                         >
-                            <X size={15} />
-                        </button>
-                    </div>
-                )}
+                            <CheckCircle2
+                                size={15}
+                                className="mt-0.5 shrink-0"
+                            />
 
-                {/* Loading */}
+                            <p className="flex-1">{notice}</p>
+
+                            <button
+                                type="button"
+                                onClick={() => setNotice(null)}
+                                aria-label="Dismiss notification"
+                            >
+                                <X size={14} />
+                            </button>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* LOADING */}
                 {isLoading ? (
-                    <div className="flex min-h-52 flex-col items-center justify-center rounded-3xl border border-slate-200 bg-white text-center">
-                        <div className="flex size-12 items-center justify-center rounded-2xl bg-[#7008E7]/[0.08] text-[#7008E7]">
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="flex min-h-52 flex-col items-center justify-center rounded-2xl border border-slate-200/80 bg-white text-center shadow-sm"
+                    >
+                        <div className="flex size-11 items-center justify-center rounded-xl bg-blue-50 text-[#1491FF]">
                             <LoaderCircle
-                                size={22}
+                                size={21}
                                 className="animate-spin"
                             />
                         </div>
 
-                        <p className="mt-3 text-sm font-semibold text-slate-700">
+                        <p className="mt-3 text-xs font-bold text-slate-700">
                             Loading your listings
                         </p>
 
-                        <p className="mt-1 text-xs text-slate-400">
+                        <p className="mt-1 text-[10px] text-slate-400">
                             Getting your inventory ready…
                         </p>
-                    </div>
+                    </motion.div>
                 ) : filteredItems.length === 0 ? (
-                    /* Empty state */
-                    <section className="rounded-3xl border border-slate-200 bg-white px-6 py-12 text-center shadow-sm">
-                        <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-[#7008E7]/[0.08] text-[#7008E7]">
+                    /* EMPTY STATE */
+                    <motion.section
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="rounded-2xl border border-slate-200/80 bg-white px-6 py-11 text-center shadow-[0_4px_16px_rgba(15,23,42,0.035)]"
+                    >
+                        <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-blue-50 text-[#1491FF]">
                             {searchQuery ? (
-                                <Search size={23} />
+                                <Search size={21} />
                             ) : (
-                                <FilePlus2 size={23} />
+                                <FilePlus2 size={21} />
                             )}
                         </div>
 
-                        <h3 className="mt-4 text-base font-bold">
+                        <h3 className="mt-4 text-sm font-extrabold text-slate-900">
                             {searchQuery
                                 ? "No matching listings"
                                 : activeFilter === "ALL"
@@ -814,7 +949,7 @@ export default function MobileMyListingsDashboard() {
                                     } listings`}
                         </h3>
 
-                        <p className="mx-auto mt-2 max-w-xs text-xs leading-5 text-slate-500">
+                        <p className="mx-auto mt-2 max-w-xs text-[11px] leading-5 text-slate-500">
                             {searchQuery
                                 ? "Try a different title, vehicle name, or location."
                                 : activeFilter === "ALL"
@@ -826,7 +961,7 @@ export default function MobileMyListingsDashboard() {
                             <button
                                 type="button"
                                 onClick={() => setSearchQuery("")}
-                                className="mt-5 rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-700"
+                                className="mt-5 rounded-xl border border-slate-200 px-4 py-2.5 text-[11px] font-bold text-slate-700 transition hover:border-blue-200 hover:text-[#1491FF]"
                             >
                                 Clear search
                             </button>
@@ -834,354 +969,210 @@ export default function MobileMyListingsDashboard() {
                             <button
                                 type="button"
                                 onClick={() => changeFilter("ALL")}
-                                className="mt-5 rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-700"
+                                className="mt-5 rounded-xl border border-slate-200 px-4 py-2.5 text-[11px] font-bold text-slate-700 transition hover:border-blue-200 hover:text-[#1491FF]"
                             >
                                 View all listings
                             </button>
                         ) : null}
-                    </section>
+                    </motion.section>
                 ) : (
-                    /* Listing cards */
-                    <div className="space-y-3">
-                        {filteredItems.map((item) => {
-                            const listing = item.listing;
-                            const busy =
-                                busyListingId === listing.id;
+                    /* LISTING CARDS */
+                    <motion.div
+                        layout
+                        className="space-y-2.5"
+                    >
+                        <AnimatePresence mode="popLayout">
+                            {filteredItems.map((item) => {
+                                const listing = item.listing;
 
-                            const coverImageUrl =
-                                item.coverImage?.thumbnailUrl ||
-                                item.coverImage?.url;
+                                const busy =
+                                    busyListingId === listing.id;
 
-                            const analysis = item.imageAnalysis;
+                                const coverImageUrl =
+                                    item.coverImage?.thumbnailUrl ||
+                                    item.coverImage?.url;
 
-                            return (
-                                <article
-                                    key={listing.id}
-                                    className="overflow-hidden rounded-[1.45rem] border border-slate-200/90 bg-white shadow-[0_4px_18px_rgba(15,23,42,0.035)] transition"
-                                >
-                                    {/* Listing summary */}
-                                    <div className="flex gap-3 p-3.5">
-                                        <div className="relative size-[5.3rem] shrink-0 overflow-hidden rounded-2xl bg-gradient-to-br from-[#F0E6FF] via-[#F7F3FF] to-[#E7DBFF]">
-                                            {coverImageUrl ? (
-                                                <Image
-                                                    src={coverImageUrl}
-                                                    alt={`${listing.title} vehicle`}
-                                                    fill
-                                                    sizes="85px"
-                                                    className="object-cover"
-                                                    unoptimized
-                                                />
-                                            ) : (
-                                                <div className="flex size-full items-center justify-center text-[#7008E7]">
-                                                    <ImageIcon size={23} />
-                                                </div>
-                                            )}
+                                const analysis = item.imageAnalysis;
 
-                                            {busy && (
-                                                <div className="absolute inset-0 flex items-center justify-center bg-white/75">
-                                                    <LoaderCircle
-                                                        size={20}
-                                                        className="animate-spin text-[#7008E7]"
+                                return (
+                                    <motion.article
+                                        layout
+                                        key={listing.id}
+                                        variants={cardVariants}
+                                        initial={
+                                            prefersReducedMotion
+                                                ? false
+                                                : "hidden"
+                                        }
+                                        animate="visible"
+                                        exit={{
+                                            opacity: 0,
+                                            scale: 0.98,
+                                        }}
+                                        transition={transition}
+                                        whileTap={
+                                            prefersReducedMotion
+                                                ? undefined
+                                                : { scale: 0.995 }
+                                        }
+                                        className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_3px_14px_rgba(15,23,42,0.045)] transition-shadow hover:shadow-[0_7px_22px_rgba(15,23,42,0.075)]"
+                                    >
+                                        {/* LISTING SUMMARY */}
+                                        <div className="flex gap-2.5 p-3">
+                                            <div className="relative size-[5rem] shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-blue-50 to-blue-100">
+                                                {coverImageUrl ? (
+                                                    <Image
+                                                        src={coverImageUrl}
+                                                        alt={`${listing.title} vehicle`}
+                                                        fill
+                                                        sizes="80px"
+                                                        className="object-cover"
+                                                        unoptimized
                                                     />
-                                                </div>
-                                            )}
-                                        </div>
+                                                ) : (
+                                                    <div className="flex size-full items-center justify-center text-[#1491FF]">
+                                                        <ImageIcon size={22} />
+                                                    </div>
+                                                )}
 
-                                        <div className="min-w-0 flex-1 pt-0.5">
-                                            <div className="flex items-start justify-between gap-2">
-                                                <span
-                                                    className={`inline-flex max-w-full items-center gap-1 rounded-full border px-2 py-1 text-[9px] font-bold ${STATUS_STYLES[listing.status]}`}
-                                                >
-                                                    <StatusGlyph
-                                                        status={listing.status}
-                                                    />
-
-                                                    <span className="truncate">
-                                                        {formatStatus(
-                                                            listing.status,
-                                                        )}
-                                                    </span>
-                                                </span>
-
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        setMenuListing(item)
-                                                    }
-                                                    aria-label={`Actions for ${listing.title}`}
-                                                    className="-mr-1 -mt-1 flex size-8 shrink-0 items-center justify-center rounded-xl text-slate-500 transition active:bg-slate-100"
-                                                >
-                                                    <MoreHorizontal size={19} />
-                                                </button>
+                                                {busy && (
+                                                    <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-[2px]">
+                                                        <LoaderCircle
+                                                            size={20}
+                                                            className="animate-spin text-[#1491FF]"
+                                                        />
+                                                    </div>
+                                                )}
                                             </div>
 
-                                            <h3 className="mt-2 line-clamp-1 text-sm font-bold leading-5 text-slate-900">
-                                                {listing.title}
-                                            </h3>
-
-                                            {vehicleName(item) && (
-                                                <p className="mt-0.5 line-clamp-1 text-[10px] text-slate-500">
-                                                    {vehicleName(item)}
-                                                </p>
-                                            )}
-
-                                            <p className="mt-1.5 truncate text-sm font-extrabold tracking-tight text-[#7008E7]">
-                                                {formatPrice(
-                                                    listing.price,
-                                                    listing.currency,
-                                                )}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    {/* Location and date */}
-                                    <div className="flex items-center gap-1.5 border-t border-slate-100 px-3.5 py-2.5 text-[10px] text-slate-500">
-                                        <MapPin
-                                            size={12}
-                                            className="shrink-0 text-slate-400"
-                                        />
-
-                                        <span className="min-w-0 flex-1 truncate">
-                                            {locationName(item) ||
-                                                "Location not provided"}
-                                        </span>
-
-                                        <span className="shrink-0 text-slate-300">
-                                            •
-                                        </span>
-
-                                        <span className="shrink-0">
-                                            {formatDate(listing.createdAt)}
-                                        </span>
-                                    </div>
-
-                                    {/* Image analysis */}
-                                    {analysis && analysis.total > 0 && (
-                                        <div className="border-t border-slate-100 px-3.5 py-3">
-                                            <div className="flex items-start justify-between gap-3">
-                                                <div className="min-w-0">
-                                                    <div className="flex items-center gap-1.5">
-                                                        <ShieldAlert
-                                                            size={14}
-                                                            className="shrink-0 text-[#7008E7]"
+                                            <div className="min-w-0 flex-1 pt-0.5">
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <span
+                                                        className={`inline-flex max-w-full items-center gap-1 rounded-full border px-2 py-1 text-[9px] font-bold ${STATUS_STYLES[listing.status]}`}
+                                                    >
+                                                        <StatusGlyph
+                                                            status={listing.status}
                                                         />
 
-                                                        <h4 className="text-xs font-bold text-slate-800">
-                                                            Image checks
-                                                        </h4>
-                                                    </div>
+                                                        <span className="truncate">
+                                                            {formatStatus(
+                                                                listing.status,
+                                                            )}
+                                                        </span>
+                                                    </span>
 
-                                                    <p className="mt-1 text-[10px] leading-4 text-slate-500">
-                                                        {getImageAnalysisMessage(
-                                                            item,
-                                                        )}
-                                                    </p>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            setMenuListing(item)
+                                                        }
+                                                        aria-label={`Actions for ${listing.title}`}
+                                                        className="-mr-1 -mt-1 flex size-8 shrink-0 items-center justify-center rounded-lg text-slate-500 transition hover:bg-blue-50 hover:text-[#1491FF] active:scale-95"
+                                                    >
+                                                        <MoreHorizontal size={19} />
+                                                    </button>
                                                 </div>
 
-                                                <span className="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-600">
-                                                    {analysis.passed}/
-                                                    {analysis.total} passed
-                                                </span>
-                                            </div>
+                                                <h3 className="mt-1.5 line-clamp-1 text-xs font-extrabold leading-5 text-slate-900">
+                                                    {listing.title}
+                                                </h3>
 
-                                            {/* Analysis counts */}
-                                            <div className="mt-3 flex flex-wrap gap-1.5">
-                                                {analysis.pending > 0 && (
-                                                    <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-[10px] font-semibold text-amber-700">
-                                                        {analysis.pending} pending
-                                                    </span>
+                                                {vehicleName(item) && (
+                                                    <p className="mt-0.5 line-clamp-1 text-[9px] text-slate-500">
+                                                        {vehicleName(item)}
+                                                    </p>
                                                 )}
 
-                                                {analysis.review > 0 && (
-                                                    <span className="rounded-full border border-orange-200 bg-orange-50 px-2 py-1 text-[10px] font-semibold text-orange-700">
-                                                        {analysis.review} for review
-                                                    </span>
-                                                )}
-
-                                                {analysis.failed > 0 && (
-                                                    <span className="rounded-full border border-rose-200 bg-rose-50 px-2 py-1 text-[10px] font-semibold text-rose-700">
-                                                        {analysis.failed} failed
-                                                    </span>
-                                                )}
-                                            </div>
-
-                                            {/* Individual image results */}
-                                            <div className="mt-3 space-y-2">
-                                                {analysis.images.map((image) => {
-                                                    const imageUrl =
-                                                        image.thumbnailUrl ||
-                                                        image.url;
-
-                                                    const retrying =
-                                                        retryingImageId ===
-                                                        image.id;
-
-                                                    return (
-                                                        <div
-                                                            key={image.id}
-                                                            className="flex items-start gap-2.5 rounded-xl border border-slate-100 bg-slate-50/70 p-2"
-                                                        >
-                                                            <div className="relative size-14 shrink-0 overflow-hidden rounded-lg bg-slate-200">
-                                                                {imageUrl ? (
-                                                                    <Image
-                                                                        src={imageUrl}
-                                                                        alt={`Vehicle photo ${image.sortOrder + 1}`}
-                                                                        fill
-                                                                        sizes="56px"
-                                                                        className="object-cover"
-                                                                        unoptimized
-                                                                    />
-                                                                ) : (
-                                                                    <div className="flex size-full items-center justify-center text-slate-400">
-                                                                        <ImageIcon
-                                                                            size={18}
-                                                                        />
-                                                                    </div>
-                                                                )}
-                                                            </div>
-
-                                                            <div className="min-w-0 flex-1">
-                                                                <div className="flex flex-wrap items-center gap-1.5">
-                                                                    <span className="text-[10px] font-bold text-slate-700">
-                                                                        Photo{" "}
-                                                                        {image.sortOrder +
-                                                                            1}
-                                                                    </span>
-
-                                                                    <span
-                                                                        className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-semibold ${getImageStatusStyles(image.imageCheckStatus)}`}
-                                                                    >
-                                                                        {image.imageCheckStatus ===
-                                                                        "PASSED" ? (
-                                                                            <CheckCircle2
-                                                                                size={10}
-                                                                            />
-                                                                        ) : image.imageCheckStatus ===
-                                                                          "PENDING" ? (
-                                                                            <LoaderCircle
-                                                                                size={10}
-                                                                                className="animate-spin"
-                                                                            />
-                                                                        ) : (
-                                                                            <AlertCircle
-                                                                                size={10}
-                                                                            />
-                                                                        )}
-
-                                                                        {getImageStatusLabel(
-                                                                            image.imageCheckStatus,
-                                                                        )}
-                                                                    </span>
-                                                                </div>
-
-                                                                {image.checkReason && (
-                                                                    <p className="mt-1 break-words text-[10px] leading-4 text-slate-600">
-                                                                        {image.checkReason}
-                                                                    </p>
-                                                                )}
-
-                                                                {image.checkedAt && (
-                                                                    <p className="mt-1 text-[9px] text-slate-400">
-                                                                        Checked{" "}
-                                                                        {formatDate(
-                                                                            image.checkedAt,
-                                                                        )}
-                                                                    </p>
-                                                                )}
-
-                                                                {image.canRetry && (
-                                                                    <button
-                                                                        type="button"
-                                                                        disabled={Boolean(
-                                                                            retryingImageId,
-                                                                        )}
-                                                                        onClick={() =>
-                                                                            void handleRetryImageAnalysis(
-                                                                                listing.id,
-                                                                                image.id,
-                                                                            )
-                                                                        }
-                                                                        className="mt-2 inline-flex min-h-8 items-center justify-center gap-1.5 rounded-lg border border-[#7008E7]/20 bg-white px-2.5 text-[10px] font-bold text-[#7008E7] transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-                                                                    >
-                                                                        {retrying ? (
-                                                                            <LoaderCircle
-                                                                                size={12}
-                                                                                className="animate-spin"
-                                                                            />
-                                                                        ) : (
-                                                                            <RefreshCw
-                                                                                size={12}
-                                                                            />
-                                                                        )}
-
-                                                                        {retrying
-                                                                            ? "Retrying…"
-                                                                            : "Retry analysis"}
-                                                                    </button>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
+                                                <p className="mt-1.5 truncate text-sm font-extrabold tracking-tight text-[#0879E5]">
+                                                    {formatPrice(
+                                                        listing.price,
+                                                        listing.currency,
+                                                    )}
+                                                </p>
                                             </div>
                                         </div>
-                                    )}
 
-                                    {/* Listing actions */}
-                                    <div className="flex gap-2 px-3.5 pb-3.5 pt-2">
-                                        <Link
-                                            href={`/dashboard/my-listings/${encodeURIComponent(listing.id)}/edit`}
-                                            className={`inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-xl px-3 text-xs font-bold transition active:scale-[0.98] ${
-                                                canEdit(listing.status)
-                                                    ? "bg-[#7008E7] text-white shadow-sm shadow-[#7008E7]/15"
-                                                    : "border border-slate-200 bg-white text-slate-700"
-                                            }`}
-                                        >
-                                            {canEdit(listing.status) ? (
-                                                <Pencil size={13} />
-                                            ) : (
-                                                <Eye size={13} />
-                                            )}
+                                        {/* LOCATION AND DATE */}
+                                        <div className="flex items-center gap-1.5 border-t border-slate-100 px-3 py-2 text-[9px] text-slate-500">
+                                            <MapPin
+                                                size={11}
+                                                className="shrink-0 text-[#1491FF]"
+                                            />
 
-                                            {canEdit(listing.status)
-                                                ? "Manage listing"
-                                                : "View details"}
-                                        </Link>
+                                            <span className="min-w-0 flex-1 truncate">
+                                                {locationName(item) ||
+                                                    "Location not provided"}
+                                            </span>
 
-                                        {listing.status === "APPROVED" && (
+                                            <span className="shrink-0 text-slate-300">
+                                                •
+                                            </span>
+
+                                            <span className="shrink-0">
+                                                {formatDate(listing.createdAt)}
+                                            </span>
+                                        </div>
+
+                                        {/* LISTING ACTIONS */}
+                                        <div className="flex gap-2 px-3 pb-3 pt-1">
                                             <Link
-                                                href={`/vehicles/${encodeURIComponent(listing.id)}`}
-                                                aria-label="View marketplace listing"
-                                                className="flex size-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition active:bg-slate-50"
+                                                href={`/dashboard/my-listings/${encodeURIComponent(listing.id)}/edit`}
+                                                className={`inline-flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-xl px-3 text-[10px] font-extrabold transition active:scale-[0.98] ${
+                                                    canEdit(listing.status)
+                                                        ? "bg-[#1491FF] text-white shadow-[0_3px_10px_rgba(20,145,255,0.2)] hover:bg-[#0879E5]"
+                                                        : "border border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:text-[#1491FF]"
+                                                }`}
                                             >
-                                                <ArrowRight size={15} />
+                                                {canEdit(listing.status) ? (
+                                                    <Pencil size={12} />
+                                                ) : (
+                                                    <Eye size={12} />
+                                                )}
+
+                                                {canEdit(listing.status)
+                                                    ? "Manage listing"
+                                                    : "View details"}
                                             </Link>
-                                        )}
-                                    </div>
 
-                                    {/* Listing rejection feedback */}
-                                    {listing.rejectionReason && (
-                                        <div className="mx-3.5 mb-3.5 rounded-xl border border-rose-100 bg-rose-50 px-3 py-2.5">
-                                            <p className="text-[10px] font-bold text-rose-700">
-                                                Review feedback
-                                            </p>
-
-                                            <p className="mt-1 line-clamp-2 text-[11px] leading-4 text-rose-700/80">
-                                                {listing.rejectionReason}
-                                            </p>
+                                            {listing.status === "APPROVED" && (
+                                                <Link
+                                                    href={`/vehicles/${encodeURIComponent(listing.id)}`}
+                                                    aria-label="View marketplace listing"
+                                                    className="flex size-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-[#1491FF]"
+                                                >
+                                                    <ArrowRight size={14} />
+                                                </Link>
+                                            )}
                                         </div>
-                                    )}
-                                </article>
-                            );
-                        })}
-                    </div>
+
+                                        {/* REJECTION FEEDBACK */}
+                                        {listing.rejectionReason && (
+                                            <div className="mx-3 mb-3 rounded-xl border border-rose-100 bg-rose-50 px-3 py-2">
+                                                <p className="text-[9px] font-extrabold text-rose-700">
+                                                    Review feedback
+                                                </p>
+
+                                                <p className="mt-1 line-clamp-2 text-[10px] leading-4 text-rose-700/80">
+                                                    {listing.rejectionReason}
+                                                </p>
+                                            </div>
+                                        )}
+                                    </motion.article>
+                                );
+                            })}
+                        </AnimatePresence>
+                    </motion.div>
                 )}
 
-                {/* Pagination */}
+                {/* PAGINATION */}
                 {!isLoading &&
                     data.pagination.totalPages > 1 && (
-                        <div className="mt-4 flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-3">
-                            <p className="text-[11px] font-medium text-slate-500">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="mt-4 flex items-center justify-between rounded-xl border border-slate-200/80 bg-white p-3 shadow-sm"
+                        >
+                            <p className="text-[10px] font-semibold text-slate-500">
                                 Page {data.pagination.page} of{" "}
                                 {data.pagination.totalPages}
                             </p>
@@ -1198,10 +1189,10 @@ export default function MobileMyListingsDashboard() {
                                             Math.max(1, current - 1),
                                         )
                                     }
-                                    className="flex size-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 disabled:opacity-35"
+                                    className="flex size-8 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:border-blue-200 hover:text-[#1491FF] disabled:opacity-35"
                                     aria-label="Previous page"
                                 >
-                                    <ArrowLeft size={15} />
+                                    <ArrowLeft size={14} />
                                 </button>
 
                                 <button
@@ -1213,244 +1204,286 @@ export default function MobileMyListingsDashboard() {
                                     onClick={() =>
                                         setPage((current) => current + 1)
                                     }
-                                    className="flex size-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 disabled:opacity-35"
+                                    className="flex size-8 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:border-blue-200 hover:text-[#1491FF] disabled:opacity-35"
                                     aria-label="Next page"
                                 >
-                                    <ArrowRight size={15} />
+                                    <ArrowRight size={14} />
                                 </button>
                             </div>
-                        </div>
+                        </motion.div>
                     )}
             </div>
 
-            {/* Fixed create-listing button */}
-            <div className="fixed inset-x-0 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-30 px-4">
+            {/* FIXED CREATE LISTING BUTTON */}
+            <div className="fixed inset-x-0 bottom-[calc(6.75rem+env(safe-area-inset-bottom))] z-30 px-4">
                 <div className="mx-auto max-w-xl">
                     <Link
                         href="/dashboard/my-listings/create"
-                        className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#7008E7] px-4 text-sm font-bold text-white shadow-[0_8px_24px_rgba(112,8,231,0.3)] transition active:scale-[0.98]"
+                        className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#1491FF] px-4 text-xs font-extrabold text-white shadow-[0_7px_22px_rgba(20,145,255,0.3)] transition hover:bg-[#0879E5] active:scale-[0.98]"
                     >
-                        <FilePlus2 size={17} />
+                        <FilePlus2 size={15} />
                         Create a listing
                     </Link>
                 </div>
             </div>
 
-            {/* Listing action sheet */}
-            {menuListing && (
-                <div
-                    className="fixed inset-0 z-[500] flex items-end justify-center bg-slate-950/35 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur-[2px]"
-                    onMouseDown={(event) => {
-                        if (event.target === event.currentTarget) {
-                            setMenuListing(null);
-                        }
-                    }}
-                >
-                    <section
-                        role="dialog"
-                        aria-modal="true"
-                        aria-labelledby="mobile-listing-actions-title"
-                        className="w-full max-w-xl overflow-hidden rounded-[1.7rem] border border-white/70 bg-white p-4 shadow-2xl"
+            {/* LISTING ACTION SHEET */}
+            <AnimatePresence>
+                {menuListing && (
+                    <motion.div
+                        variants={overlayVariants}
+                        initial="hidden"
+                        animate="visible"
+                        exit="exit"
+                        transition={transition}
+                        className="fixed inset-0 z-[500] flex items-end justify-center bg-slate-950/40 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur-[3px]"
+                        onMouseDown={(event) => {
+                            if (event.target === event.currentTarget) {
+                                setMenuListing(null);
+                            }
+                        }}
                     >
-                        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-slate-200" />
+                        <motion.section
+                            variants={sheetVariants}
+                            initial="hidden"
+                            animate="visible"
+                            exit="exit"
+                            transition={
+                                prefersReducedMotion
+                                    ? { duration: 0 }
+                                    : {
+                                          type: "spring",
+                                          damping: 28,
+                                          stiffness: 320,
+                                      }
+                            }
+                            role="dialog"
+                            aria-modal="true"
+                            aria-labelledby="mobile-listing-actions-title"
+                            className="w-full max-w-xl overflow-hidden rounded-[1.6rem] border border-white/70 bg-white p-4 shadow-2xl"
+                        >
+                            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-slate-200" />
 
-                        <div className="mb-3 flex items-start justify-between gap-3 px-1">
-                            <div className="min-w-0">
-                                <h2
-                                    id="mobile-listing-actions-title"
-                                    className="text-base font-bold"
+                            <div className="mb-3 flex items-start justify-between gap-3 px-1">
+                                <div className="min-w-0">
+                                    <h2
+                                        id="mobile-listing-actions-title"
+                                        className="text-sm font-extrabold"
+                                    >
+                                        Listing actions
+                                    </h2>
+
+                                    <p className="mt-1 truncate text-[10px] text-slate-500">
+                                        {menuListing.listing.title}
+                                    </p>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={() => setMenuListing(null)}
+                                    aria-label="Close actions"
+                                    className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 transition hover:bg-slate-200"
                                 >
-                                    Listing actions
-                                </h2>
+                                    <X size={15} />
+                                </button>
+                            </div>
 
-                                <p className="mt-1 truncate text-xs text-slate-500">
-                                    {menuListing.listing.title}
-                                </p>
+                            <div className="space-y-1">
+                                {canEdit(menuListing.listing.status) && (
+                                    <Link
+                                        href={`/dashboard/my-listings/${encodeURIComponent(menuListing.listing.id)}/edit`}
+                                        onClick={() => setMenuListing(null)}
+                                        className="flex min-h-10 items-center gap-3 rounded-xl px-3 text-xs font-semibold text-slate-700 transition hover:bg-blue-50"
+                                    >
+                                        <Pencil
+                                            size={15}
+                                            className="text-[#1491FF]"
+                                        />
+                                        Edit listing
+                                    </Link>
+                                )}
+
+                                {canSubmit(menuListing.listing.status) && (
+                                    <button
+                                        type="button"
+                                        disabled={Boolean(busyListingId)}
+                                        onClick={() =>
+                                            void runAction(
+                                                menuListing,
+                                                "submit",
+                                            )
+                                        }
+                                        className="flex min-h-10 w-full items-center gap-3 rounded-xl px-3 text-left text-xs font-semibold text-slate-700 transition hover:bg-blue-50 disabled:opacity-50"
+                                    >
+                                        <CheckCircle2
+                                            size={15}
+                                            className="text-[#1491FF]"
+                                        />
+                                        Submit for review
+                                    </button>
+                                )}
+
+                                {canMarkSold(menuListing.listing.status) && (
+                                    <button
+                                        type="button"
+                                        disabled={Boolean(busyListingId)}
+                                        onClick={() =>
+                                            void runAction(
+                                                menuListing,
+                                                "sold",
+                                            )
+                                        }
+                                        className="flex min-h-10 w-full items-center gap-3 rounded-xl px-3 text-left text-xs font-semibold text-slate-700 transition hover:bg-emerald-50 disabled:opacity-50"
+                                    >
+                                        <CheckCircle2
+                                            size={15}
+                                            className="text-emerald-600"
+                                        />
+                                        Mark as sold
+                                    </button>
+                                )}
+
+                                {canReactivate(menuListing.listing.status) && (
+                                    <button
+                                        type="button"
+                                        disabled={Boolean(busyListingId)}
+                                        onClick={() =>
+                                            void runAction(
+                                                menuListing,
+                                                "reactivate",
+                                            )
+                                        }
+                                        className="flex min-h-10 w-full items-center gap-3 rounded-xl px-3 text-left text-xs font-semibold text-slate-700 transition hover:bg-blue-50 disabled:opacity-50"
+                                    >
+                                        <RotateCcw
+                                            size={15}
+                                            className="text-[#1491FF]"
+                                        />
+                                        Reactivate listing
+                                    </button>
+                                )}
+
+                                {canDelete(menuListing.listing.status) && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setDeleteTarget(menuListing);
+                                            setMenuListing(null);
+                                        }}
+                                        className="flex min-h-10 w-full items-center gap-3 rounded-xl px-3 text-left text-xs font-bold text-rose-600 transition hover:bg-rose-50"
+                                    >
+                                        <Trash2 size={15} />
+                                        Delete listing
+                                    </button>
+                                )}
                             </div>
 
                             <button
                                 type="button"
                                 onClick={() => setMenuListing(null)}
-                                aria-label="Close actions"
-                                className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500"
-                            >
-                                <X size={16} />
-                            </button>
-                        </div>
-
-                        <div className="space-y-1">
-                            {canEdit(menuListing.listing.status) && (
-                                <Link
-                                    href={`/dashboard/my-listings/${encodeURIComponent(menuListing.listing.id)}/edit`}
-                                    onClick={() => setMenuListing(null)}
-                                    className="flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium text-slate-700 active:bg-slate-50"
-                                >
-                                    <Pencil
-                                        size={16}
-                                        className="text-[#7008E7]"
-                                    />
-                                    Edit listing
-                                </Link>
-                            )}
-
-                            {canSubmit(menuListing.listing.status) && (
-                                <button
-                                    type="button"
-                                    disabled={Boolean(busyListingId)}
-                                    onClick={() =>
-                                        void runAction(
-                                            menuListing,
-                                            "submit",
-                                        )
-                                    }
-                                    className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium text-slate-700 active:bg-slate-50 disabled:opacity-50"
-                                >
-                                    <CheckCircle2
-                                        size={16}
-                                        className="text-[#7008E7]"
-                                    />
-                                    Submit for review
-                                </button>
-                            )}
-
-                            {canMarkSold(menuListing.listing.status) && (
-                                <button
-                                    type="button"
-                                    disabled={Boolean(busyListingId)}
-                                    onClick={() =>
-                                        void runAction(
-                                            menuListing,
-                                            "sold",
-                                        )
-                                    }
-                                    className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium text-slate-700 active:bg-slate-50 disabled:opacity-50"
-                                >
-                                    <CheckCircle2
-                                        size={16}
-                                        className="text-emerald-600"
-                                    />
-                                    Mark as sold
-                                </button>
-                            )}
-
-                            {canReactivate(menuListing.listing.status) && (
-                                <button
-                                    type="button"
-                                    disabled={Boolean(busyListingId)}
-                                    onClick={() =>
-                                        void runAction(
-                                            menuListing,
-                                            "reactivate",
-                                        )
-                                    }
-                                    className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium text-slate-700 active:bg-slate-50 disabled:opacity-50"
-                                >
-                                    <RotateCcw
-                                        size={16}
-                                        className="text-[#7008E7]"
-                                    />
-                                    Reactivate listing
-                                </button>
-                            )}
-
-                            {canDelete(menuListing.listing.status) && (
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setDeleteTarget(menuListing);
-                                        setMenuListing(null);
-                                    }}
-                                    className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-semibold text-rose-600 active:bg-rose-50"
-                                >
-                                    <Trash2 size={16} />
-                                    Delete listing
-                                </button>
-                            )}
-                        </div>
-
-                        <button
-                            type="button"
-                            onClick={() => setMenuListing(null)}
-                            className="mt-3 min-h-11 w-full rounded-xl bg-slate-100 text-sm font-bold text-slate-600"
-                        >
-                            Cancel
-                        </button>
-                    </section>
-                </div>
-            )}
-
-            {/* Delete confirmation */}
-            {deleteTarget && (
-                <div
-                    className="fixed inset-0 z-[510] flex items-end justify-center bg-slate-950/40 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur-[2px] sm:items-center"
-                    onMouseDown={(event) => {
-                        if (
-                            event.target === event.currentTarget &&
-                            !isDeleting
-                        ) {
-                            setDeleteTarget(null);
-                        }
-                    }}
-                >
-                    <section
-                        role="alertdialog"
-                        aria-modal="true"
-                        aria-labelledby="delete-mobile-listing-title"
-                        className="w-full max-w-md rounded-[1.7rem] border border-white/70 bg-white p-5 shadow-2xl"
-                    >
-                        <div className="flex size-11 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
-                            <Trash2 size={20} />
-                        </div>
-
-                        <h2
-                            id="delete-mobile-listing-title"
-                            className="mt-4 text-lg font-bold"
-                        >
-                            Delete this listing?
-                        </h2>
-
-                        <p className="mt-2 text-sm leading-6 text-slate-500">
-                            You are about to delete{" "}
-                            <span className="font-semibold text-slate-800">
-                                {deleteTarget.listing.title}
-                            </span>
-                            . The backend will determine whether this
-                            operation is allowed.
-                        </p>
-
-                        <div className="mt-5 grid grid-cols-2 gap-2">
-                            <button
-                                type="button"
-                                disabled={isDeleting}
-                                onClick={() => setDeleteTarget(null)}
-                                className="min-h-11 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 disabled:opacity-50"
+                                className="mt-3 min-h-10 w-full rounded-xl bg-slate-100 text-xs font-bold text-slate-600 transition hover:bg-slate-200"
                             >
                                 Cancel
                             </button>
+                        </motion.section>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
-                            <button
-                                type="button"
-                                disabled={isDeleting}
-                                onClick={() => void removeListing()}
-                                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-rose-600 text-sm font-bold text-white disabled:opacity-50"
+            {/* DELETE CONFIRMATION */}
+            <AnimatePresence>
+                {deleteTarget && (
+                    <motion.div
+                        variants={overlayVariants}
+                        initial="hidden"
+                        animate="visible"
+                        exit="exit"
+                        transition={transition}
+                        className="fixed inset-0 z-[510] flex items-end justify-center bg-slate-950/45 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur-[3px] sm:items-center"
+                        onMouseDown={(event) => {
+                            if (
+                                event.target === event.currentTarget &&
+                                !isDeleting
+                            ) {
+                                setDeleteTarget(null);
+                            }
+                        }}
+                    >
+                        <motion.section
+                            variants={sheetVariants}
+                            initial="hidden"
+                            animate="visible"
+                            exit="exit"
+                            transition={
+                                prefersReducedMotion
+                                    ? { duration: 0 }
+                                    : {
+                                          type: "spring",
+                                          damping: 28,
+                                          stiffness: 320,
+                                      }
+                            }
+                            role="alertdialog"
+                            aria-modal="true"
+                            aria-labelledby="delete-mobile-listing-title"
+                            className="w-full max-w-md rounded-[1.6rem] border border-white/70 bg-white p-5 shadow-2xl"
+                        >
+                            <div className="flex size-11 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
+                                <Trash2 size={19} />
+                            </div>
+
+                            <h2
+                                id="delete-mobile-listing-title"
+                                className="mt-4 text-base font-extrabold"
                             >
-                                {isDeleting ? (
-                                    <LoaderCircle
-                                        size={15}
-                                        className="animate-spin"
-                                    />
-                                ) : (
-                                    <Trash2 size={15} />
-                                )}
+                                Delete this listing?
+                            </h2>
 
-                                {isDeleting
-                                    ? "Deleting…"
-                                    : "Delete listing"}
-                            </button>
-                        </div>
-                    </section>
-                </div>
-            )}
+                            <p className="mt-2 text-xs leading-6 text-slate-500">
+                                You are about to delete{" "}
+                                <span className="font-bold text-slate-800">
+                                    {deleteTarget.listing.title}
+                                </span>
+                                . The backend will determine whether this
+                                operation is allowed.
+                            </p>
+
+                            <div className="mt-5 grid grid-cols-2 gap-2">
+                                <button
+                                    type="button"
+                                    disabled={isDeleting}
+                                    onClick={() =>
+                                        setDeleteTarget(null)
+                                    }
+                                    className="min-h-10 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50"
+                                >
+                                    Cancel
+                                </button>
+
+                                <button
+                                    type="button"
+                                    disabled={isDeleting}
+                                    onClick={() => void removeListing()}
+                                    className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-rose-600 text-xs font-extrabold text-white shadow-sm transition hover:bg-rose-700 disabled:opacity-50"
+                                >
+                                    {isDeleting ? (
+                                        <LoaderCircle
+                                            size={14}
+                                            className="animate-spin"
+                                        />
+                                    ) : (
+                                        <Trash2 size={14} />
+                                    )}
+
+                                    {isDeleting
+                                        ? "Deleting…"
+                                        : "Delete listing"}
+                                </button>
+                            </div>
+                        </motion.section>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </main>
     );
 }

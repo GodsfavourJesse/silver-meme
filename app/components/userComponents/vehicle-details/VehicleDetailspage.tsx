@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { ShieldAlert } from "lucide-react";
 
 import { ContactSellerModal } from "./ContactSellerModal";
@@ -29,10 +30,42 @@ interface VehicleDetailsPageProps {
     listingId: string;
 }
 
+const pageVariants = {
+    hidden: {
+        opacity: 0,
+        y: 12,
+    },
+    visible: {
+        opacity: 1,
+        y: 0,
+        transition: {
+            duration: 0.45,
+            ease: [0.22, 1, 0.36, 1] as const,
+            staggerChildren: 0.09,
+        },
+    },
+};
+
+const sectionVariants = {
+    hidden: {
+        opacity: 0,
+        y: 16,
+    },
+    visible: {
+        opacity: 1,
+        y: 0,
+        transition: {
+            duration: 0.4,
+            ease: [0.22, 1, 0.36, 1] as const,
+        },
+    },
+};
+
 export function VehicleDetailsPage({
     listingId,
 }: VehicleDetailsPageProps) {
     const router = useRouter();
+    const shouldReduceMotion = useReducedMotion();
 
     const {
         details,
@@ -78,11 +111,6 @@ export function VehicleDetailsPage({
         setReportOpen(false);
     }
 
-    /*
-     * Do not render listing-dependent content until the request
-     * has finished. This also prevents actions from receiving an
-     * invalid listing ID while details are loading.
-     */
     if (loading) {
         return <VehicleDetailsSkeleton />;
     }
@@ -96,15 +124,6 @@ export function VehicleDetailsPage({
         );
     }
 
-    /*
-     * Contact submission belongs to the contact hook/modal.
-     *
-     * The existing contact API already returns a conversation ID.
-     * Once the contact flow has successfully created or retrieved
-     * that conversation, the user should be taken to the inbox.
-     *
-     * Do not call contactMarketplaceSeller() here during rendering.
-     */
     function openConversation(conversationId: string) {
         if (!conversationId.trim()) {
             return;
@@ -119,73 +138,191 @@ export function VehicleDetailsPage({
         );
     }
 
+    const motionProps = shouldReduceMotion
+        ? {}
+        : {
+              variants: pageVariants,
+              initial: "hidden" as const,
+              animate: "visible" as const,
+          };
+
+    const sectionMotionProps = shouldReduceMotion
+        ? {}
+        : {
+              variants: sectionVariants,
+          };
+
     return (
-        <main className="min-h-screen bg-slate-50 pb-24 md:pb-12">
-            <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-10">
-                <VehicleBreadcrumb title={title} />
+        <main className="min-h-screen bg-[#F7F9FC] pb-28 md:pb-12">
+            {/* Subtle page background */}
+            <div className="pointer-events-none fixed inset-x-0 top-0 -z-0 h-[420px] bg-gradient-to-b from-blue-50/70 via-white/50 to-transparent" />
 
-                <div className="grid min-w-0 gap-7 lg:grid-cols-[minmax(0,1.45fr)_minmax(360px,0.8fr)] lg:gap-10">
-                    <div className="min-w-0">
-                        <VehicleImageGallery
-                            images={details.images}
-                            title={title}
-                            isBoosted={details.isBoosted}
-                        />
+            <div className="relative mx-auto w-full max-w-[1440px] px-4 pb-8 pt-4 sm:px-6 sm:pt-6 lg:px-10 lg:pt-8">
+                {/* Breadcrumb */}
+                <motion.div
+                    initial={shouldReduceMotion ? false : { opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.35 }}
+                    className="mb-5 sm:mb-7"
+                >
+                    <VehicleBreadcrumb title={title} />
+                </motion.div>
 
-                        <VehicleSpecifications
-                            details={details}
-                            variant="desktop"
-                        />
+                {/* Main content */}
+                <motion.div
+                    {...motionProps}
+                    className="grid min-w-0 grid-cols-1 items-start gap-7 lg:grid-cols-[minmax(0,1.55fr)_minmax(350px,0.85fr)] lg:gap-9 xl:gap-11"
+                >
+                    {/* Left column */}
+                    <div className="min-w-0 space-y-7 sm:space-y-9">
+                        {/* Vehicle gallery */}
+                        <motion.section
+                            {...sectionMotionProps}
+                            className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_3px_18px_rgba(15,23,42,0.035)] sm:rounded-3xl"
+                        >
+                            <VehicleImageGallery
+                                images={details.images}
+                                title={title}
+                                isBoosted={details.isBoosted}
+                            />
+                        </motion.section>
 
-                        <VehicleDescription
-                            description={details.listing.description}
-                            variant="desktop"
-                        />
+                        {/* Desktop specifications */}
+                        <motion.section
+                            {...sectionMotionProps}
+                            className="hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_3px_18px_rgba(15,23,42,0.025)] sm:rounded-3xl sm:p-6 lg:block"
+                        >
+                            <VehicleSpecifications
+                                details={details}
+                                variant="desktop"
+                            />
+                        </motion.section>
+
+                        {/* Desktop description */}
+                        <motion.section
+                            {...sectionMotionProps}
+                            className="hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_3px_18px_rgba(15,23,42,0.025)] sm:rounded-3xl sm:p-6 lg:block"
+                        >
+                            <VehicleDescription
+                                description={details.listing.description}
+                                variant="desktop"
+                            />
+                        </motion.section>
                     </div>
 
-                    <aside className="min-w-0">
-                        <VehicleSummaryCard
-                            details={details}
-                            title={title}
-                            favorite={actions.favorite}
-                            favoriteLoading={actions.favoriteLoading}
-                            actionError={actions.actionError}
-                            shareMessage={actions.shareMessage}
-                            onFavorite={() =>
-                                void actions.toggleFavorite()
-                            }
-                            onShare={() => void actions.share()}
-                            onContact={openContact}
-                        />
-
-                        <VehicleSellerCard details={details} />
-
-                        <VehicleSpecifications
-                            details={details}
-                            variant="mobile"
-                        />
-
-                        <VehicleDescription
-                            description={details.listing.description}
-                            variant="mobile"
-                        />
-
-                        <button
-                            type="button"
-                            onClick={openReport}
-                            className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-xl px-2 text-sm font-medium text-slate-500 transition hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+                    {/* Right column */}
+                    <aside className="min-w-0 space-y-5 lg:sticky lg:top-6">
+                        {/* Vehicle summary */}
+                        <motion.section
+                            {...sectionMotionProps}
+                            className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_4px_22px_rgba(15,23,42,0.045)] sm:rounded-3xl"
                         >
-                            <ShieldAlert size={17} aria-hidden="true" />
-                            Report this listing
-                        </button>
+                            <VehicleSummaryCard
+                                details={details}
+                                title={title}
+                                favorite={actions.favorite}
+                                favoriteLoading={actions.favoriteLoading}
+                                actionError={actions.actionError}
+                                shareMessage={actions.shareMessage}
+                                onFavorite={() =>
+                                    void actions.toggleFavorite()
+                                }
+                                onShare={() => void actions.share()}
+                                onContact={openContact}
+                            />
+                        </motion.section>
+
+                        {/* Seller information */}
+                        <motion.section
+                            {...sectionMotionProps}
+                            className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_3px_18px_rgba(15,23,42,0.035)] sm:rounded-3xl"
+                        >
+                            <VehicleSellerCard details={details} />
+                        </motion.section>
+
+                        {/* Mobile specifications */}
+                        <motion.section
+                            {...sectionMotionProps}
+                            className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_3px_18px_rgba(15,23,42,0.025)] sm:rounded-3xl sm:p-6 lg:hidden"
+                        >
+                            <VehicleSpecifications
+                                details={details}
+                                variant="mobile"
+                            />
+                        </motion.section>
+
+                        {/* Mobile description */}
+                        <motion.section
+                            {...sectionMotionProps}
+                            className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_3px_18px_rgba(15,23,42,0.025)] sm:rounded-3xl sm:p-6 lg:hidden"
+                        >
+                            <VehicleDescription
+                                description={details.listing.description}
+                                variant="mobile"
+                            />
+                        </motion.section>
+
+                        {/* Report listing */}
+                        <motion.div
+                            {...sectionMotionProps}
+                            className="flex items-center justify-between gap-3 rounded-xl border border-slate-200/70 bg-white px-4 py-3 sm:rounded-2xl"
+                        >
+                            <div className="flex items-center gap-2.5">
+                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+                                    <ShieldAlert size={17} />
+                                </div>
+
+                                <div>
+                                    <p className="text-xs font-semibold text-slate-700">
+                                        Something not right?
+                                    </p>
+                                    <p className="mt-0.5 text-[11px] text-slate-500">
+                                        Help us keep KARMASS safe.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={openReport}
+                                className="shrink-0 rounded-lg px-3 py-2 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+                            >
+                                Report listing
+                            </button>
+                        </motion.div>
                     </aside>
-                </div>
+                </motion.div>
 
-                <VehicleSafetyNotice />
+                {/* Safety information */}
+                <motion.section
+                    initial={shouldReduceMotion ? false : { opacity: 0, y: 14 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.15 }}
+                    transition={{ duration: 0.4 }}
+                    className="mt-8 sm:mt-10"
+                >
+                    <VehicleSafetyNotice />
+                </motion.section>
 
-                <SimilarVehicles vehicles={similarVehicles} />
+                {/* Similar vehicles */}
+                {similarVehicles.length > 0 && (
+                    <motion.section
+                        initial={
+                            shouldReduceMotion
+                                ? false
+                                : { opacity: 0, y: 18 }
+                        }
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true, amount: 0.1 }}
+                        transition={{ duration: 0.45 }}
+                        className="mt-10 sm:mt-14"
+                    >
+                        <SimilarVehicles vehicles={similarVehicles} />
+                    </motion.section>
+                )}
             </div>
 
+            {/* Mobile sticky action bar */}
             <VehicleMobileActionBar
                 favorite={actions.favorite}
                 favoriteLoading={actions.favoriteLoading}
@@ -193,21 +330,24 @@ export function VehicleDetailsPage({
                 onContact={openContact}
             />
 
-            {contactOpen && (
-                <ContactSellerModal
-                    title={title}
-                    price={details.listing.price}
-                    contact={contact}
-                    onClose={closeContact}
-                />
-            )}
+            {/* Modals */}
+            <AnimatePresence>
+                {contactOpen && (
+                    <ContactSellerModal
+                        title={title}
+                        price={details.listing.price}
+                        contact={contact}
+                        onClose={closeContact}
+                    />
+                )}
 
-            {reportOpen && (
-                <ReportListingModal
-                    report={report}
-                    onClose={closeReport}
-                />
-            )}
+                {reportOpen && (
+                    <ReportListingModal
+                        report={report}
+                        onClose={closeReport}
+                    />
+                )}
+            </AnimatePresence>
         </main>
     );
 }

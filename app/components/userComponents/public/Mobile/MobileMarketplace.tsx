@@ -240,7 +240,7 @@ export function MobileMarketplace() {
                     </Link>
 
                     <Link
-                        href="/sell"
+                        href="/login"
                         className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-[#1491FF] px-3.5 text-xs font-bold text-white shadow-sm shadow-blue-500/15 transition hover:bg-[#0876D1] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100"
                     >
                         Sell your car
@@ -253,7 +253,7 @@ export function MobileMarketplace() {
                 {/* BREADCRUMB */}
                 {/* ================================================== */}
 
-                <nav aria-label="Breadcrumb">
+                {/* <nav aria-label="Breadcrumb">
                     <Link
                         href="/"
                         className="group inline-flex min-h-8 items-center gap-1.5 rounded-lg text-xs font-medium text-slate-500 transition hover:text-[#0876D1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1491FF]"
@@ -265,20 +265,20 @@ export function MobileMarketplace() {
 
                         <span>Home</span>
                     </Link>
-                </nav>
+                </nav> */}
 
                 {/* ================================================== */}
                 {/* PAGE INTRODUCTION */}
                 {/* ================================================== */}
 
                 <section className="mt-5">
-                    <div className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5">
+                    {/* <div className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5">
                         <span className="size-1.5 rounded-full bg-[#1491FF]" />
 
                         <span className="text-[10px] font-bold uppercase tracking-[0.13em] text-[#0876D1]">
                             KARMASS Marketplace
                         </span>
-                    </div>
+                    </div> */}
 
                     <h1 className="mt-3 text-[27px] font-bold leading-[1.18] tracking-[-0.045em] text-slate-950 sm:text-3xl">
                         Find a car that
