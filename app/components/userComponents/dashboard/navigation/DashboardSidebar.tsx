@@ -71,7 +71,7 @@ export default function DashboardSidebar() {
                 },
                 {
                     label: "Notifications",
-                    href: "/notifications",
+                    href: "/dashboard/notifications",
                     icon: Bell,
                 },
             ],
@@ -95,7 +95,7 @@ export default function DashboardSidebar() {
                 },
                 {
                     label: "Saved vehicles",
-                    href: "/saved-vehicles",
+                    href: "/dashboard/saved-vehicles",
                     icon: Bookmark,
                 },
                 {
@@ -110,7 +110,7 @@ export default function DashboardSidebar() {
             items: [
                 {
                     label: "Subscriptions",
-                    href: "/subscriptions",
+                    href: "/dashbord/subscriptions",
                     icon: CreditCard,
                 },
                 ...(isDealer
@@ -118,13 +118,13 @@ export default function DashboardSidebar() {
                     : [
                         {
                             label: "Become a dealer",
-                            href: "/dealer-registration",
+                            href: "/dashboard/dealers",
                             icon: ShieldCheck,
                         },
                     ]),
                 {
                     label: "Settings",
-                    href: "/settings",
+                    href: "/dashboard/settings",
                     icon: Settings2,
                 },
             ],
