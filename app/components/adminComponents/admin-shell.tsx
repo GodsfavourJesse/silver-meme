@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAdminSession } from "@/app/hooks/admin/use-admin-session";
 import { ApiError } from "@/app/lib/api/api-error";
 import { ADMIN_LOGIN_PATH } from "@/app/lib/admin/path";
+import { MobileAdminNavigation } from "./MobileAdminNavigation";
 
 export function AdminShell({ children }: { children: ReactNode }) {
     const router = useRouter();
@@ -93,9 +94,11 @@ export function AdminShell({ children }: { children: ReactNode }) {
 
     return (
         <div className="admin-console min-h-dvh bg-[#F5F8FC] text-[#172033]">
-            <main className="mx-auto w-full max-w-[1600px] px-4 py-5 sm:px-6 sm:py-7 lg:px-8 lg:py-8">
+            <main className="mx-auto w-full max-w-[1600px] px-4 pb-24 pt-5 sm:px-6 sm:py-7 lg:px-8 lg:py-8 lg:pb-8">
                 {children}
             </main>
+
+            <MobileAdminNavigation />
         </div>
     );
 }
