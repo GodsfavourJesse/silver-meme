@@ -7,11 +7,14 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { LoaderCircle, LogOut } from "lucide-react";
 
-import { adminFetch, clearAdminCsrfCache } from "@/app/lib/admin/admin-fetch";
+import {
+    adminFetch,
+    clearAdminCsrfCache,
+} from "@/app/lib/api/api-client";
+
 import { fullName, initialsOf } from "@/app/lib/admin/format";
 import type { AdminSession } from "@/app/types/admin/admin-dashboard.types";
 import { ADMIN_LOGIN_PATH } from "@/app/lib/admin/path";
-
 
 export function UserMenu({ admin }: { admin: AdminSession }) {
     const router = useRouter();

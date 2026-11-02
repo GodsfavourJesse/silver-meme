@@ -2,10 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AdminAuthGuard } from "@/app/components/adminComponents/admin-auth-guard";
-import { adminFetch } from "@/app/lib/admin/admin-fetch";
 import { AdminListingsDesktop } from "./admin-listings-desktop";
 import { AdminListingsMobile } from "./admin-listings-mobile";
 import { PendingListing } from "./admin-listings.types";
+import { adminFetch } from "@/app/lib/api/api-client";
 
 export function AdminListingsView() {
     /*

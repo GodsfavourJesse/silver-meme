@@ -1,8 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-
-import { adminFetch } from "@/app/lib/admin/admin-fetch";
 import type { AdminListedUser } from "@/app/types/admin/admin-dashboard.types";
-import { adminDashboardKeys } from "./admin-dashboard/admin-dashboard-query-keys";
+import { adminDashboardKeys } from "../admin-dashboard/admin-dashboard-query-keys";
+import { adminFetch } from "@/app/lib/api/api-client";
 
 export function useAdminRecentUsers() {
     return useQuery({

@@ -8,7 +8,7 @@ import {
     Users,
 } from "lucide-react";
 
-import { useAdminRecentUsers } from "@/app/hooks/admin/use-admin-recent-users";
+import { useAdminRecentUsers } from "@/app/hooks/admin/admin-users/use-admin-recent-users";
 import { fullName, initialsOf, timeAgo } from "@/app/lib/admin/format";
 import { ADMIN_BASE_PATH } from "@/app/lib/admin/path";
 

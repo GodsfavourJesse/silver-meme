@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { adminFetch } from "@/app/lib/admin/admin-fetch";
+import { adminFetch } from "@/app/lib/api/api-client";
 import type { AdminSystemHealth } from "@/app/types/admin/admin-dashboard.types";
 import { adminDashboardKeys } from "./admin-dashboard/admin-dashboard-query-keys";
 
@@ -15,7 +15,9 @@ export function useAdminSystemHealth() {
              */
             const response = await adminFetch<AdminSystemHealth>(
                 "/dashboard/system-health",
-                { okStatuses: [503] },
+                {
+                    okStatuses: [503],
+                },
             );
 
             return response.data;

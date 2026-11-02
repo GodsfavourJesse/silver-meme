@@ -1,8 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-
-import { adminFetch } from "@/app/lib/admin/admin-fetch";
 import type { AdminNotificationsData } from "@/app/types/admin/admin-dashboard.types";
 import { adminDashboardKeys } from "./admin-dashboard/admin-dashboard-query-keys";
+import { adminFetch } from "@/app/lib/api/api-client";
 
 export function useAdminNotifications() {
     return useQuery({
