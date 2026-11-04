@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
     ArrowDownRight,
     ArrowRight,
@@ -19,15 +18,17 @@ import {
     Sparkles,
     MoveUpRight,
 } from "lucide-react";
-import { useEffect, useState, type FormEvent } from "react";
+import {
+    useRef,
+    type FormEvent,
+    type ReactNode,
+} from "react";
 
 import { DesktopNavbar } from "./DesktopNavbar";
-import { searchMarketplace } from "@/app/services/user/marketplace/marketplace.service";
-
-import type {
-    MarketplaceSearchResult,
-} from "@/app/types/user/marketplace.types";
 import PublicFooter from "./PublicFooter";
+
+import type { MarketplaceHomeState } from "../MarketplaceHomeClient";
+import type { MarketplaceSearchResult } from "@/app/types/user/marketplace.types";
 
 /* =========================================================
    BRAND
@@ -38,11 +39,11 @@ const BRAND_HOVER = "#0877D9";
 const BRAND_LIGHT = "#EAF5FF";
 
 const categories = [
-    { label: "SUVs", number: "01" },
-    { label: "Sedans", number: "02" },
-    { label: "Luxury", number: "03" },
-    { label: "Electric", number: "04" },
-    { label: "Pickup trucks", number: "05" },
+    { label: "SUVs", number: "01", query: "SUV" },
+    { label: "Sedans", number: "02", query: "SEDAN" },
+    { label: "Luxury", number: "03", query: "Luxury" },
+    { label: "Electric", number: "04", query: "ELECTRIC" },
+    { label: "Pickup trucks", number: "05", query: "TRUCK" },
 ];
 
 const marketplaceSteps = [
@@ -148,14 +149,34 @@ function getVehicleLocation(
         .join(", ");
 }
 
+function getVehicleImage(
+    result: MarketplaceSearchResult,
+): string | null {
+    return (
+        result.images?.[0]?.thumbnailUrl ||
+        result.images?.[0]?.url ||
+        null
+    );
+}
+
+function getSellerName(
+    result: MarketplaceSearchResult,
+): string {
+    if (result.dealer?.companyName?.trim()) {
+        return result.dealer.companyName;
+    }
+
+    return result.seller?.displayName || "KARMASS seller";
+}
+
 /* =========================================================
-   ANIMATED SECTION LABEL
+   SECTION EYEBROW
 ========================================================= */
 
 function SectionEyebrow({
     children,
 }: {
-    children: React.ReactNode;
+    children: ReactNode;
 }) {
     return (
         <div className="flex items-center gap-3">
@@ -172,36 +193,58 @@ function SectionEyebrow({
 }
 
 /* =========================================================
-   VEHICLE IMAGE PLACEHOLDER
+   VEHICLE IMAGE
 ========================================================= */
 
-function VehicleImagePlaceholder() {
+function VehicleImage({
+    result,
+    title,
+}: {
+    result: MarketplaceSearchResult;
+    title: string;
+}) {
+    const image = getVehicleImage(result);
+
     return (
         <div className="relative flex h-full w-full items-center justify-center overflow-hidden bg-[#F1F5F9]">
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_45%,rgba(20,145,255,0.12),transparent_60%)]" />
+            {image ? (
+                <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                        src={image}
+                        alt={title}
+                        loading="lazy"
+                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
 
-            <div className="absolute inset-x-8 bottom-10 h-12 rounded-[50%] bg-slate-900/[0.045] blur-xl" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/20 via-transparent to-transparent" />
+                </>
+            ) : (
+                <>
+                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_45%,rgba(20,145,255,0.12),transparent_60%)]" />
 
-            <div className="relative flex flex-col items-center">
-                <CarFront
-                    size={66}
-                    strokeWidth={0.8}
-                    className="text-slate-300 transition-all duration-700 group-hover:scale-110 group-hover:text-blue-400"
-                    aria-hidden="true"
-                />
+                    <div className="absolute inset-x-8 bottom-10 h-12 rounded-[50%] bg-slate-900/[0.045] blur-xl" />
 
-                <span className="mt-3 text-[9px] font-semibold uppercase tracking-[0.2em] text-slate-400">
-                    KARMASS
-                </span>
-            </div>
+                    <div className="relative flex flex-col items-center">
+                        <CarFront
+                            size={66}
+                            strokeWidth={0.8}
+                            className="text-slate-300 transition-all duration-700 group-hover:scale-110 group-hover:text-blue-400"
+                            aria-hidden="true"
+                        />
 
-            <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-blue-200 to-transparent" />
+                        <span className="mt-3 text-[9px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                            KARMASS
+                        </span>
+                    </div>
+                </>
+            )}
         </div>
     );
 }
 
 /* =========================================================
-   FEATURED VEHICLE CARD
+   VEHICLE CARD
 ========================================================= */
 
 function FeaturedVehicleCard({
@@ -215,27 +258,24 @@ function FeaturedVehicleCard({
     const details = getVehicleDetails(result);
     const location = getVehicleLocation(result);
 
-    const isPromoted = result.boostPriority > 0;
-
     return (
         <Link
-            href={`/marketplace?q=${encodeURIComponent(title)}`}
-            className="group relative flex h-full flex-col overflow-hidden rounded-[5px] border border-slate-200/80 bg-white transition-all duration-500 ease-out hover:-translate-y-1.5 hover:border-blue-200 hover:shadow-[0_24px_65px_-32px_rgba(8,119,217,0.32)] motion-safe:animate-[rise-in_650ms_ease-out_both]"
+            href={`/marketplace/${result.listing.id}`}
+            className="group relative flex h-full min-w-[290px] flex-col overflow-hidden rounded-[5px] border border-slate-200/80 bg-white transition-all duration-500 ease-out hover:-translate-y-1.5 hover:border-blue-200 hover:shadow-[0_24px_65px_-32px_rgba(8,119,217,0.32)] sm:min-w-[320px]"
             style={{
                 animationDelay: `${index * 90}ms`,
             }}
         >
-            {/* Image */}
             <div className="relative h-[225px] overflow-hidden bg-slate-100">
-                <VehicleImagePlaceholder />
+                <VehicleImage result={result} title={title} />
 
                 <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-4">
                     <span className="border border-white/70 bg-white/85 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.13em] text-slate-700 shadow-sm backdrop-blur-xl">
-                        {index === 0 ? "Recently listed" : "Available"}
+                        Available
                     </span>
 
-                    {isPromoted && (
-                        <span className="inline-flex items-center gap-1.5 border border-white/25 bg-slate-950/40 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.12em] text-white shadow-sm backdrop-blur-xl">
+                    {result.boostPriority > 0 && (
+                        <span className="inline-flex items-center gap-1.5 border border-white/25 bg-slate-950/55 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.12em] text-white shadow-sm backdrop-blur-xl">
                             <Sparkles size={11} />
                             Featured
                         </span>
@@ -243,7 +283,7 @@ function FeaturedVehicleCard({
                 </div>
 
                 <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 pb-4">
-                    <span className="text-[9px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    <span className="text-[9px] font-semibold uppercase tracking-[0.16em] text-white/90">
                         KARMASS / {String(index + 1).padStart(2, "0")}
                     </span>
 
@@ -256,18 +296,15 @@ function FeaturedVehicleCard({
                 </div>
             </div>
 
-            {/* Content */}
             <div className="flex flex-1 flex-col p-5">
-                <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                        <p className="mb-2 text-[9px] font-bold uppercase tracking-[0.16em] text-slate-400">
-                            Vehicle for sale
-                        </p>
+                <div>
+                    <p className="mb-2 text-[9px] font-bold uppercase tracking-[0.16em] text-slate-400">
+                        Vehicle for sale
+                    </p>
 
-                        <h3 className="line-clamp-2 min-h-[48px] text-[17px] font-semibold leading-6 tracking-[-0.035em] text-slate-900 transition-colors duration-300 group-hover:text-blue-700">
-                            {title}
-                        </h3>
-                    </div>
+                    <h3 className="line-clamp-2 min-h-[48px] text-[17px] font-semibold leading-6 tracking-[-0.035em] text-slate-900 transition-colors duration-300 group-hover:text-blue-700">
+                        {title}
+                    </h3>
                 </div>
 
                 {details && (
@@ -293,15 +330,13 @@ function FeaturedVehicleCard({
                     )}
                 </div>
 
-                <div className="mt-auto flex items-end justify-between gap-3 border-t border-slate-100 pt-4 mt-5">
+                <div className="mt-auto mt-5 flex items-end justify-between gap-3 border-t border-slate-100 pt-4">
                     <div className="min-w-0">
                         <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-slate-400">
                             Asking price
                         </p>
 
-                        <p
-                            className="mt-1 truncate text-[19px] font-bold tracking-[-0.045em] text-slate-950"
-                        >
+                        <p className="mt-1 truncate text-[19px] font-bold tracking-[-0.045em] text-slate-950">
                             {formatPrice(
                                 result.listing.price,
                                 result.listing.currency,
@@ -325,7 +360,6 @@ function FeaturedVehicleCard({
                 </div>
             </div>
 
-            {/* Hover accent */}
             <div
                 className="absolute bottom-0 left-0 h-[2px] w-0 transition-all duration-500 group-hover:w-full"
                 style={{ backgroundColor: BRAND_COLOR }}
@@ -335,7 +369,109 @@ function FeaturedVehicleCard({
 }
 
 /* =========================================================
-   SKELETON
+   LATEST VEHICLE CARD
+========================================================= */
+
+function LatestVehicleCard({
+    result,
+    index,
+}: {
+    result: MarketplaceSearchResult;
+    index: number;
+}) {
+    const title = getVehicleTitle(result);
+    const details = getVehicleDetails(result);
+    const location = getVehicleLocation(result);
+
+    return (
+        <Link
+            href={`/marketplace/${result.listing.id}`}
+            className="group relative flex h-full flex-col overflow-hidden rounded-[5px] border border-slate-200/80 bg-white transition-all duration-500 hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_20px_55px_-30px_rgba(8,119,217,0.3)]"
+            style={{
+                animationDelay: `${index * 60}ms`,
+            }}
+        >
+            <div className="relative h-[215px] overflow-hidden bg-slate-100">
+                <VehicleImage result={result} title={title} />
+
+                <span className="absolute left-4 top-4 border border-white/70 bg-white/90 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.12em] text-slate-700 shadow-sm backdrop-blur-xl">
+                    New arrival
+                </span>
+
+                {result.dealer?.verified && (
+                    <span className="absolute right-4 top-4 inline-flex items-center gap-1.5 bg-blue-600 px-2.5 py-1.5 text-[9px] font-bold text-white shadow-sm">
+                        <BadgeCheck size={12} />
+                        Verified dealer
+                    </span>
+                )}
+            </div>
+
+            <div className="flex flex-1 flex-col p-5">
+                <p className="mb-2 text-[9px] font-bold uppercase tracking-[0.16em] text-slate-400">
+                    {getSellerName(result)}
+                </p>
+
+                <h3 className="line-clamp-2 min-h-[48px] text-[16px] font-semibold leading-6 tracking-[-0.035em] text-slate-900 transition-colors group-hover:text-blue-700">
+                    {title}
+                </h3>
+
+                {details && (
+                    <p className="mt-2 text-[11px] font-medium text-slate-500">
+                        {details}
+                    </p>
+                )}
+
+                <div className="mt-4 flex min-h-5 items-center gap-2 text-[11px] text-slate-500">
+                    <MapPin
+                        size={13}
+                        className="shrink-0 text-slate-400"
+                    />
+
+                    <span className="truncate">
+                        {location || "Location not specified"}
+                    </span>
+                </div>
+
+                <div className="mt-auto mt-5 flex items-end justify-between gap-3 border-t border-slate-100 pt-4">
+                    <div className="min-w-0">
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-slate-400">
+                            Asking price
+                        </p>
+
+                        <p className="mt-1 truncate text-[19px] font-bold tracking-[-0.045em] text-slate-950">
+                            {formatPrice(
+                                result.listing.price,
+                                result.listing.currency,
+                            )}
+                        </p>
+                    </div>
+
+                    {result.listing.mileage !== null &&
+                        result.listing.mileage !== undefined && (
+                            <div className="flex shrink-0 items-center gap-1.5 pb-1 text-[10px] font-medium text-slate-500">
+                                <Gauge size={13} />
+
+                                <span>
+                                    {result.listing.mileage.toLocaleString(
+                                        "en-NG",
+                                    )}{" "}
+                                    km
+                                </span>
+                            </div>
+                        )}
+                </div>
+            </div>
+
+            <div
+                className="absolute bottom-0 left-0 h-[2px] w-0 transition-all duration-500 group-hover:w-full"
+                style={{ backgroundColor: BRAND_COLOR }}
+            />
+        </Link>
+    );
+}
+
+/* =========================================================
+   VEHICLE CARD SKELETON
 ========================================================= */
 
 function VehicleCardSkeleton() {
@@ -362,77 +498,57 @@ function VehicleCardSkeleton() {
    DESKTOP HOME
 ========================================================= */
 
-export function DesktopHome() {
-    const router = useRouter();
+type DesktopHomeProps = {
+    marketplace: MarketplaceHomeState;
+};
 
-    const [query, setQuery] = useState("");
+export function DesktopHome({
+    marketplace,
+}: DesktopHomeProps) {
+    const searchFormRef = useRef<HTMLFormElement>(null);
 
-    const [featuredVehicles, setFeaturedVehicles] = useState<
-        MarketplaceSearchResult[]
-    >([]);
+    const {
+        // Search
+        query,
+        setQuery,
+        submittedQuery,
+        handleSearch,
 
-    const [isLoading, setIsLoading] = useState(true);
-    const [loadError, setLoadError] = useState<string | null>(null);
-    const [retryCount, setRetryCount] = useState(0);
+        // Featured vehicles
+        featuredVehicles,
+        featuredLoading,
+        featuredError,
+        retryFeatured,
 
-    useEffect(() => {
-        let isMounted = true;
+        // Ordinary marketplace results
+        results,
+        pagination,
+        loading,
+        error,
+        retry,
 
-        async function loadFeaturedVehicles(): Promise<void> {
-            setIsLoading(true);
-            setLoadError(null);
+        // Pagination
+        hasMore,
+        loadMore,
+        loadingMore,
+    } = marketplace;
 
-            try {
-                const response = await searchMarketplace({
-                    page: 1,
-                    limit: 6,
-                    sort: "newest",
-                });
+    function handleCategorySearch(category: string) {
+        const url = new URL(window.location.href);
 
-                if (!isMounted) return;
+        url.search = "";
+        url.searchParams.set("q", category);
 
-                setFeaturedVehicles(response.data.listings);
-            } catch (error: unknown) {
-                if (!isMounted) return;
+        window.location.assign(`${url.pathname}${url.search}`);
+    }
 
-                setLoadError(
-                    error instanceof Error
-                        ? error.message
-                        : "We couldn't load vehicles right now.",
-                );
-            } finally {
-                if (isMounted) {
-                    setIsLoading(false);
-                }
-            }
-        }
-
-        void loadFeaturedVehicles();
-
-        return () => {
-            isMounted = false;
-        };
-    }, [retryCount]);
-
-    function handleSearch(
+    function handleSubmitSearch(
         event: FormEvent<HTMLFormElement>,
-    ): void {
-        event.preventDefault();
-
-        const searchQuery = query.trim();
-
-        router.push(
-            searchQuery
-                ? `/marketplace?q=${encodeURIComponent(searchQuery)}`
-                : "/marketplace",
-        );
+    ) {
+        handleSearch(event);
     }
 
-    function searchCategory(category: string): void {
-        router.push(
-            `/marketplace?q=${encodeURIComponent(category)}`,
-        );
-    }
+    const isSearching = Boolean(submittedQuery.trim());
 
     return (
         <div className="min-h-screen overflow-x-hidden bg-white text-slate-900">
@@ -467,15 +583,6 @@ export function DesktopHome() {
                     }
                 }
 
-                @keyframes shimmer-line {
-                    from {
-                        transform: translateX(-100%);
-                    }
-                    to {
-                        transform: translateX(250%);
-                    }
-                }
-
                 @media (prefers-reduced-motion: reduce) {
                     *,
                     *::before,
@@ -505,7 +612,6 @@ export function DesktopHome() {
                 ================================================= */}
 
                 <section className="relative isolate overflow-hidden bg-[#F7F9FC]">
-                    {/* Restrained background treatment */}
                     <div
                         className="pointer-events-none absolute -right-48 -top-56 h-[650px] w-[650px] rounded-full blur-[100px]"
                         style={{
@@ -517,7 +623,6 @@ export function DesktopHome() {
 
                     <div className="relative mx-auto max-w-[1500px] px-6 pb-16 pt-12 lg:px-16 lg:pb-24 lg:pt-16">
                         <div className="grid items-center gap-12 lg:grid-cols-[0.88fr_1.12fr] lg:gap-10">
-                            {/* Editorial copy */}
                             <div className="relative z-10 motion-safe:animate-[rise-in_800ms_cubic-bezier(0.16,1,0.3,1)_both]">
                                 <div className="flex items-center gap-3">
                                     <span
@@ -564,12 +669,17 @@ export function DesktopHome() {
                                 </p>
 
                                 {/* Search */}
+
                                 <form
-                                    onSubmit={handleSearch}
+                                    ref={searchFormRef}
+                                    onSubmit={handleSubmitSearch}
                                     className="group/search mt-9 flex max-w-[540px] items-center gap-2 rounded-[5px] border border-slate-200/90 bg-white p-2 shadow-[0_15px_45px_-30px_rgba(15,23,42,0.28)] transition-all duration-300 focus-within:border-blue-300 focus-within:shadow-[0_15px_45px_-25px_rgba(20,145,255,0.25)] focus-within:ring-4 focus-within:ring-blue-100/60"
                                 >
                                     <div className="flex h-11 w-11 shrink-0 items-center justify-center text-slate-400 transition-colors group-focus-within/search:text-blue-500">
-                                        <Search size={20} strokeWidth={1.7} />
+                                        <Search
+                                            size={20}
+                                            strokeWidth={1.7}
+                                        />
                                     </div>
 
                                     <input
@@ -599,6 +709,7 @@ export function DesktopHome() {
                                 </form>
 
                                 {/* Categories */}
+
                                 <div className="mt-7">
                                     <p className="mb-3 text-[9px] font-bold uppercase tracking-[0.2em] text-slate-400">
                                         Start with a category
@@ -610,8 +721,8 @@ export function DesktopHome() {
                                                 key={category.label}
                                                 type="button"
                                                 onClick={() =>
-                                                    searchCategory(
-                                                        category.label,
+                                                    handleCategorySearch(
+                                                        category.query,
                                                     )
                                                 }
                                                 className="group/chip inline-flex items-center gap-2 border border-slate-200/90 bg-white/70 px-3.5 py-2.5 text-[11px] font-medium text-slate-600 backdrop-blur-sm transition-all duration-300 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
@@ -628,6 +739,7 @@ export function DesktopHome() {
                                 </div>
 
                                 {/* Trust row */}
+
                                 <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-slate-200/80 pt-6">
                                     <div className="flex items-center gap-2">
                                         <ShieldCheck
@@ -653,7 +765,8 @@ export function DesktopHome() {
                                 </div>
                             </div>
 
-                            {/* Cinematic hero visual */}
+                            {/* Hero visual */}
+
                             <div className="relative min-w-0 motion-safe:animate-[fade-in_1.2s_ease-out_both]">
                                 <div className="relative min-h-[430px] overflow-hidden rounded-[4px] bg-slate-200 sm:min-h-[550px] lg:min-h-[620px]">
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -667,8 +780,7 @@ export function DesktopHome() {
 
                                     <div className="absolute inset-0 bg-gradient-to-r from-slate-950/20 via-transparent to-transparent" />
 
-                                    {/* Glass label */}
-                                    <div className="absolute left-5 top-5 flex items-center gap-3 border border-white/25 rounded-[10px] bg-slate-950/25 px-4 py-3 shadow-lg backdrop-blur-xl sm:left-7 sm:top-7">
+                                    <div className="absolute left-5 top-5 flex items-center gap-3 rounded-[10px] border border-white/25 bg-slate-950/25 px-4 py-3 shadow-lg backdrop-blur-xl sm:left-7 sm:top-7">
                                         <span className="relative flex h-2 w-2">
                                             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-300 opacity-70" />
 
@@ -685,7 +797,6 @@ export function DesktopHome() {
                                         </span>
                                     </div>
 
-                                    {/* Editorial image marker */}
                                     <div className="absolute right-5 top-6 text-right sm:right-7 sm:top-7">
                                         <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-white/65">
                                             Discover
@@ -696,8 +807,7 @@ export function DesktopHome() {
                                         </p>
                                     </div>
 
-                                    {/* Bottom glass panel */}
-                                    <div className="absolute rounded-[10px] bottom-5 left-5 right-5 border border-white/25 bg-slate-950/35 p-5 shadow-2xl backdrop-blur-xl sm:bottom-7 sm:left-7 sm:right-7 sm:p-7">
+                                    <div className="absolute bottom-5 left-5 right-5 rounded-[10px] border border-white/25 bg-slate-950/35 p-5 shadow-2xl backdrop-blur-xl sm:bottom-7 sm:left-7 sm:right-7 sm:p-7">
                                         <div className="flex items-end justify-between gap-5">
                                             <div className="max-w-md">
                                                 <p className="text-[9px] font-bold uppercase tracking-[0.23em] text-blue-200">
@@ -716,9 +826,9 @@ export function DesktopHome() {
                                             </div>
 
                                             <Link
-                                                href="/marketplace"
+                                                href="#latest-vehicles"
                                                 aria-label="Explore all vehicles"
-                                                className="group/explore rounded-[10px] flex h-12 w-12 shrink-0 items-center justify-center border border-white/30 bg-white/10 text-white backdrop-blur-md transition-all duration-300 hover:border-blue-400 hover:bg-blue-500 sm:h-14 sm:w-14"
+                                                className="group/explore flex h-12 w-12 shrink-0 items-center justify-center rounded-[10px] border border-white/30 bg-white/10 text-white backdrop-blur-md transition-all duration-300 hover:border-blue-400 hover:bg-blue-500 sm:h-14 sm:w-14"
                                             >
                                                 <MoveUpRight
                                                     size={22}
@@ -727,21 +837,11 @@ export function DesktopHome() {
                                             </Link>
                                         </div>
                                     </div>
-
-                                    {/* Image index */}
-                                    {/* <div className="absolute bottom-7 right-7 hidden items-center gap-2 text-[9px] font-semibold tracking-[0.2em] text-white/55 xl:flex">
-                                        <span className="h-px w-7 bg-white/60" />
-                                        01 — 01
-                                    </div> */}
                                 </div>
 
-                                {/* Offset decorative edge */}
-                                <div
-                                    className="pointer-events-none absolute -bottom-3 -right-3 -z-10 h-2/3 w-2/3 border border-blue-200/70"
-                                />
+                                <div className="pointer-events-none absolute -bottom-3 -right-3 -z-10 h-2/3 w-2/3 border border-blue-200/70" />
 
-                                {/* Floating glass detail */}
-                                <div className="absolute rounded-[10px] -left-5 top-[35%] hidden border border-white/80 bg-white/70 px-4 py-3 shadow-[0_10px_35px_-15px_rgba(15,23,42,0.2)] backdrop-blur-xl motion-safe:animate-[slow-drift_6s_ease-in-out_infinite] xl:block">
+                                <div className="absolute -left-5 top-[35%] hidden rounded-[10px] border border-white/80 bg-white/70 px-4 py-3 shadow-[0_10px_35px_-15px_rgba(15,23,42,0.2)] backdrop-blur-xl motion-safe:animate-[slow-drift_6s_ease-in-out_infinite] xl:block">
                                     <div className="flex items-center gap-3">
                                         <div
                                             className="flex h-9 w-9 items-center justify-center"
@@ -767,7 +867,8 @@ export function DesktopHome() {
                             </div>
                         </div>
 
-                        {/* Bottom editorial strip */}
+                        {/* Editorial strip */}
+
                         <div className="mt-12 grid grid-cols-1 border-y border-slate-200/80 sm:grid-cols-3">
                             <div className="flex items-center justify-between gap-4 py-5 sm:pr-8">
                                 <div>
@@ -905,31 +1006,35 @@ export function DesktopHome() {
                 >
                     <div className="pointer-events-none absolute -right-48 top-40 h-[500px] w-[500px] rounded-full bg-blue-100/50 blur-[110px]" />
 
-                    <div className="relative mx-auto max-w-[1500px] px-6 py-16 lg:px-16 lg:py-24">
+                    <div className="relative mx-auto max-w-[1500px] px-6 py-16 lg:px-16 lg:py-20">
                         <div className="mb-10 flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
                             <div>
                                 <SectionEyebrow>
-                                    The latest arrivals
+                                    Selected for more visibility
                                 </SectionEyebrow>
 
-                                <h2 className="mt-5 max-w-xl text-3xl font-semibold leading-tight tracking-[-0.06em] text-slate-950 sm:text-5xl">
-                                    Good cars.
-                                    <br className="sm:hidden" />{" "}
-                                    Good possibilities.
-                                </h2>
+                                <div className="mt-5 flex items-center gap-3">
+                                    <h2 className="text-3xl font-semibold leading-tight tracking-[-0.06em] text-slate-950 sm:text-5xl">
+                                        Featured vehicles.
+                                    </h2>
+
+                                    <span className="hidden items-center gap-1.5 bg-blue-50 px-3 py-2 text-[9px] font-bold uppercase tracking-wider text-blue-700 sm:inline-flex">
+                                        <Sparkles size={12} />
+                                        Promoted
+                                    </span>
+                                </div>
 
                                 <p className="mt-4 max-w-lg text-sm leading-7 text-slate-500">
-                                    Take a look at the latest vehicles
-                                    listed on KARMASS. Your next favourite
-                                    might be right here.
+                                    Discover vehicles currently receiving
+                                    extra visibility from sellers on KARMASS.
                                 </p>
                             </div>
 
                             <Link
-                                href="/marketplace"
+                                href="#latest-vehicles"
                                 className="group inline-flex w-fit items-center gap-3 border-b border-slate-300 pb-2 text-xs font-semibold text-slate-800 transition-colors duration-300 hover:border-blue-500 hover:text-blue-700"
                             >
-                                Browse all vehicles
+                                Explore all vehicles
 
                                 <ArrowRight
                                     size={15}
@@ -938,13 +1043,13 @@ export function DesktopHome() {
                             </Link>
                         </div>
 
-                        {isLoading ? (
+                        {featuredLoading ? (
                             <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-                                {Array.from({ length: 6 }).map((_, index) => (
+                                {Array.from({ length: 3 }).map((_, index) => (
                                     <VehicleCardSkeleton key={index} />
                                 ))}
                             </div>
-                        ) : loadError ? (
+                        ) : featuredError ? (
                             <div
                                 role="alert"
                                 className="border border-red-100 bg-white px-6 py-14 text-center"
@@ -954,18 +1059,16 @@ export function DesktopHome() {
                                 </div>
 
                                 <h3 className="mt-5 text-base font-semibold text-slate-900">
-                                    The listings haven&apos;t loaded.
+                                    Featured vehicles couldn&apos;t load.
                                 </h3>
 
                                 <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-500">
-                                    {loadError}
+                                    {featuredError}
                                 </p>
 
                                 <button
                                     type="button"
-                                    onClick={() =>
-                                        setRetryCount((count) => count + 1)
-                                    }
+                                    onClick={retryFeatured}
                                     className="mt-6 inline-flex items-center gap-2 px-5 py-3 text-xs font-semibold text-white transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200"
                                     style={{
                                         backgroundColor: BRAND_COLOR,
@@ -984,132 +1087,352 @@ export function DesktopHome() {
                                         color: BRAND_COLOR,
                                     }}
                                 >
-                                    <CarFront size={27} strokeWidth={1.4} />
+                                    <CarFront
+                                        size={27}
+                                        strokeWidth={1.4}
+                                    />
                                 </div>
 
                                 <h3 className="mt-5 text-lg font-semibold tracking-tight text-slate-900">
-                                    The next great listing could be yours.
+                                    Featured vehicles are on their way.
                                 </h3>
 
                                 <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
-                                    There are no vehicles to display just
-                                    yet. Explore the marketplace or check
-                                    back soon.
+                                    There are no actively promoted vehicles
+                                    right now. Browse the latest listings
+                                    below to find your next car.
                                 </p>
 
                                 <Link
-                                    href="/marketplace"
+                                    href="#latest-vehicles"
                                     className="mt-6 inline-flex items-center gap-2 px-5 py-3 text-xs font-semibold text-white transition hover:brightness-95"
                                     style={{
                                         backgroundColor: BRAND_COLOR,
                                     }}
                                 >
-                                    Explore marketplace
+                                    Browse latest vehicles
                                     <ArrowRight size={15} />
                                 </Link>
                             </div>
                         ) : (
-                            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-                                {featuredVehicles
-                                    .slice(0, 6)
-                                    .map((result, index) => (
+                            <div className="-mx-2 flex snap-x snap-mandatory gap-5 overflow-x-auto px-2 pb-6 [scrollbar-width:thin] [scrollbar-color:#CBD5E1_transparent]">
+                                {featuredVehicles.map((result, index) => (
+                                    <div
+                                        key={result.listing.id}
+                                        className="w-[calc(33.333%-14px)] min-w-[290px] shrink-0 snap-start sm:min-w-[320px] lg:min-w-[calc(33.333%-14px)]"
+                                    >
                                         <FeaturedVehicleCard
+                                            result={result}
+                                            index={index}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </section>
+
+                {/* =================================================
+                    LATEST VEHICLES / SEARCH RESULTS
+                ================================================= */}
+
+                <section
+                    id="latest-vehicles"
+                    className="relative overflow-hidden bg-white"
+                >
+                    <div className="mx-auto max-w-[1500px] px-6 py-16 lg:px-16 lg:py-24">
+                        <div className="mb-10 flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
+                            <div>
+                                <SectionEyebrow>
+                                    {isSearching
+                                        ? "Your search"
+                                        : "The latest arrivals"}
+                                </SectionEyebrow>
+
+                                <h2 className="mt-5 max-w-xl text-3xl font-semibold leading-tight tracking-[-0.06em] text-slate-950 sm:text-5xl">
+                                    {isSearching
+                                        ? "Search results."
+                                        : "Fresh on KARMASS."}
+                                </h2>
+
+                                <p className="mt-4 max-w-lg text-sm leading-7 text-slate-500">
+                                    {isSearching
+                                        ? `Vehicles matching "${submittedQuery}". Refine your search to find exactly what you're looking for.`
+                                        : "Explore the newest ordinary listings added to KARMASS. Your next favourite might be right here."}
+                                </p>
+                            </div>
+
+                            {isSearching && (
+                                <button
+                                    type="button"
+                                    onClick={() => marketplace.clearFilters()}
+                                    className="group inline-flex w-fit items-center gap-2 border-b border-slate-300 pb-2 text-xs font-semibold text-slate-700 transition-colors hover:border-blue-500 hover:text-blue-700"
+                                >
+                                    Clear search
+                                    <RefreshCw
+                                        size={13}
+                                        className="transition-transform group-hover:rotate-[-45deg]"
+                                    />
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Result count */}
+                        {!loading && !error && pagination && (
+                            <div className="mb-6 flex flex-col gap-3 border-y border-slate-100 py-4 sm:flex-row sm:items-center sm:justify-between">
+                                <p className="text-xs text-slate-500">
+                                    Showing{" "}
+                                    <span className="font-semibold text-slate-900">
+                                        {results.length}
+                                    </span>{" "}
+                                    of{" "}
+                                    <span className="font-semibold text-slate-900">
+                                        {pagination.total}
+                                    </span>{" "}
+                                    vehicles
+                                </p>
+
+                                <span className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                                    <CircleDot
+                                        size={12}
+                                        className="text-blue-500"
+                                    />
+
+                                    {submittedQuery.trim()
+                                        ? "Search results"
+                                        : "Latest listings"}
+                                </span>
+                            </div>
+                        )}
+                        
+                        {loading && results.length === 0 ? (
+                            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+                                {Array.from({ length: 6 }).map((_, index) => (
+                                    <VehicleCardSkeleton key={index} />
+                                ))}
+                            </div>
+                        ) : error && results.length === 0 ? (
+                            <div
+                                role="alert"
+                                className="border border-red-100 bg-white px-6 py-14 text-center"
+                            >
+                                <div className="mx-auto flex h-12 w-12 items-center justify-center bg-red-50 text-red-500">
+                                    <RefreshCw size={21} />
+                                </div>
+
+                                <h3 className="mt-5 text-base font-semibold text-slate-900">
+                                    The listings haven&apos;t loaded.
+                                </h3>
+
+                                <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-500">
+                                    {error}
+                                </p>
+
+                                <button
+                                    type="button"
+                                    onClick={retry}
+                                    className="mt-6 inline-flex items-center gap-2 px-5 py-3 text-xs font-semibold text-white transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200"
+                                    style={{
+                                        backgroundColor: BRAND_COLOR,
+                                    }}
+                                >
+                                    <RefreshCw size={14} />
+                                    Try again
+                                </button>
+                            </div>
+                        ) : results.length === 0 ? (
+                            <div className="border border-slate-200 bg-[#F8FAFC] px-6 py-16 text-center">
+                                <div
+                                    className="mx-auto flex h-14 w-14 items-center justify-center"
+                                    style={{
+                                        backgroundColor: BRAND_LIGHT,
+                                        color: BRAND_COLOR,
+                                    }}
+                                >
+                                    <Search
+                                        size={25}
+                                        strokeWidth={1.5}
+                                    />
+                                </div>
+
+                                <h3 className="mt-5 text-lg font-semibold tracking-tight text-slate-900">
+                                    {isSearching
+                                        ? "No matching vehicles found."
+                                        : "No vehicles available just yet."}
+                                </h3>
+
+                                <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
+                                    {isSearching
+                                        ? "Try another search term or clear your filters to explore more vehicles."
+                                        : "New vehicles are added regularly. Please check back soon."}
+                                </p>
+
+                                {isSearching && (
+                                    <button
+                                        type="button"
+                                        onClick={() => marketplace.clearFilters()}
+                                        className="mt-6 inline-flex items-center gap-2 px-5 py-3 text-xs font-semibold text-white transition hover:brightness-95"
+                                        style={{
+                                            backgroundColor: BRAND_COLOR,
+                                        }}
+                                    >
+                                        Clear search
+                                        <ArrowRight size={15} />
+                                    </button>
+                                )}
+                            </div>
+                        ) : (
+                            <>
+                                <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+                                    {results.map((result, index) => (
+                                        <LatestVehicleCard
                                             key={result.listing.id}
                                             result={result}
                                             index={index}
                                         />
                                     ))}
-                            </div>
-                        )}
+                                </div>
 
-                        <div className="mt-10 flex justify-center sm:hidden">
-                            <Link
-                                href="/marketplace"
-                                className="flex w-full items-center justify-center gap-3 border border-slate-200 bg-white px-5 py-4 text-xs font-semibold text-slate-800 transition-colors hover:border-blue-300 hover:text-blue-700"
-                            >
-                                See every listing
-                                <ArrowRight size={15} />
-                            </Link>
+                                {/* Subsequent page error */}
+
+                                {error && results.length > 0 && (
+                                    <div
+                                        role="alert"
+                                        className="mt-8 flex flex-col items-center gap-3 border border-red-100 bg-red-50/60 px-5 py-5 text-center sm:flex-row sm:justify-between sm:text-left"
+                                    >
+                                        <p className="text-xs text-red-700">
+                                            We couldn&apos;t load more vehicles.
+                                            Your existing listings are still available.
+                                        </p>
+
+                                        <button
+                                            type="button"
+                                            onClick={retry}
+                                            className="inline-flex shrink-0 items-center gap-2 bg-white px-4 py-2.5 text-xs font-semibold text-red-700 ring-1 ring-red-200 transition hover:bg-red-50"
+                                        >
+                                            <RefreshCw size={13} />
+                                            Try again
+                                        </button>
+                                    </div>
+                                )}
+
+                                {/* Load more */}
+
+                                {hasMore && (
+                                    <div className="mt-12 flex justify-center">
+                                        <button
+                                            type="button"
+                                            onClick={loadMore}
+                                            disabled={loadingMore || loading}
+                                            className="group inline-flex min-w-[190px] items-center justify-center gap-3 border border-slate-200 bg-white px-7 py-4 text-xs font-semibold text-slate-800 transition-all duration-300 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                                        >
+                                            {loadingMore ? (
+                                                <>
+                                                    <RefreshCw
+                                                        size={15}
+                                                        className="animate-spin"
+                                                    />
+                                                    Loading vehicles...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    Load more vehicles
+                                                    <ArrowDownRight
+                                                        size={15}
+                                                        className="transition-transform duration-300 group-hover:translate-y-1"
+                                                    />
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                )}
+
+                                {!hasMore && results.length > 0 && (
+                                    <p className="mt-10 text-center text-[11px] font-medium text-slate-400">
+                                        You&apos;ve reached the end of the listings.
+                                    </p>
+                                )}
+                            </>
+                        )}
+                    </div>
+                </section>
+
+                {/* =================================================
+                    SELLER CTA
+                ================================================= */}
+
+                <section className="bg-white px-6 pb-16 lg:px-16 lg:pb-24">
+                    <div className="relative mx-auto max-w-[1500px] overflow-hidden bg-[#071B33]">
+                        <div
+                            className="pointer-events-none absolute -right-20 -top-48 h-[450px] w-[450px] rounded-full blur-[100px]"
+                            style={{
+                                backgroundColor: "rgba(20,145,255,0.25)",
+                            }}
+                        />
+
+                        <div className="pointer-events-none absolute -bottom-40 left-[25%] h-[300px] w-[300px] rounded-full bg-blue-500/10 blur-[80px]" />
+
+                        <div
+                            className="pointer-events-none absolute inset-0 opacity-[0.07]"
+                            style={{
+                                backgroundImage:
+                                    "linear-gradient(rgba(255,255,255,0.25) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.25) 1px, transparent 1px)",
+                                backgroundSize: "44px 44px",
+                            }}
+                        />
+
+                        <div className="relative grid gap-10 p-7 sm:p-10 lg:grid-cols-[1fr_auto] lg:items-center lg:gap-16 lg:p-14">
+                            <div className="max-w-2xl">
+                                <div className="inline-flex items-center gap-2 border border-white/15 bg-white/[0.06] px-3 py-2 text-[9px] font-semibold uppercase tracking-[0.19em] text-blue-200 backdrop-blur-xl">
+                                    <CarFront size={14} />
+                                    For car owners and dealers
+                                </div>
+
+                                <h2 className="mt-6 text-3xl font-semibold leading-[1.08] tracking-[-0.06em] text-white sm:text-5xl">
+                                    Your car has a buyer.
+                                    <br />
+                                    Let them find it.
+                                </h2>
+
+                                <p className="mt-5 max-w-lg text-sm leading-7 text-slate-300">
+                                    Put your vehicle in front of people
+                                    who are actively looking. Create a
+                                    listing and take the first step
+                                    toward your next sale.
+                                </p>
+                            </div>
+
+                            <div className="flex flex-col items-start gap-4 lg:items-end">
+                                <Link
+                                    href="/login"
+                                    className="group inline-flex items-center gap-4 bg-[#1491FF] px-6 py-4 text-xs font-semibold text-white shadow-[0_10px_35px_-12px_rgba(20,145,255,0.65)] transition-all duration-300 hover:-translate-y-1 hover:bg-[#0877D9] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-300/40"
+                                >
+                                    List your vehicle
+
+                                    <span className="flex h-7 w-7 items-center justify-center border border-white/30 transition-transform duration-300 group-hover:translate-x-1">
+                                        <ArrowRight size={15} />
+                                    </span>
+                                </Link>
+
+                                <p className="text-[10px] text-slate-400">
+                                    Start your next sale on KARMASS
+                                </p>
+                            </div>
                         </div>
 
-                        {/* =================================================
-                            SELLER CTA
-                        ================================================= */}
+                        <div className="relative flex items-center justify-between border-t border-white/10 px-7 py-4 sm:px-10 lg:px-14">
+                            <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                                Make your next move
+                            </p>
 
-                        <section className="relative mt-20 overflow-hidden bg-[#071B33]">
-                            {/* Blue light */}
-                            <div
-                                className="pointer-events-none absolute -right-20 -top-48 h-[450px] w-[450px] rounded-full blur-[100px]"
-                                style={{
-                                    backgroundColor: "rgba(20,145,255,0.25)",
-                                }}
-                            />
-
-                            <div className="pointer-events-none absolute -bottom-40 left-[25%] h-[300px] w-[300px] rounded-full bg-blue-500/10 blur-[80px]" />
-
-                            {/* Fine decorative grid */}
-                            <div
-                                className="pointer-events-none absolute inset-0 opacity-[0.07]"
-                                style={{
-                                    backgroundImage:
-                                        "linear-gradient(rgba(255,255,255,0.25) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.25) 1px, transparent 1px)",
-                                    backgroundSize: "44px 44px",
-                                }}
-                            />
-
-                            <div className="relative grid gap-10 p-7 sm:p-10 lg:grid-cols-[1fr_auto] lg:items-center lg:gap-16 lg:p-14">
-                                <div className="max-w-2xl">
-                                    <div className="inline-flex items-center gap-2 border border-white/15 bg-white/[0.06] px-3 py-2 text-[9px] font-semibold uppercase tracking-[0.19em] text-blue-200 backdrop-blur-xl">
-                                        <CarFront size={14} />
-                                        For car owners and dealers
-                                    </div>
-
-                                    <h2 className="mt-6 text-3xl font-semibold leading-[1.08] tracking-[-0.06em] text-white sm:text-5xl">
-                                        Your car has a buyer.
-                                        <br />
-                                        Let them find it.
-                                    </h2>
-
-                                    <p className="mt-5 max-w-lg text-sm leading-7 text-slate-300">
-                                        Put your vehicle in front of people
-                                        who are actively looking. Create a
-                                        listing and take the first step
-                                        toward your next sale.
-                                    </p>
-                                </div>
-
-                                <div className="flex flex-col items-start gap-4 lg:items-end">
-                                    <Link
-                                        href="/login"
-                                        className="group inline-flex items-center gap-4 bg-[#1491FF] px-6 py-4 text-xs font-semibold text-white shadow-[0_10px_35px_-12px_rgba(20,145,255,0.65)] transition-all duration-300 hover:-translate-y-1 hover:bg-[#0877D9] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-300/40"
-                                    >
-                                        List your vehicle
-
-                                        <span className="flex h-7 w-7 items-center justify-center border border-white/30 transition-transform duration-300 group-hover:translate-x-1">
-                                            <ArrowRight size={15} />
-                                        </span>
-                                    </Link>
-
-                                    <p className="text-[10px] text-slate-400">
-                                        Start your next sale on KARMASS
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="relative flex items-center justify-between border-t border-white/10 px-7 py-4 sm:px-10 lg:px-14">
-                                <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-slate-400">
-                                    Make your next move
-                                </p>
-
-                                <Link
-                                    href="/register"
-                                    className="inline-flex items-center gap-2 text-[10px] font-medium text-blue-300 transition-colors hover:text-white"
-                                >
-                                    Start here
-                                    <ChevronRight size={13} />
-                                </Link>
-                            </div>
-                        </section>
+                            <Link
+                                href="/register"
+                                className="inline-flex items-center gap-2 text-[10px] font-medium text-blue-300 transition-colors hover:text-white"
+                            >
+                                Start here
+                                <ChevronRight size={13} />
+                            </Link>
+                        </div>
                     </div>
                 </section>
 
@@ -1142,10 +1465,10 @@ export function DesktopHome() {
                         </div>
 
                         <Link
-                            href="/marketplace"
+                            href="#latest-vehicles"
                             className="group inline-flex items-center gap-2 text-xs font-semibold text-slate-700 transition-colors hover:text-blue-700"
                         >
-                            Explore the marketplace
+                            Explore the latest vehicles
 
                             <ArrowRight
                                 size={15}

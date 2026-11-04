@@ -76,7 +76,7 @@ export function AuthExperience({
                         <div className="mx-auto flex min-h-full w-full max-w-[430px] flex-col">
                             {/* Form and heading */}
                             <div className="my-auto w-full py-2">
-                                <AuthFormHeader mode={mode} />
+                                {/* <AuthFormHeader mode={mode} /> */}
 
                                 {children}
                             </div>

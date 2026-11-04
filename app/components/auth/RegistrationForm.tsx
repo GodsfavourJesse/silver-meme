@@ -273,7 +273,7 @@ export function RegistrationForm() {
                 transition={transition}
                 className="space-y-2"
             >
-                <motion.div
+                {/* <motion.div
                     initial={
                         shouldReduceMotion
                             ? false
@@ -295,7 +295,7 @@ export function RegistrationForm() {
                     <span className="text-[11px] font-semibold tracking-wide text-[#0876D1]">
                         YOUR NEXT DRIVE STARTS HERE
                     </span>
-                </motion.div>
+                </motion.div> */}
 
                 <AnimatePresence mode="wait" initial={false}>
                     <motion.h2
@@ -322,10 +322,10 @@ export function RegistrationForm() {
                     </motion.h2>
                 </AnimatePresence>
 
-                <p className="max-w-md text-sm leading-6 text-slate-500">
+                {/* <p className="max-w-md text-sm leading-6 text-slate-500">
                     Join KARMASS to discover cars, connect with sellers,
                     and find the right vehicle for your next journey.
-                </p>
+                </p> */}
             </motion.div>
 
             {/* Server error */}
@@ -384,7 +384,7 @@ export function RegistrationForm() {
                 className="space-y-4"
                 aria-labelledby="personal-information-heading"
             >
-                <div className="flex items-center gap-2">
+                {/* <div className="flex items-center gap-2">
                     <div className="grid size-8 shrink-0 place-items-center rounded-lg bg-blue-50 text-[#1491FF]">
                         <UserRound size={16} aria-hidden="true" />
                     </div>
@@ -401,7 +401,7 @@ export function RegistrationForm() {
                             Let's start with your name.
                         </p>
                     </div>
-                </div>
+                </div> */}
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     {/* First name */}
@@ -478,10 +478,10 @@ export function RegistrationForm() {
             <motion.section
                 variants={animatedSectionVariants}
                 transition={transition}
-                className="space-y-4 border-t border-slate-100 pt-5"
+                className="space-y-4 pt-2"
                 aria-labelledby="contact-information-heading"
             >
-                <div className="flex items-center gap-2">
+                {/* <div className="flex items-center gap-2">
                     <div className="grid size-8 shrink-0 place-items-center rounded-lg bg-blue-50 text-[#1491FF]">
                         <Mail size={16} aria-hidden="true" />
                     </div>
@@ -498,7 +498,7 @@ export function RegistrationForm() {
                             How can we reach you?
                         </p>
                     </div>
-                </div>
+                </div> */}
 
                 {/* Email */}
                 <div className="space-y-2">
@@ -601,10 +601,10 @@ export function RegistrationForm() {
             <motion.section
                 variants={animatedSectionVariants}
                 transition={transition}
-                className="space-y-4 border-t border-slate-100 pt-5"
+                className="space-y-4 pt-2"
                 aria-labelledby="account-security-heading"
             >
-                <div className="flex items-center gap-2">
+                {/* <div className="flex items-center gap-2">
                     <div className="grid size-8 shrink-0 place-items-center rounded-lg bg-blue-50 text-[#1491FF]">
                         <LockKeyhole size={16} aria-hidden="true" />
                     </div>
@@ -621,7 +621,7 @@ export function RegistrationForm() {
                             Choose a password only you know.
                         </p>
                     </div>
-                </div>
+                </div> */}
 
                 {/* Password */}
                 <div className="space-y-2">

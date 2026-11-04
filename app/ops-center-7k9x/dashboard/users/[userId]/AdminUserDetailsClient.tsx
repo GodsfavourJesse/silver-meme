@@ -26,6 +26,7 @@ import type {
 } from "@/app/types/admin/admin-users.types";
 import { useAdminUser } from "@/app/hooks/admin/admin-users/useAdminUser";
 import AdminUserActions from "@/app/components/adminComponents/admin-users/AdminUserActions";
+import { ADMIN_BASE_PATH } from "@/app/lib/admin/path";
 
 // ============================================================
 // HELPERS
@@ -273,7 +274,7 @@ export default function AdminUserDetailsPage() {
                 <div className="mx-auto max-w-3xl">
                     <button
                         type="button"
-                        onClick={() => router.push("/admin/users")}
+                        onClick={() => router.push(`${ADMIN_BASE_PATH}/dashboard/users`)}
                         className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-gray-600 transition hover:text-purple-700"
                     >
                         <ArrowLeft className="h-4 w-4" />

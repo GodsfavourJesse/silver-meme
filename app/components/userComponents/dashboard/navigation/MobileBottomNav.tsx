@@ -16,6 +16,7 @@ import {
     House,
     LayoutGrid,
     MessageCircle,
+    Rocket,
     Settings,
     ShieldCheck,
     Store,
@@ -104,6 +105,11 @@ export default function MobileBottomNav() {
                           icon: ShieldCheck,
                       },
                   ]),
+            {
+                label: "Boost History",
+                href: "/dashboard/boost-history",
+                icon: Rocket,
+            },
             {
                 label: "Account settings",
                 href: "/dashboard/settings",

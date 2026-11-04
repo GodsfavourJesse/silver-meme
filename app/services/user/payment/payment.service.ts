@@ -2,6 +2,7 @@ import { apiRequest } from "@/app/lib/api/api-client";
 import { FulfilledPaymentResult, SubscriptionPaymentResult } from "@/app/types/user/subscription/subscription.types";
 import { getUserCsrfToken } from "../auth/csrf.service";
 import { ApiResponse } from "@/app/types/api.types";
+import { BoostPaymentResult } from "@/app/types/user/boost/boost.types";
 
 const PAYMENT_ENDPOINT = "/payments";
 
@@ -113,6 +114,54 @@ export async function getUserPaymentHistory(
     if (!response.success) {
         throw new Error(
             response.message ?? "Unable to load payment history.",
+        );
+    }
+
+    return response.data;
+}
+
+export async function initializeBoostPayment(
+    boostId: string,
+): Promise<BoostPaymentResult> {
+    const csrfToken = await getUserCsrfToken();
+
+    const response = await apiRequest<
+        ApiResponse<BoostPaymentResult>
+    >("/payments/boosts/initialize", {
+        method: "POST",
+        csrfToken,
+        body: {
+            boostId,
+        },
+    });
+
+    if (!response.success || !response.data) {
+        throw new Error(
+            response.message || "Unable to initialize boost payment.",
+        );
+    }
+
+    return response.data;
+}
+
+export async function verifyBoostPayment(
+    reference: string,
+) {
+    const csrfToken = await getUserCsrfToken();
+
+    const response = await apiRequest<
+        ApiResponse<unknown>
+    >("/payments/verify", {
+        method: "POST",
+        csrfToken,
+        body: {
+            reference,
+        },
+    });
+
+    if (!response.success || !response.data) {
+        throw new Error(
+            response.message || "Unable to verify boost payment.",
         );
     }
 

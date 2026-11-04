@@ -12,9 +12,12 @@ import {
     Building2,
     CreditCard,
     ChevronRight,
+    Rocket,
 } from "lucide-react";
 
-const ADMIN_BASE = "/ops-center-7k9x/dashboard";
+import { ADMIN_BASE_PATH } from "@/app/lib/admin/path";
+
+const ADMIN_BASE = `${ADMIN_BASE_PATH}/dashboard`;
 
 const primaryLinks = [
     {
@@ -36,6 +39,12 @@ const primaryLinks = [
 ];
 
 const moreLinks = [
+    {
+        label: "Boost Management",
+        href: `${ADMIN_BASE}/boosts`,
+        icon: Rocket,
+        description: "Manage promotions, requests and approvals",
+    },
     {
         label: "Dealers",
         href: `${ADMIN_BASE}/dealers`,
@@ -205,6 +214,7 @@ export function MobileAdminNavigation() {
                                             key={item.label}
                                             type="button"
                                             onClick={() => navigate(item.href)}
+                                            aria-current={active ? "page" : undefined}
                                             className={`flex w-full items-center gap-3 rounded-2xl p-3 text-left transition ${
                                                 active
                                                     ? "bg-[#EAF5FF] text-[#0877D9]"

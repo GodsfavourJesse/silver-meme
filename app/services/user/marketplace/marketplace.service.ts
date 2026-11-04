@@ -13,18 +13,16 @@ import type {
     VehicleReportReason,
     VehicleSharePlatform,
 } from "@/app/types/user/vehicle-details.types";
+
 import { getUserCsrfToken } from "../auth/csrf.service";
 
 const MARKETPLACE_ENDPOINT = "/marketplace/search";
+const MARKETPLACE_FEATURED_ENDPOINT = "/marketplace/featured";
 
-const MARKETPLACE_LISTING_DETAILS_ENDPOINT =
-    "/marketplace/listings";
-
+const MARKETPLACE_LISTING_DETAILS_ENDPOINT = "/marketplace/listings";
 const LISTINGS_ENDPOINT = "/listings";
 
-function getListingEndpoint(
-    listingId: string,
-): string {
+function getListingEndpoint(listingId: string): string {
     if (!listingId.trim()) {
         throw new Error("A listing ID is required.");
     }
@@ -32,9 +30,12 @@ function getListingEndpoint(
     return `${LISTINGS_ENDPOINT}/${encodeURIComponent(listingId)}`;
 }
 
-export async function searchMarketplace(
-    params: MarketplaceSearchParams = {},
-): Promise<MarketplaceSearchResponse> {
+/**
+ * Shared query parameter serializer.
+ */
+function buildQueryString<T extends object>(
+    params: T,
+): string {
     const searchParams = new URLSearchParams();
 
     for (const [key, value] of Object.entries(params)) {
@@ -49,7 +50,16 @@ export async function searchMarketplace(
         searchParams.set(key, String(value));
     }
 
-    const queryString = searchParams.toString();
+    return searchParams.toString();
+}
+
+/**
+ * Search marketplace listings.
+ */
+export async function searchMarketplace(
+    params: MarketplaceSearchParams = {},
+): Promise<MarketplaceSearchResponse> {
+    const queryString = buildQueryString(params);
 
     const endpoint = queryString
         ? `${MARKETPLACE_ENDPOINT}?${queryString}`
@@ -63,6 +73,35 @@ export async function searchMarketplace(
     );
 }
 
+/**
+ * Fetch currently active boosted marketplace listings.
+ */
+export async function getFeaturedMarketplaceListings(
+    params: {
+        page?: number;
+        limit?: number;
+    } = {},
+): Promise<MarketplaceSearchResponse> {
+    const queryString = buildQueryString({
+        page: params.page ?? 1,
+        limit: params.limit ?? 12,
+    });
+
+    const endpoint = queryString
+        ? `${MARKETPLACE_FEATURED_ENDPOINT}?${queryString}`
+        : MARKETPLACE_FEATURED_ENDPOINT;
+
+    return apiRequest<MarketplaceSearchResponse>(
+        endpoint,
+        {
+            method: "GET",
+        },
+    );
+}
+
+/**
+ * Fetch a single marketplace listing's details.
+ */
 export async function getMarketplaceListingDetails(
     listingId: string,
 ): Promise<VehicleDetailsApiResponse> {
@@ -78,7 +117,9 @@ export async function getMarketplaceListingDetails(
     );
 }
 
-
+/**
+ * Get the authenticated user's favorite status.
+ */
 export async function getListingFavoriteStatus(
     listingId: string,
 ): Promise<VehicleDetailsFavoriteStatusResponse> {
@@ -90,6 +131,9 @@ export async function getListingFavoriteStatus(
     );
 }
 
+/**
+ * Add a listing to favorites.
+ */
 export async function addListingToFavorites(
     listingId: string,
 ): Promise<VehicleDetailsActionResponse<{
@@ -106,6 +150,9 @@ export async function addListingToFavorites(
     );
 }
 
+/**
+ * Remove a listing from favorites.
+ */
 export async function removeListingFromFavorites(
     listingId: string,
 ): Promise<VehicleDetailsActionResponse<{
@@ -122,6 +169,9 @@ export async function removeListingFromFavorites(
     );
 }
 
+/**
+ * Report a marketplace listing.
+ */
 export async function reportMarketplaceListing(
     listingId: string,
     input: {
@@ -149,6 +199,9 @@ export async function reportMarketplaceListing(
     );
 }
 
+/**
+ * Contact a marketplace seller.
+ */
 export async function contactMarketplaceSeller(
     listingId: string,
     message?: string,
@@ -171,6 +224,9 @@ export async function contactMarketplaceSeller(
     );
 }
 
+/**
+ * Record a listing share.
+ */
 export async function recordMarketplaceListingShare(
     listingId: string,
     platform: VehicleSharePlatform,

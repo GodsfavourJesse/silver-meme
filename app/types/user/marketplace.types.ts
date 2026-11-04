@@ -74,24 +74,20 @@ export interface MarketplaceSeller {
 }
 
 export interface MarketplaceDealer {
-    companyName: string;
-    verified: boolean;
+    companyName: string | null;
+    verified: boolean | null;
     verifiedAt: string | null;
 }
 
 export interface MarketplaceSearchResult {
     listing: MarketplaceListing;
-
     make: MarketplaceMake | null;
     model: MarketplaceModel | null;
     generation: MarketplaceGeneration | null;
     variant: MarketplaceVariant | null;
-
     seller: MarketplaceSeller;
     dealer: MarketplaceDealer | null;
-
     images: MarketplaceImage[];
-
     boostPriority: number;
 }
 
@@ -136,6 +132,13 @@ export interface MarketplaceSearchParams {
 
     dealerOnly?: boolean;
     verifiedDealerOnly?: boolean;
+
+    /**
+     * Exclude listings with currently active boosts.
+     * Used for the homepage's ordinary Latest Vehicles
+     * and Search Results sections.
+     */
+    excludeBoosted?: boolean;
 
     sort?: "newest" | "price_asc" | "price_desc" | "relevance";
 
