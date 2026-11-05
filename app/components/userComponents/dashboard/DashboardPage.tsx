@@ -39,6 +39,8 @@ import { authService } from "@/app/services/user/auth/auth.service";
 import { queryKeys } from "@/app/lib/query/query-keys";
 import DashboardMobile from "./DashboardMobile";
 import { CurrentYear } from "@/app/utils/current-year";
+import { KarmassLogoutDialog } from "@/app/components/shared/KarmassLogoutDialog";
+import { KarmassLoadingOverlay } from "@/app/components/shared/KarmassLoadingOverlay";
 
 const BRAND = "#1491FF";
 const BRAND_HOVER = "#0877D9";
@@ -128,44 +130,8 @@ function getDisplayName(
 
 }
 
-function DashboardHeader() {
+function DashboardHeader({ onLogout }: { onLogout: () => void }) {
     const { user } = useAuth();
-
-    const router = useRouter();
-    const queryClient = useQueryClient();
-
-    const [isLoggingOut, setIsLoggingOut] = useState(false);
-    const [logoutError, setLogoutError] = useState("");
-
-    async function handleLogout(): Promise<void> {
-        if (isLoggingOut) {
-            return;
-        }
-
-        setIsLoggingOut(true);
-        setLogoutError("");
-
-        try {
-            await authService.logout();
-        } catch {
-            setLogoutError(
-                "We couldn't confirm that your session was closed. Please sign in again.",
-            );
-        } finally {
-            await queryClient.cancelQueries({
-                queryKey: queryKeys.auth.all,
-            });
-
-            queryClient.removeQueries({
-                queryKey: queryKeys.auth.all,
-            });
-
-            queryClient.clear();
-
-            router.replace("/login");
-            router.refresh();
-        }
-    }
 
     const firstName = user?.firstName?.trim();
     const initials = getInitials(user?.firstName, user?.lastName);
@@ -238,12 +204,11 @@ function DashboardHeader() {
 
                     <button
                         type="button"
-                        onClick={handleLogout}
-                        disabled={isLoggingOut}
+                        onClick={onLogout}
                         className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl px-3 text-sm font-medium text-slate-500 transition hover:bg-white hover:text-[#0877D9] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         <LogOut size={16} />
-                        {isLoggingOut ? "Signing out..." : "Sign out"}
+                        Sign out
                     </button>
                 </div>
             </header>
@@ -286,8 +251,7 @@ function DashboardHeader() {
 
                         <button
                             type="button"
-                            onClick={handleLogout}
-                            disabled={isLoggingOut}
+                            onClick={onLogout}
                             aria-label="Sign out"
                             className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 transition hover:text-[#0877D9] disabled:opacity-50"
                         >
@@ -329,14 +293,6 @@ function DashboardHeader() {
                 </div>
             </header>
 
-            {logoutError && (
-                <p
-                    role="status"
-                    className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-800"
-                >
-                    {logoutError}
-                </p>
-            )}
         </>
     );
 
@@ -1121,11 +1077,11 @@ function SignInPrompt() {
 
 }
 
-function DashboardDesktop() {
+function DashboardDesktop({ onLogout }: { onLogout: () => void }) {
     return ( 
         <div className="hidden min-h-screen bg-[#F7FAFE] text-slate-800 xl:block"> 
             <div className="mx-auto max-w-[1440px] px-8 py-8 2xl:px-12"> 
-                <DashboardHeader />
+                <DashboardHeader onLogout={onLogout} />
                 <main className="mt-9 space-y-9">
                     <DesktopWelcomeCard />
 
@@ -1183,35 +1139,27 @@ function DashboardDesktop() {
 }
 
 export default function DashboardPage() {
-const { user } = useAuth();
+    const { user } = useAuth();
     const router = useRouter();
     const queryClient = useQueryClient();
 
+    const [showLogoutDialog, setShowLogoutDialog] = useState(false);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-    async function handleLogout(): Promise<void> {
-        if (isLoggingOut) {
-            return;
-        }
+    async function confirmLogout(): Promise<void> {
+        if (isLoggingOut) return;
 
         setIsLoggingOut(true);
+        setShowLogoutDialog(false);
 
         try {
             await authService.logout();
         } catch {
-            // Continue clearing local authentication state even if
-            // the logout request fails.
+            // Local cleanup and redirect still happen if the network is unavailable.
         } finally {
-            await queryClient.cancelQueries({
-                queryKey: queryKeys.auth.all,
-            });
-
-            queryClient.removeQueries({
-                queryKey: queryKeys.auth.all,
-            });
-
+            await queryClient.cancelQueries();
+            queryClient.removeQueries({ queryKey: queryKeys.auth.all });
             queryClient.clear();
-
             router.replace("/login");
             router.refresh();
         }
@@ -1230,15 +1178,30 @@ const { user } = useAuth();
 
     return (
         <>
-            <DashboardDesktop />
+            <DashboardDesktop onLogout={() => setShowLogoutDialog(true)} />
 
             <div className="xl:hidden">
                 <DashboardMobile
                     user={dashboardUser}
-                    onLogout={handleLogout}
+                    onLogout={() => setShowLogoutDialog(true)}
                     isLoggingOut={isLoggingOut}
                 />
             </div>
+
+            <KarmassLogoutDialog
+                open={showLogoutDialog}
+                isLoggingOut={isLoggingOut}
+                onCancel={() => setShowLogoutDialog(false)}
+                onConfirm={confirmLogout}
+                title="Sign out of your KARMASS account?"
+                description="You will be returned to the user sign-in page. Any unsaved work may be lost. Do you want to continue?"
+            />
+
+            <KarmassLoadingOverlay
+                open={isLoggingOut}
+                message="Signing you out securely"
+                detail="Closing your session and preparing the sign-in page."
+            />
         </>
     );
 

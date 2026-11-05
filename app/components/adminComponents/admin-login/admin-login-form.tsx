@@ -22,6 +22,7 @@ import {
 import { useAdminLoginForm } from "@/app/hooks/admin/admin-auth/use-admin-login-form";
 
 import { AdminSecurityChallengeModal } from "./admin-security-challenge-modal";
+import { KarmassLoadingOverlay } from "@/app/components/shared/KarmassLoadingOverlay";
 
 export function AdminLoginForm() {
     const {
@@ -41,6 +42,12 @@ export function AdminLoginForm() {
 
     return (
         <>
+            <KarmassLoadingOverlay
+                open={isSubmitting}
+                message="Security check passed"
+                detail="Signing you in to the KARMASS administration portal."
+            />
+
             <motion.form
                 onSubmit={handleSubmit}
                 initial={{

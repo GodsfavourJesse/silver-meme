@@ -8,7 +8,6 @@ import {
     CarFront,
     ChevronRight,
     CircleDot,
-    Fuel,
     Gauge,
     MapPin,
     RefreshCw,
@@ -330,7 +329,7 @@ function FeaturedVehicleCard({
                     )}
                 </div>
 
-                <div className="mt-auto mt-5 flex items-end justify-between gap-3 border-t border-slate-100 pt-4">
+                <div className="mt-auto flex items-end justify-between gap-3 border-t border-slate-100 pt-4">
                     <div className="min-w-0">
                         <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-slate-400">
                             Asking price
@@ -432,7 +431,7 @@ function LatestVehicleCard({
                     </span>
                 </div>
 
-                <div className="mt-auto mt-5 flex items-end justify-between gap-3 border-t border-slate-100 pt-4">
+                <div className="mt-auto flex items-end justify-between gap-3 border-t border-slate-100 pt-4">
                     <div className="min-w-0">
                         <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-slate-400">
                             Asking price
@@ -508,26 +507,24 @@ export function DesktopHome({
     const searchFormRef = useRef<HTMLFormElement>(null);
 
     const {
-        // Search
         query,
         setQuery,
         submittedQuery,
         handleSearch,
+        filters,
+        sort,
 
-        // Featured vehicles
         featuredVehicles,
         featuredLoading,
         featuredError,
         retryFeatured,
 
-        // Ordinary marketplace results
         results,
         pagination,
         loading,
         error,
         retry,
 
-        // Pagination
         hasMore,
         loadMore,
         loadingMore,
@@ -548,7 +545,11 @@ export function DesktopHome({
         handleSearch(event);
     }
 
+    const hasActiveFilters = Object.values(filters).some((value) =>
+        value !== "" && value !== null && value !== undefined && value !== false,
+    );
     const isSearching = Boolean(submittedQuery.trim());
+    const hasActiveSearch = isSearching || hasActiveFilters || sort !== "newest";
 
     return (
         <div className="min-h-screen overflow-x-hidden bg-white text-slate-900">
@@ -1115,7 +1116,7 @@ export function DesktopHome({
                                 </Link>
                             </div>
                         ) : (
-                            <div className="-mx-2 flex snap-x snap-mandatory gap-5 overflow-x-auto px-2 pb-6 [scrollbar-width:thin] [scrollbar-color:#CBD5E1_transparent]">
+                            <div aria-label="Featured vehicles" className="-mx-2 flex snap-x snap-mandatory gap-5 overflow-x-auto px-2 pb-6 [scrollbar-width:thin] [scrollbar-color:#CBD5E1_transparent]">
                                 {featuredVehicles.map((result, index) => (
                                     <div
                                         key={result.listing.id}
@@ -1144,25 +1145,27 @@ export function DesktopHome({
                         <div className="mb-10 flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
                             <div>
                                 <SectionEyebrow>
-                                    {isSearching
+                                    {hasActiveSearch
                                         ? "Your search"
                                         : "The latest arrivals"}
                                 </SectionEyebrow>
 
                                 <h2 className="mt-5 max-w-xl text-3xl font-semibold leading-tight tracking-[-0.06em] text-slate-950 sm:text-5xl">
-                                    {isSearching
+                                    {hasActiveSearch
                                         ? "Search results."
                                         : "Fresh on KARMASS."}
                                 </h2>
 
                                 <p className="mt-4 max-w-lg text-sm leading-7 text-slate-500">
-                                    {isSearching
-                                        ? `Vehicles matching "${submittedQuery}". Refine your search to find exactly what you're looking for.`
+                                    {hasActiveSearch
+                                        ? submittedQuery.trim()
+                                            ? `Vehicles matching "${submittedQuery}". Refine your search to find exactly what you're looking for.`
+                                            : "Vehicles matching your selected filters. Refine your options to find the right car."
                                         : "Explore the newest ordinary listings added to KARMASS. Your next favourite might be right here."}
                                 </p>
                             </div>
 
-                            {isSearching && (
+                            {hasActiveSearch && (
                                 <button
                                     type="button"
                                     onClick={() => marketplace.clearFilters()}
@@ -1178,8 +1181,9 @@ export function DesktopHome({
                         </div>
 
                         {/* Result count */}
+
                         {!loading && !error && pagination && (
-                            <div className="mb-6 flex flex-col gap-3 border-y border-slate-100 py-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="mb-6 flex items-center justify-between border-y border-slate-100 py-4">
                                 <p className="text-xs text-slate-500">
                                     Showing{" "}
                                     <span className="font-semibold text-slate-900">
@@ -1197,14 +1201,11 @@ export function DesktopHome({
                                         size={12}
                                         className="text-blue-500"
                                     />
-
-                                    {submittedQuery.trim()
-                                        ? "Search results"
-                                        : "Latest listings"}
+                                    {hasActiveSearch ? "Filtered listings" : "Latest listings"}
                                 </span>
                             </div>
                         )}
-                        
+
                         {loading && results.length === 0 ? (
                             <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
                                 {Array.from({ length: 6 }).map((_, index) => (
@@ -1256,18 +1257,18 @@ export function DesktopHome({
                                 </div>
 
                                 <h3 className="mt-5 text-lg font-semibold tracking-tight text-slate-900">
-                                    {isSearching
+                                    {hasActiveSearch
                                         ? "No matching vehicles found."
                                         : "No vehicles available just yet."}
                                 </h3>
 
                                 <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
-                                    {isSearching
+                                    {hasActiveSearch
                                         ? "Try another search term or clear your filters to explore more vehicles."
                                         : "New vehicles are added regularly. Please check back soon."}
                                 </p>
 
-                                {isSearching && (
+                                {hasActiveSearch && (
                                     <button
                                         type="button"
                                         onClick={() => marketplace.clearFilters()}

@@ -27,6 +27,7 @@ import {
 
 import { authService } from "@/app/services/user/auth/auth.service";
 import { PasswordInput } from "@/app/components/auth/PasswordInput";
+import { KarmassLoadingOverlay } from "@/app/components/shared/KarmassLoadingOverlay";
 import { ApiError } from "@/app/lib/api/api-error";
 import { registrationSchema } from "@/app/schema/auth/auth.schema";
 
@@ -259,7 +260,13 @@ export function RegistrationForm() {
     };
 
     return (
-        <motion.form
+        <>
+            <KarmassLoadingOverlay
+                open={isSubmitting}
+                message="Creating your KARMASS account"
+                detail="We are securely setting up your profile. This will only take a moment."
+            />
+            <motion.form
             onSubmit={handleSubmit(onSubmit)}
             noValidate
             variants={formVariants}
@@ -929,6 +936,7 @@ export function RegistrationForm() {
                     </Link>
                 </div>
             </motion.section>
-        </motion.form>
+            </motion.form>
+        </>
     );
 }

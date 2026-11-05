@@ -17,7 +17,7 @@ import type {
     AdminBoostListParams,
     AdminBoostRejectInput,
     AdminBoostReviewInput,
-} from "@/app/types/admin/admin-boost.types";
+} from "@/app/types/admin/admin-boosts/admin-boost.types";
 
 /* -------------------------------------------------------------------------- */
 /* Query Keys                                                                 */

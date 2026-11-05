@@ -30,6 +30,7 @@ import { ListingPipeline } from "./listing-pipeline";
 import { RevenuePanel } from "./revenue-panel";
 import { RecentSignups } from "./recent-signups";
 import { CurrentYear } from "@/app/utils/current-year";
+import { KarmassLoadingOverlay } from "@/app/components/shared/KarmassLoadingOverlay";
 
 function getGreeting(): string {
     const hour = new Date().getHours();
@@ -130,6 +131,11 @@ export function DashboardView() {
 
     return (
         <AdminAuthGuard>
+            <KarmassLoadingOverlay
+                open={logout.isPending}
+                message="Signing out of the admin portal"
+                detail="Closing your secure administrator session."
+            />
             <main className="min-w-0 space-y-6 p-6 md:px-20 md:10 sm:space-y-7">
                 {/* Dashboard header */}
                 <header className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">

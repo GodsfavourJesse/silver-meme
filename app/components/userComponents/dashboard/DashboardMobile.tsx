@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 
 import { CurrentYear } from "@/app/utils/current-year";
+import MobileLogout from "./navigation/MobileLogout";
 
 interface DashboardUser {
     firstName?: string | null;
@@ -712,15 +713,11 @@ function MobileAccountLinks({
                 })}
             </div>
 
-            <button
-                type="button"
-                onClick={onLogout}
-                disabled={isLoggingOut}
-                className="mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-[16px] border border-rose-100 bg-white text-xs font-semibold text-rose-600 transition hover:bg-rose-50 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-                <LogOut size={16} />
-                {isLoggingOut ? "Signing out..." : "Sign out"}
-            </button>
+            <MobileLogout
+                variant="button"
+                onLogout={onLogout}
+                isLoggingOut={isLoggingOut}
+            />
         </section>
     );
 }

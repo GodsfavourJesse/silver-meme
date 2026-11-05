@@ -32,7 +32,7 @@ import {
 
 import type {
     AdminBoostStatus,
-} from "@/app/types/admin/admin-boost.types";
+} from "@/app/types/admin/admin-boosts/admin-boost.types";
 
 const BOOSTS_PATH = `${ADMIN_BASE_PATH}/dashboard/boosts`;
 

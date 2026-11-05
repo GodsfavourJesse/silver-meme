@@ -3,6 +3,7 @@
 import {
     useCallback,
     useEffect,
+    useMemo,
     useRef,
     useState,
     type FormEvent,
@@ -39,22 +40,37 @@ import type {
     MarketplaceSearchResult,
 } from "@/app/types/user/marketplace.types";
 
+/* -------------------------------------------------------------------------- */
+/* Configuration                                                              */
+/* -------------------------------------------------------------------------- */
+
 const MARKETPLACE_PAGE_SIZE = 12;
 const FEATURED_PAGE_SIZE = 12;
 
+const MARKETPLACE_ERROR =
+    "We couldn't load vehicle listings. Please check your connection and try again.";
+
+/* -------------------------------------------------------------------------- */
+/* Hook                                                                       */
+/* -------------------------------------------------------------------------- */
+
 export function useMarketplaceSearch() {
+    /* ---------------------------------------------------------------------- */
+    /* Search state                                                           */
+    /* ---------------------------------------------------------------------- */
+
     const [query, setQuery] = useState("");
     const [submittedQuery, setSubmittedQuery] = useState("");
 
-    const [filters, setFilters] = useState<MarketplaceFilterState>(
-        INITIAL_FILTERS,
-    );
+    const [filters, setFilters] =
+        useState<MarketplaceFilterState>(INITIAL_FILTERS);
 
     const [sort, setSort] = useState<SortOption>("newest");
     const [page, setPage] = useState(1);
 
-    // Ordinary marketplace results
-    const [results, setResults] = useState<MarketplaceSearchResult[]>([]);
+    const [results, setResults] = useState<
+        MarketplaceSearchResult[]
+    >([]);
 
     const [pagination, setPagination] =
         useState<MarketplacePagination | null>(null);
@@ -64,10 +80,12 @@ export function useMarketplaceSearch() {
     const [error, setError] = useState("");
 
     const [retryCount, setRetryCount] = useState(0);
-
     const [initialized, setInitialized] = useState(false);
 
-    // Featured marketplace results
+    /* ---------------------------------------------------------------------- */
+    /* Featured listings                                                      */
+    /* ---------------------------------------------------------------------- */
+
     const [featuredVehicles, setFeaturedVehicles] = useState<
         MarketplaceSearchResult[]
     >([]);
@@ -76,10 +94,10 @@ export function useMarketplaceSearch() {
     const [featuredError, setFeaturedError] = useState("");
     const [featuredRetryCount, setFeaturedRetryCount] = useState(0);
 
-    // Prevent multiple Load More requests before React updates state.
-    const loadingMoreRef = useRef(false);
+    /* ---------------------------------------------------------------------- */
+    /* Vehicle catalog                                                        */
+    /* ---------------------------------------------------------------------- */
 
-    // Vehicle catalog
     const [makes, setMakes] = useState<MarketplaceMake[]>([]);
     const [models, setModels] = useState<MarketplaceModel[]>([]);
     const [generations, setGenerations] = useState<
@@ -92,11 +110,29 @@ export function useMarketplaceSearch() {
 
     const [vehicleCatalogError, setVehicleCatalogError] = useState("");
 
-    /*
-    |--------------------------------------------------------------------------
-    | Restore search and filter state from homepage URL
-    |--------------------------------------------------------------------------
-    */
+    const [vehicleCatalogRetryCount, setVehicleCatalogRetryCount] =
+        useState(0);
+
+    /* ---------------------------------------------------------------------- */
+    /* Request coordination                                                   */
+    /* ---------------------------------------------------------------------- */
+
+    /**
+     * Every marketplace request receives an increasing ID.
+     *
+     * Only the latest request is allowed to update the result state.
+     * This prevents older requests from overwriting newer searches.
+     */
+    const searchRequestIdRef = useRef(0);
+
+    /**
+     * Prevent duplicate Load More requests before React updates state.
+     */
+    const loadingMoreRef = useRef(false);
+
+    /* ---------------------------------------------------------------------- */
+    /* Restore state from URL                                                 */
+    /* ---------------------------------------------------------------------- */
 
     useEffect(() => {
         const initialState = readFiltersFromUrl();
@@ -105,20 +141,22 @@ export function useMarketplaceSearch() {
         setSubmittedQuery(initialState.query);
         setFilters(initialState.filters);
         setSort(initialState.sort);
+
+        /**
+         * Always start from page one.
+         *
+         * This is important because Load More uses accumulated results.
+         * Loading page three directly after refresh would omit pages one
+         * and two from the displayed results.
+         */
         setPage(1);
 
         setInitialized(true);
     }, []);
 
-    /*
-    |--------------------------------------------------------------------------
-    | Load featured vehicles
-    |--------------------------------------------------------------------------
-    |
-    | Featured vehicles are fetched independently.
-    | The backend returns only listings with currently active boosts.
-    |
-    */
+    /* ---------------------------------------------------------------------- */
+    /* Load featured listings                                                 */
+    /* ---------------------------------------------------------------------- */
 
     useEffect(() => {
         let active = true;
@@ -128,22 +166,19 @@ export function useMarketplaceSearch() {
             setFeaturedError("");
 
             try {
-                const response = await getFeaturedMarketplaceListings({
-                    page: 1,
-                    limit: FEATURED_PAGE_SIZE,
-                });
+                const response =
+                    await getFeaturedMarketplaceListings({
+                        page: 1,
+                        limit: FEATURED_PAGE_SIZE,
+                    });
 
-                if (!active) {
-                    return;
-                }
+                if (!active) return;
 
-                setFeaturedVehicles(response.data.listings);
+                setFeaturedVehicles(
+                    response.data.listings ?? [],
+                );
             } catch {
-                if (!active) {
-                    return;
-                }
-
-                setFeaturedVehicles([]);
+                if (!active) return;
 
                 setFeaturedError(
                     "Unable to load featured vehicles. Please try again.",
@@ -162,11 +197,9 @@ export function useMarketplaceSearch() {
         };
     }, [featuredRetryCount]);
 
-    /*
-    |--------------------------------------------------------------------------
-    | Load vehicle makes
-    |--------------------------------------------------------------------------
-    */
+    /* ---------------------------------------------------------------------- */
+    /* Load vehicle makes                                                     */
+    /* ---------------------------------------------------------------------- */
 
     useEffect(() => {
         let active = true;
@@ -178,15 +211,15 @@ export function useMarketplaceSearch() {
             try {
                 const data = await getVehicleMakes();
 
-                if (active) {
-                    setMakes(data);
-                }
+                if (!active) return;
+
+                setMakes(data);
             } catch {
-                if (active) {
-                    setVehicleCatalogError(
-                        "Unable to load vehicle makes. Please try again.",
-                    );
-                }
+                if (!active) return;
+
+                setVehicleCatalogError(
+                    "Unable to load vehicle makes. Please try again.",
+                );
             } finally {
                 if (active) {
                     setVehicleCatalogLoading(false);
@@ -199,13 +232,11 @@ export function useMarketplaceSearch() {
         return () => {
             active = false;
         };
-    }, []);
+    }, [vehicleCatalogRetryCount]);
 
-    /*
-    |--------------------------------------------------------------------------
-    | Load models when selected make changes
-    |--------------------------------------------------------------------------
-    */
+    /* ---------------------------------------------------------------------- */
+    /* Load models                                                            */
+    /* ---------------------------------------------------------------------- */
 
     useEffect(() => {
         let active = true;
@@ -221,18 +252,22 @@ export function useMarketplaceSearch() {
         }
 
         async function loadModels() {
-            try {
-                const data = await getVehicleModels(filters.makeId);
+            setVehicleCatalogError("");
 
-                if (active) {
-                    setModels(data);
-                }
+            try {
+                const data = await getVehicleModels(
+                    filters.makeId,
+                );
+
+                if (!active) return;
+
+                setModels(data);
             } catch {
-                if (active) {
-                    setVehicleCatalogError(
-                        "Unable to load models for the selected make.",
-                    );
-                }
+                if (!active) return;
+
+                setVehicleCatalogError(
+                    "Unable to load models for the selected make.",
+                );
             }
         }
 
@@ -241,13 +276,11 @@ export function useMarketplaceSearch() {
         return () => {
             active = false;
         };
-    }, [filters.makeId]);
+    }, [filters.makeId, vehicleCatalogRetryCount]);
 
-    /*
-    |--------------------------------------------------------------------------
-    | Load generations when selected model changes
-    |--------------------------------------------------------------------------
-    */
+    /* ---------------------------------------------------------------------- */
+    /* Load generations                                                       */
+    /* ---------------------------------------------------------------------- */
 
     useEffect(() => {
         let active = true;
@@ -262,18 +295,22 @@ export function useMarketplaceSearch() {
         }
 
         async function loadGenerations() {
-            try {
-                const data = await getVehicleGenerations(filters.modelId);
+            setVehicleCatalogError("");
 
-                if (active) {
-                    setGenerations(data);
-                }
+            try {
+                const data = await getVehicleGenerations(
+                    filters.modelId,
+                );
+
+                if (!active) return;
+
+                setGenerations(data);
             } catch {
-                if (active) {
-                    setVehicleCatalogError(
-                        "Unable to load generations for the selected model.",
-                    );
-                }
+                if (!active) return;
+
+                setVehicleCatalogError(
+                    "Unable to load generations for the selected model.",
+                );
             }
         }
 
@@ -282,13 +319,11 @@ export function useMarketplaceSearch() {
         return () => {
             active = false;
         };
-    }, [filters.modelId]);
+    }, [filters.modelId, vehicleCatalogRetryCount]);
 
-    /*
-    |--------------------------------------------------------------------------
-    | Load variants when selected generation changes
-    |--------------------------------------------------------------------------
-    */
+    /* ---------------------------------------------------------------------- */
+    /* Load variants                                                          */
+    /* ---------------------------------------------------------------------- */
 
     useEffect(() => {
         let active = true;
@@ -302,20 +337,22 @@ export function useMarketplaceSearch() {
         }
 
         async function loadVariants() {
+            setVehicleCatalogError("");
+
             try {
                 const data = await getVehicleVariants(
                     filters.generationId,
                 );
 
-                if (active) {
-                    setVariants(data);
-                }
+                if (!active) return;
+
+                setVariants(data);
             } catch {
-                if (active) {
-                    setVehicleCatalogError(
-                        "Unable to load variants for the selected generation.",
-                    );
-                }
+                if (!active) return;
+
+                setVehicleCatalogError(
+                    "Unable to load variants for the selected generation.",
+                );
             }
         }
 
@@ -324,52 +361,62 @@ export function useMarketplaceSearch() {
         return () => {
             active = false;
         };
-    }, [filters.generationId]);
+    }, [filters.generationId, vehicleCatalogRetryCount]);
 
-    /*
-    |--------------------------------------------------------------------------
-    | Resolve vehicle IDs into readable labels
-    |--------------------------------------------------------------------------
-    */
+    /* ---------------------------------------------------------------------- */
+    /* Resolve selected vehicle labels                                        */
+    /* ---------------------------------------------------------------------- */
 
-    const vehicleLabels: MarketplaceVehicleFilterLabels = {
-        make: makes.find(
-            (item) => item.id === filters.makeId,
-        )?.name,
-
-        model: models.find(
-            (item) => item.id === filters.modelId,
-        )?.name,
-
-        generation: generations.find(
-            (item) => item.id === filters.generationId,
-        )?.name,
-
-        variant: (() => {
+    const vehicleLabels: MarketplaceVehicleFilterLabels =
+        useMemo(() => {
             const selectedVariant = variants.find(
                 (item) => item.id === filters.variantId,
             );
 
-            if (!selectedVariant) {
-                return undefined;
+            const variantName = selectedVariant?.name?.trim();
+            const variantYear = selectedVariant?.year;
+
+            let variant: string | undefined;
+
+            if (variantName && variantYear) {
+                variant = `${variantYear} ${variantName}`;
+            } else {
+                variant =
+                    variantName ||
+                    (variantYear
+                        ? String(variantYear)
+                        : undefined);
             }
 
-            const name = selectedVariant.name?.trim();
-            const year = selectedVariant.year;
+            return {
+                make: makes.find(
+                    (item) => item.id === filters.makeId,
+                )?.name,
 
-            if (name && year) {
-                return `${year} ${name}`;
-            }
+                model: models.find(
+                    (item) => item.id === filters.modelId,
+                )?.name,
 
-            return name || (year ? String(year) : undefined);
-        })(),
-    };
+                generation: generations.find(
+                    (item) => item.id === filters.generationId,
+                )?.name,
 
-    /*
-    |--------------------------------------------------------------------------
-    | Update an individual filter
-    |--------------------------------------------------------------------------
-    */
+                variant,
+            };
+        }, [
+            makes,
+            models,
+            generations,
+            variants,
+            filters.makeId,
+            filters.modelId,
+            filters.generationId,
+            filters.variantId,
+        ]);
+
+    /* ---------------------------------------------------------------------- */
+    /* Update individual filters                                              */
+    /* ---------------------------------------------------------------------- */
 
     const updateFilter = useCallback(
         <K extends MarketplaceFilterKey>(
@@ -382,20 +429,26 @@ export function useMarketplaceSearch() {
                     [key]: value,
                 };
 
-                if (key === "makeId" && value !== current.makeId) {
+                if (
+                    key === "makeId" &&
+                    value !== current.makeId
+                ) {
                     next.modelId = "";
                     next.generationId = "";
                     next.variantId = "";
                 }
 
-                if (key === "modelId" && value !== current.modelId) {
+                if (
+                    key === "modelId" &&
+                    value !== current.modelId
+                ) {
                     next.generationId = "";
                     next.variantId = "";
                 }
 
                 if (
-                    key === "generationId"
-                    && value !== current.generationId
+                    key === "generationId" &&
+                    value !== current.generationId
                 ) {
                     next.variantId = "";
                 }
@@ -405,15 +458,14 @@ export function useMarketplaceSearch() {
 
             loadingMoreRef.current = false;
             setPage(1);
+            setError("");
         },
         [],
     );
 
-    /*
-    |--------------------------------------------------------------------------
-    | Remove an individual filter
-    |--------------------------------------------------------------------------
-    */
+    /* ---------------------------------------------------------------------- */
+    /* Remove individual filters                                              */
+    /* ---------------------------------------------------------------------- */
 
     const removeFilter = useCallback(
         (key: MarketplaceFilterKey) => {
@@ -476,15 +528,14 @@ export function useMarketplaceSearch() {
 
             loadingMoreRef.current = false;
             setPage(1);
+            setError("");
         },
         [],
     );
 
-    /*
-    |--------------------------------------------------------------------------
-    | Submit keyword search
-    |--------------------------------------------------------------------------
-    */
+    /* ---------------------------------------------------------------------- */
+    /* Submit keyword search                                                  */
+    /* ---------------------------------------------------------------------- */
 
     const handleSearch = useCallback(
         (event: FormEvent<HTMLFormElement>) => {
@@ -493,16 +544,15 @@ export function useMarketplaceSearch() {
             loadingMoreRef.current = false;
 
             setPage(1);
+            setError("");
             setSubmittedQuery(query.trim());
         },
         [query],
     );
 
-    /*
-    |--------------------------------------------------------------------------
-    | Clear search and filters
-    |--------------------------------------------------------------------------
-    */
+    /* ---------------------------------------------------------------------- */
+    /* Clear all search filters                                               */
+    /* ---------------------------------------------------------------------- */
 
     const clearFilters = useCallback(() => {
         loadingMoreRef.current = false;
@@ -517,105 +567,80 @@ export function useMarketplaceSearch() {
         setError("");
     }, []);
 
-    /*
-    |--------------------------------------------------------------------------
-    | Change sorting
-    |--------------------------------------------------------------------------
-    */
+    /* ---------------------------------------------------------------------- */
+    /* Change sort                                                            */
+    /* ---------------------------------------------------------------------- */
 
     const handleSortChange = useCallback(
         (nextSort: SortOption) => {
+            if (nextSort === sort) return;
+
             loadingMoreRef.current = false;
 
             setSort(nextSort);
             setPage(1);
+            setError("");
         },
-        [],
+        [sort],
     );
 
-    /*
-    |--------------------------------------------------------------------------
-    | Retry ordinary marketplace request
-    |--------------------------------------------------------------------------
-    */
+    /* ---------------------------------------------------------------------- */
+    /* Retry marketplace search                                               */
+    /* ---------------------------------------------------------------------- */
 
     const retry = useCallback(() => {
         setRetryCount((count) => count + 1);
     }, []);
 
-    /*
-    |--------------------------------------------------------------------------
-    | Retry featured vehicles request
-    |--------------------------------------------------------------------------
-    */
+    /* ---------------------------------------------------------------------- */
+    /* Retry featured listings                                                */
+    /* ---------------------------------------------------------------------- */
 
     const retryFeatured = useCallback(() => {
         setFeaturedRetryCount((count) => count + 1);
     }, []);
 
-    /*
-    |--------------------------------------------------------------------------
-    | Retry vehicle catalog
-    |--------------------------------------------------------------------------
-    */
+    /* ---------------------------------------------------------------------- */
+    /* Retry vehicle catalog                                                  */
+    /* ---------------------------------------------------------------------- */
 
-    const retryVehicleCatalog = useCallback(async () => {
-        setVehicleCatalogLoading(true);
+    const retryVehicleCatalog = useCallback(() => {
         setVehicleCatalogError("");
-
-        try {
-            const data = await getVehicleMakes();
-
-            setMakes(data);
-        } catch {
-            setVehicleCatalogError(
-                "Unable to load vehicle makes. Please try again.",
-            );
-        } finally {
-            setVehicleCatalogLoading(false);
-        }
+        setVehicleCatalogRetryCount((count) => count + 1);
     }, []);
 
-    /*
-    |--------------------------------------------------------------------------
-    | Load more listings
-    |--------------------------------------------------------------------------
-    */
+    /* ---------------------------------------------------------------------- */
+    /* Load more listings                                                      */
+    /* ---------------------------------------------------------------------- */
 
     const loadMore = useCallback(() => {
         if (
-            loading
-            || loadingMoreRef.current
-            || !pagination?.hasNextPage
-            || error
+            loading ||
+            loadingMoreRef.current ||
+            !pagination?.hasNextPage ||
+            error
         ) {
             return;
         }
 
         loadingMoreRef.current = true;
-
         setPage((current) => current + 1);
     }, [loading, pagination, error]);
 
-    /*
-    |--------------------------------------------------------------------------
-    | Fetch marketplace listings
-    |--------------------------------------------------------------------------
-    |
-    | Page 1 replaces the current result set.
-    | Subsequent pages append to the existing result set.
-    |
-    | excludeBoosted: true ensures actively boosted listings
-    | are displayed only in the Featured Vehicles section.
-    |
-    */
+    /* ---------------------------------------------------------------------- */
+    /* Fetch marketplace listings                                             */
+    /* ---------------------------------------------------------------------- */
 
     useEffect(() => {
-        if (!initialized) {
-            return;
-        }
+        if (!initialized) return;
 
         let active = true;
+
+        const requestId = ++searchRequestIdRef.current;
+
+        const isCurrentRequest = () =>
+            active &&
+            requestId === searchRequestIdRef.current;
 
         async function loadListings() {
             setLoading(true);
@@ -640,14 +665,18 @@ export function useMarketplaceSearch() {
                     ...searchParams,
                     page,
                     limit: MARKETPLACE_PAGE_SIZE,
+
+                    /**
+                     * Boosted vehicles are fetched separately
+                     * and displayed in the Featured Vehicles section.
+                     */
                     excludeBoosted: true,
                 });
 
-                if (!active) {
-                    return;
-                }
+                if (!isCurrentRequest()) return;
 
-                const incomingListings = response.data.listings;
+                const incomingListings =
+                    response.data.listings ?? [];
 
                 if (page === 1) {
                     setResults(incomingListings);
@@ -659,9 +688,13 @@ export function useMarketplaceSearch() {
                             ),
                         );
 
-                        const uniqueListings = incomingListings.filter(
-                            (item) => !existingIds.has(item.listing.id),
-                        );
+                        const uniqueListings =
+                            incomingListings.filter(
+                                (item) =>
+                                    !existingIds.has(
+                                        item.listing.id,
+                                    ),
+                            );
 
                         return [
                             ...current,
@@ -672,20 +705,20 @@ export function useMarketplaceSearch() {
 
                 setPagination(response.data.pagination);
             } catch {
-                if (!active) {
-                    return;
-                }
+                if (!isCurrentRequest()) return;
 
+                /**
+                 * Preserve already loaded results when a later
+                 * pagination request fails.
+                 */
                 if (page === 1) {
                     setResults([]);
                     setPagination(null);
                 }
 
-                setError(
-                    "We couldn't load vehicle listings. Please check your connection and try again.",
-                );
+                setError(MARKETPLACE_ERROR);
             } finally {
-                if (active) {
+                if (isCurrentRequest()) {
                     setLoading(false);
                     setLoadingMore(false);
                     loadingMoreRef.current = false;
@@ -707,32 +740,29 @@ export function useMarketplaceSearch() {
         retryCount,
     ]);
 
-    /*
-    |--------------------------------------------------------------------------
-    | Synchronize search state with homepage URL
-    |--------------------------------------------------------------------------
-    */
+    /* ---------------------------------------------------------------------- */
+    /* Synchronize search state with URL                                       */
+    /* ---------------------------------------------------------------------- */
 
     useEffect(() => {
-        if (!initialized) {
-            return;
-        }
+        if (!initialized) return;
 
         const searchParams = buildSearchParams(
             submittedQuery,
             filters,
             sort,
-            page,
+            1,
         );
 
         const params = new URLSearchParams();
 
         for (const [key, value] of Object.entries(searchParams)) {
             if (
-                value === undefined
-                || value === null
-                || value === ""
-                || value === false
+                value === undefined ||
+                value === null ||
+                value === "" ||
+                value === false ||
+                key === "page"
             ) {
                 continue;
             }
@@ -740,12 +770,16 @@ export function useMarketplaceSearch() {
             params.set(key, String(value));
         }
 
-        /*
-         * Preserve generationId even though the current
-         * marketplace search API does not accept it.
+        /**
+         * generationId is preserved in the URL for filter restoration,
+         * even though the current marketplace search API does not
+         * accept generationId as a search parameter.
          */
         if (filters.generationId) {
-            params.set("generationId", filters.generationId);
+            params.set(
+                "generationId",
+                filters.generationId,
+            );
         }
 
         const queryString = params.toString();
@@ -758,21 +792,22 @@ export function useMarketplaceSearch() {
             `${window.location.pathname}${window.location.search}`;
 
         if (currentUrl !== nextUrl) {
-            window.history.replaceState(null, "", nextUrl);
+            window.history.replaceState(
+                null,
+                "",
+                nextUrl,
+            );
         }
     }, [
         initialized,
         submittedQuery,
         filters,
         sort,
-        page,
     ]);
 
-    /*
-    |--------------------------------------------------------------------------
-    | Return marketplace state and actions
-    |--------------------------------------------------------------------------
-    */
+    /* ---------------------------------------------------------------------- */
+    /* Return public hook API                                                  */
+    /* ---------------------------------------------------------------------- */
 
     return {
         initialized,
@@ -803,7 +838,7 @@ export function useMarketplaceSearch() {
         sort,
         handleSortChange,
 
-        // Featured vehicles
+        // Featured listings
         featuredVehicles,
         featuredLoading,
         featuredError,

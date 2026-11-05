@@ -21,29 +21,12 @@ import {
     getSafeReturnTo,
 } from "@/app/lib/user/auth/safe-redirect";
 
+import {
+    KarmassPageLoader,
+} from "@/app/components/shared/KarmassPageLoader";
+
 interface AuthenticatedUserGuardProps {
     children: ReactNode;
-}
-
-function AuthLoadingScreen() {
-    return (
-        <main
-            className="flex min-h-screen items-center justify-center bg-[#faf8ff] px-6"
-            aria-live="polite"
-            aria-busy="true"
-        >
-            <div className="flex flex-col items-center gap-4">
-                <div
-                    className="h-10 w-10 animate-spin rounded-full border-2 border-[#7008E7]/10 border-t-[#7008E7]"
-                    aria-hidden="true"
-                />
-
-                <p className="text-sm font-medium text-gray-600">
-                    Checking your session...
-                </p>
-            </div>
-        </main>
-    );
 }
 
 function AuthErrorScreen({
@@ -54,9 +37,9 @@ function AuthErrorScreen({
     isRetrying: boolean;
 }) {
     return (
-        <main className="flex min-h-screen items-center justify-center bg-[#faf8ff] px-6">
+        <main className="flex min-h-screen items-center justify-center bg-[#F7FAFE] px-6">
             <section
-                className="w-full max-w-md rounded-2xl border border-[#7008E7]/10 bg-white p-8 text-center shadow-xl shadow-[#7008E7]/[0.04]"
+                className="w-full max-w-md rounded-2xl border border-[#1491FF]/10 bg-white p-8 text-center shadow-xl shadow-[#1491FF]/[0.04]"
                 aria-labelledby="auth-error-title"
             >
                 <div
@@ -83,7 +66,7 @@ function AuthErrorScreen({
                     type="button"
                     onClick={onRetry}
                     disabled={isRetrying}
-                    className="mt-7 inline-flex min-h-11 items-center justify-center rounded-xl bg-[#7008E7] px-6 text-sm font-semibold text-white shadow-lg shadow-[#7008E7]/20 transition hover:bg-[#5D07C2] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#7008E7]/20 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="mt-7 inline-flex min-h-11 items-center justify-center rounded-xl bg-[#1491FF] px-6 text-sm font-semibold text-white shadow-lg shadow-[#1491FF]/20 transition hover:bg-[#0877D9] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#1491FF]/20 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                     {isRetrying
                         ? "Checking..."
@@ -95,8 +78,7 @@ function AuthErrorScreen({
 }
 
 /**
- * The pathname-dependent logic lives inside this component
- * so it can be isolated behind a Suspense boundary.
+ * Handles authentication before rendering protected pages.
  */
 function AuthenticatedUserGuardContent({
     children,
@@ -159,10 +141,16 @@ function AuthenticatedUserGuardContent({
         redirectToLogin,
     ]);
 
+    // Wait until session verification finishes.
     if (isLoading) {
-        return <AuthLoadingScreen />;
+        return (
+            <KarmassPageLoader
+                message="Checking your session..."
+            />
+        );
     }
 
+    // Display an error if session verification fails.
     if (isError) {
         return (
             <AuthErrorScreen
@@ -175,10 +163,16 @@ function AuthenticatedUserGuardContent({
         );
     }
 
+    // Keep the loading screen visible while redirecting.
     if (!isAuthenticated || !user) {
-        return <AuthLoadingScreen />;
+        return (
+            <KarmassPageLoader
+                message="Redirecting you..."
+            />
+        );
     }
 
+    // Render protected content only after authentication.
     return <>{children}</>;
 }
 
@@ -186,7 +180,13 @@ export function AuthenticatedUserGuard({
     children,
 }: AuthenticatedUserGuardProps) {
     return (
-        <Suspense fallback={<AuthLoadingScreen />}>
+        <Suspense
+            fallback={
+                <KarmassPageLoader
+                    message="Checking your session..."
+                />
+            }
+        >
             <AuthenticatedUserGuardContent>
                 {children}
             </AuthenticatedUserGuardContent>

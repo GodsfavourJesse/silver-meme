@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Outfit } from "next/font/google";
 import "./globals.css";
+
 import { QueryProvider } from "./providers/query-provider";
 import { Toaster } from "sonner";
+import GlobalLoadingBar from "./components/GlobalLoadingBar";
 
 const outfit = Outfit({
     variable: "--font-outfit",
@@ -16,7 +18,8 @@ export const metadata: Metadata = {
         default: "KARMASS | Buy and Sell Cars",
         template: "%s | KARMASS",
     },
-    description: "Discover cars, compare vehicles, and connect with sellers on KARMASS, your automotive marketplace.",
+    description:
+        "Discover cars, compare vehicles, and connect with sellers on KARMASS, your automotive marketplace.",
     applicationName: "KARMASS",
     keywords: [
         "KARMASS",
@@ -37,7 +40,7 @@ export const viewport: Viewport = {
     width: "device-width",
     initialScale: 1,
     viewportFit: "cover",
-    themeColor: "#0a0912",
+    themeColor: "#1491FF",
 };
 
 export default function RootLayout({
@@ -45,18 +48,17 @@ export default function RootLayout({
 }: Readonly<{
     children: React.ReactNode;
 }>) {
-    return ( 
-        <html 
-            lang="en" 
-            className={outfit.variable}
-        > 
+    return (
+        <html lang="en" className={outfit.variable}>
             <body suppressHydrationWarning>
+                <GlobalLoadingBar />
+
                 <QueryProvider>
                     {children}
                 </QueryProvider>
 
                 <Toaster position="top-right" richColors />
-            </body> 
+            </body>
         </html>
     );
 }

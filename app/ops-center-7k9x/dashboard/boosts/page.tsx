@@ -27,7 +27,7 @@ import {
 
 import type {
     AdminBoostStatus,
-} from "@/app/types/admin/admin-boost.types";
+} from "@/app/types/admin/admin-boosts/admin-boost.types";
 
 const PAGE_SIZE = 10;
 

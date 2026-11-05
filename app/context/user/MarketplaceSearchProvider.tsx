@@ -25,7 +25,9 @@ export function MarketplaceSearchProvider({
     const marketplaceSearch = useMarketplaceSearch();
 
     return (
-        <MarketplaceSearchContext.Provider value={marketplaceSearch}>
+        <MarketplaceSearchContext.Provider
+            value={marketplaceSearch}
+        >
             {children}
         </MarketplaceSearchContext.Provider>
     );

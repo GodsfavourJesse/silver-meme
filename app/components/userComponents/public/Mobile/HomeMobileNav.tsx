@@ -5,7 +5,8 @@ import { usePathname } from "next/navigation";
 
 import {
     Home,
-    MessageCircle,
+    Compass,
+    Store,
     UserRound,
 } from "lucide-react";
 
@@ -16,9 +17,14 @@ const NAV_ITEMS = [
         icon: Home,
     },
     {
+        label: "Explore",
+        href: "/marketplace",
+        icon: Compass,
+    },
+    {
         label: "Dealers",
         href: "/dealers",
-        icon: MessageCircle,
+        icon: Store,
     },
     {
         label: "Account",
@@ -35,6 +41,14 @@ export default function HomeMobileNav() {
             return pathname === "/";
         }
 
+        if (href === "/register") {
+            return (
+                pathname === "/register" ||
+                pathname === "/login" ||
+                pathname.startsWith("/dashboard")
+            );
+        }
+
         return (
             pathname === href ||
             pathname.startsWith(`${href}/`)
@@ -46,8 +60,7 @@ export default function HomeMobileNav() {
             aria-label="Main navigation"
             className="
                 fixed inset-x-3 bottom-3 z-40
-                overflow-hidden
-                rounded-[22px]
+                overflow-hidden rounded-[22px]
                 border border-white/15
                 bg-gradient-to-r from-[#0877D9] via-[#1491FF] to-[#0877D9]
                 p-2
@@ -56,8 +69,7 @@ export default function HomeMobileNav() {
                 md:hidden
             "
         >
-            <div className="grid grid-cols-3 gap-1">
-
+            <div className="grid grid-cols-4 gap-1">
                 {NAV_ITEMS.map((item) => {
                     const active = isActive(item.href);
                     const Icon = item.icon;
@@ -71,7 +83,7 @@ export default function HomeMobileNav() {
                                 group relative flex min-w-0
                                 flex-col items-center justify-center
                                 gap-1.5 rounded-[15px]
-                                px-2 py-2.5
+                                px-1 py-2.5
                                 transition-all duration-200
                                 active:scale-[0.96]
                                 ${
@@ -89,8 +101,7 @@ export default function HomeMobileNav() {
 
                             <span
                                 className={`
-                                    truncate text-[10px]
-                                    tracking-wide
+                                    truncate text-[10px] tracking-wide
                                     ${
                                         active
                                             ? "font-bold"
@@ -110,7 +121,6 @@ export default function HomeMobileNav() {
                         </Link>
                     );
                 })}
-
             </div>
         </nav>
     );

@@ -4,10 +4,9 @@ import {
     useMutation,
     useQueryClient,
 } from "@tanstack/react-query";
-
 import { useRouter } from "next/navigation";
-
 import { adminAuthService } from "../../../services/admin/admin-auth.service";
+import { clearAdminCsrfCache } from "@/app/lib/api/api-client";
 
 export function useAdminLogout() {
     const queryClient = useQueryClient();
@@ -15,22 +14,16 @@ export function useAdminLogout() {
 
     return useMutation({
         mutationFn: async () => {
-            // Step 1: Obtain a CSRF token for the authenticated admin.
-            const csrfResponse =
-                await adminAuthService.getCsrfToken();
-
-            // Step 2: Send the token with the logout request.
-            return adminAuthService.logout(
-                csrfResponse.csrfToken,
-            );
+            const csrfResponse = await adminAuthService.getCsrfToken();
+            return adminAuthService.logout(csrfResponse.csrfToken);
         },
-
-        onSuccess: async () => {
-            // Clear cached user and dashboard information.
+        onSettled: async () => {
+            // Always discard private admin data locally, even if the network fails.
+            await queryClient.cancelQueries();
             queryClient.clear();
-
-            // Redirect to the admin login page.
+            clearAdminCsrfCache();
             router.replace("/ops-center-7k9x/login");
+            router.refresh();
         },
     });
 }

@@ -20,6 +20,7 @@ import { authService } from "@/app/services/user/auth/auth.service";
 import { ApiError } from "@/app/lib/api/api-error";
 import { PasswordInput } from "@/app/components/auth/PasswordInput";
 import { queryKeys } from "@/app/lib/query/query-keys";
+import { KarmassLoadingOverlay } from "@/app/components/shared/KarmassLoadingOverlay";
 
 const BRAND_BLUE = "#1491FF";
 
@@ -125,7 +126,13 @@ export function LoginForm() {
         "h-[54px] w-full rounded-2xl border bg-white pl-11 pr-4 text-[14px] text-slate-900 outline-none transition-all duration-200 placeholder:text-slate-400 focus:ring-4";
 
     return (
-        <form
+        <>
+            <KarmassLoadingOverlay
+                open={isSubmitting}
+                message="Signing you in securely"
+                detail="We are verifying your details and preparing your account."
+            />
+            <form
             onSubmit={handleSubmit(onSubmit)}
             noValidate
             className="space-y-5"
@@ -347,6 +354,7 @@ export function LoginForm() {
                     Your next drive starts here.
                 </span>
             </div>
-        </form>
+            </form>
+        </>
     );
 }

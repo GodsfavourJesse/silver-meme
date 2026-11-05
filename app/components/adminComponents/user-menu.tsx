@@ -5,7 +5,9 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 
-import { LoaderCircle, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
+import { KarmassLogoutDialog } from "@/app/components/shared/KarmassLogoutDialog";
+import { KarmassLoadingOverlay } from "@/app/components/shared/KarmassLoadingOverlay";
 
 import {
     adminFetch,
@@ -23,6 +25,7 @@ export function UserMenu({ admin }: { admin: AdminSession }) {
     const containerRef = useRef<HTMLDivElement>(null);
 
     const [open, setOpen] = useState(false);
+    const [showLogoutDialog, setShowLogoutDialog] = useState(false);
     const [loggingOut, setLoggingOut] = useState(false);
 
     useEffect(() => {
@@ -39,16 +42,20 @@ export function UserMenu({ admin }: { admin: AdminSession }) {
     }, []);
 
     async function handleLogout(): Promise<void> {
+        if (loggingOut) return;
         setLoggingOut(true);
+        setShowLogoutDialog(false);
 
         try {
             await adminFetch("/auth/logout", { method: "POST" });
         } catch {
-            // Leave the portal even if the server call fails.
+            // Local cleanup and redirect still happen if the network is unavailable.
         } finally {
             clearAdminCsrfCache();
+            await queryClient.cancelQueries();
             queryClient.clear();
             router.replace(ADMIN_LOGIN_PATH);
+            router.refresh();
         }
     }
 
@@ -82,19 +89,32 @@ export function UserMenu({ admin }: { admin: AdminSession }) {
                     <button
                         type="button"
                         role="menuitem"
-                        onClick={handleLogout}
+                        onClick={() => {
+                            setOpen(false);
+                            setShowLogoutDialog(true);
+                        }}
                         disabled={loggingOut}
                         className="flex w-full items-center gap-3 px-4 py-3 text-sm text-kar-muted transition hover:bg-kar-surface-raised hover:text-kar-text disabled:opacity-60"
                     >
-                        {loggingOut ? (
-                            <LoaderCircle size={17} className="animate-spin" />
-                        ) : (
-                            <LogOut size={17} />
-                        )}
+                        <LogOut size={17} />
                         Sign out
                     </button>
                 </div>
             ) : null}
+
+            <KarmassLogoutDialog
+                open={showLogoutDialog}
+                isLoggingOut={loggingOut}
+                onCancel={() => setShowLogoutDialog(false)}
+                onConfirm={handleLogout}
+                title="Sign out of the admin portal?"
+                description="You will need to complete the administrator sign-in and security checks again to access the portal."
+            />
+            <KarmassLoadingOverlay
+                open={loggingOut}
+                message="Signing out of the admin portal"
+                detail="Closing your secure administrator session."
+            />
         </div>
     );
 }

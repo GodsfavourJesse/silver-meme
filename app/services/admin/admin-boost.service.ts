@@ -14,7 +14,8 @@ import type {
     AdminBoostPagination,
     AdminBoostRejectInput,
     AdminBoostReviewInput,
-} from "@/app/types/admin/admin-boost.types";
+} from "@/app/types/admin/admin-boosts/admin-boost.types";
+import { AdminBoostPlan, CreateAdminBoostPlanInput, UpdateAdminBoostPlanInput } from "@/app/types/admin/admin-boosts/adminBoostPlan.types";
 
 /**
  * The backend list response has pagination
@@ -109,6 +110,79 @@ export async function rejectAdminBoost(
             body: {
                 reviewNote: input.reviewNote,
             },
+        },
+    );
+
+    return response.data;
+}
+
+/**
+ * GET /admin/boosts/plans
+ *
+ * Retrieves all boost plans, including inactive plans.
+ */
+export async function getAdminBoostPlans(): Promise<AdminBoostPlan[]> {
+    const response = await adminFetch<AdminBoostPlan[]>(
+        "/boosts/plans",
+        {
+            method: "GET",
+        },
+    );
+
+    return response.data;
+}
+
+/**
+ * POST /admin/boosts/plans
+ *
+ * Creates a new boost plan.
+ */
+export async function createAdminBoostPlan(
+    input: CreateAdminBoostPlanInput,
+): Promise<AdminBoostPlan> {
+    const response = await adminFetch<AdminBoostPlan>(
+        "/boosts/plans",
+        {
+            method: "POST",
+            body: input,
+        },
+    );
+
+    return response.data;
+}
+
+/**
+ * PATCH /admin/boosts/plans/:planId
+ *
+ * Updates an existing boost plan.
+ */
+export async function updateAdminBoostPlan(
+    planId: string,
+    input: UpdateAdminBoostPlanInput,
+): Promise<AdminBoostPlan> {
+    const response = await adminFetch<AdminBoostPlan>(
+        `/boosts/plans/${encodeURIComponent(planId)}`,
+        {
+            method: "PATCH",
+            body: input,
+        },
+    );
+
+    return response.data;
+}
+
+/**
+ * DELETE /admin/boosts/plans/:planId
+ *
+ * Soft-deactivates a boost plan.
+ */
+export async function deactivateAdminBoostPlan(
+    planId: string,
+): Promise<AdminBoostPlan> {
+    const response = await adminFetch<AdminBoostPlan>(
+        `/boosts/plans/${encodeURIComponent(planId)}`,
+        {
+            method: "DELETE",
         },
     );
 

@@ -17,8 +17,11 @@ export function useAdminLoginForm() {
     const [password, setPassword] = useState("");
     const [formError, setFormError] = useState<string | null>(null);
     const [challengeOpen, setChallengeOpen] = useState(false);
+    const [isCompletingLogin, setIsCompletingLogin] = useState(false);
 
-    const isSubmitting = loginMutation.isPending;
+    // Keep the branded loading overlay visible through the dashboard navigation,
+    // not only while the login mutation itself is pending.
+    const isSubmitting = loginMutation.isPending || isCompletingLogin;
 
     function updateEmail(value: string): void {
         setEmail(value);
@@ -36,6 +39,8 @@ export function useAdminLoginForm() {
 
     async function handleChallengeComplete(challengeToken: string): Promise<void> {
         setFormError(null);
+        setIsCompletingLogin(true);
+
         try {
             await loginMutation.mutateAsync({
                 email: email.trim().toLowerCase(),
@@ -50,6 +55,7 @@ export function useAdminLoginForm() {
             ]);
             router.replace(ADMIN_DASHBOARD_PATH);
         } catch (error: unknown) {
+            setIsCompletingLogin(false);
             setChallengeOpen(false);
             setFormError(getAdminLoginErrorMessage(error));
         }
