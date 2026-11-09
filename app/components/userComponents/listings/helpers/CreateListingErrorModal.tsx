@@ -118,7 +118,7 @@ export function CreateListingErrorModal({
                                 ref={primaryButtonRef}
                                 type="button"
                                 onClick={onViewPlans}
-                                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#7008E7] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#5f06c7]"
+                                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#1491FF] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#0877D9]"
                             >
                                 View subscription plans
                                 <ArrowRight size={16} />
@@ -129,7 +129,7 @@ export function CreateListingErrorModal({
                             ref={primaryButtonRef}
                             type="button"
                             onClick={onClose}
-                            className="inline-flex h-11 items-center justify-center rounded-xl bg-[#7008E7] px-6 text-sm font-semibold text-white transition-colors hover:bg-[#5f06c7]"
+                            className="inline-flex h-11 items-center justify-center rounded-xl bg-[#1491FF] px-6 text-sm font-semibold text-white transition-colors hover:bg-[#0877D9]"
                         >
                             Try again
                         </button>

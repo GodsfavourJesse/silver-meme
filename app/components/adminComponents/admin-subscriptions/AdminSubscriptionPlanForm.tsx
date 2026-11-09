@@ -7,6 +7,9 @@ import {
     Save,
     Plus,
     Info,
+    Percent,
+    Users,
+    ShieldCheck,
 } from "lucide-react";
 
 import type {
@@ -33,6 +36,7 @@ interface FormState {
     currency: string;
     durationDays: string;
     listingCredits: string;
+    normalUserDiscountPercent: string;
     dealerDiscountPercent: string;
     active: boolean;
 }
@@ -44,6 +48,7 @@ const INITIAL_FORM: FormState = {
     currency: "NGN",
     durationDays: "30",
     listingCredits: "5",
+    normalUserDiscountPercent: "0",
     dealerDiscountPercent: "0",
     active: true,
 };
@@ -62,9 +67,15 @@ function getPlanFormValues(
         currency: version?.currency ?? "NGN",
         durationDays: String(version?.durationDays ?? 30),
         listingCredits: String(version?.listingCredits ?? 5),
+
+        normalUserDiscountPercent: String(
+            version?.normalUserDiscountPercent ?? 0,
+        ),
+
         dealerDiscountPercent: String(
             version?.dealerDiscountPercent ?? 0,
         ),
+
         active: plan.active,
     };
 }
@@ -96,7 +107,7 @@ function FormField({
 }
 
 const inputClass =
-    "w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#1491FF] focus:ring-4 focus:ring-blue-50";
+    "w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#1491FF] focus:ring-4 focus:ring-[#1491FF]/10";
 
 export default function AdminSubscriptionPlanForm({
     plan,
@@ -136,6 +147,11 @@ export default function AdminSubscriptionPlanForm({
         const price = Number(form.price);
         const durationDays = Number(form.durationDays);
         const listingCredits = Number(form.listingCredits);
+
+        const normalUserDiscountPercent = Number(
+            form.normalUserDiscountPercent,
+        );
+
         const dealerDiscountPercent = Number(
             form.dealerDiscountPercent,
         );
@@ -174,12 +190,23 @@ export default function AdminSubscriptionPlanForm({
         }
 
         if (
+            !Number.isFinite(normalUserDiscountPercent) ||
+            normalUserDiscountPercent < 0 ||
+            normalUserDiscountPercent > 100
+        ) {
+            setFormError(
+                "Normal-user discount must be between 0 and 100.",
+            );
+            return;
+        }
+
+        if (
             !Number.isFinite(dealerDiscountPercent) ||
             dealerDiscountPercent < 0 ||
             dealerDiscountPercent > 100
         ) {
             setFormError(
-                "Dealer discount must be between 0 and 100.",
+                "Verified-dealer discount must be between 0 and 100.",
             );
             return;
         }
@@ -192,7 +219,10 @@ export default function AdminSubscriptionPlanForm({
                 currency: form.currency,
                 durationDays,
                 listingCredits,
+
+                normalUserDiscountPercent,
                 dealerDiscountPercent,
+
                 active: form.active,
             };
 
@@ -207,6 +237,8 @@ export default function AdminSubscriptionPlanForm({
             currency: form.currency,
             durationDays,
             listingCredits,
+
+            normalUserDiscountPercent,
             dealerDiscountPercent,
         };
 
@@ -217,12 +249,16 @@ export default function AdminSubscriptionPlanForm({
         <div
             className="fixed inset-0 z-[100] flex items-end justify-center bg-gray-950/50 p-0 backdrop-blur-[2px] sm:items-center sm:p-5"
             onMouseDown={(event) => {
-                if (event.target === event.currentTarget && !isSubmitting) {
+                if (
+                    event.target === event.currentTarget &&
+                    !isSubmitting
+                ) {
                     onClose();
                 }
             }}
         >
             <div className="flex max-h-[94vh] w-full max-w-2xl flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl sm:rounded-2xl">
+
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-gray-100 px-6 py-5">
                     <div>
@@ -255,6 +291,7 @@ export default function AdminSubscriptionPlanForm({
                     onSubmit={handleSubmit}
                     className="min-h-0 space-y-6 overflow-y-auto p-6"
                 >
+                    {/* Version information */}
                     <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-4">
                         <div className="flex items-start gap-3">
                             <Info
@@ -265,13 +302,15 @@ export default function AdminSubscriptionPlanForm({
                             <p className="text-xs leading-5 text-blue-800">
                                 Plan configuration changes create a new
                                 immutable version. Existing subscriptions
-                                retain the pricing and benefits of the
-                                version they purchased.
+                                retain the pricing, discounts, and benefits
+                                of the version they purchased.
                             </p>
                         </div>
                     </div>
 
                     <div className="grid gap-5 sm:grid-cols-2">
+
+                        {/* Plan name */}
                         <div className="sm:col-span-2">
                             <FormField label="Plan name">
                                 <input
@@ -290,6 +329,7 @@ export default function AdminSubscriptionPlanForm({
                             </FormField>
                         </div>
 
+                        {/* Description */}
                         <div className="sm:col-span-2">
                             <FormField label="Description">
                                 <textarea
@@ -308,9 +348,10 @@ export default function AdminSubscriptionPlanForm({
                             </FormField>
                         </div>
 
+                        {/* Price */}
                         <FormField
                             label="Subscription price"
-                            hint="The amount customers pay for this plan."
+                            hint="Original plan price before customer discounts."
                         >
                             <input
                                 type="number"
@@ -329,6 +370,7 @@ export default function AdminSubscriptionPlanForm({
                             />
                         </FormField>
 
+                        {/* Currency */}
                         <FormField label="Currency">
                             <select
                                 value={form.currency}
@@ -343,12 +385,14 @@ export default function AdminSubscriptionPlanForm({
                                 <option value="NGN">
                                     NGN — Nigerian Naira
                                 </option>
+
                                 <option value="USD">
                                     USD — US Dollar
                                 </option>
                             </select>
                         </FormField>
 
+                        {/* Duration */}
                         <FormField
                             label="Duration"
                             hint="Number of days the subscription remains valid."
@@ -369,6 +413,7 @@ export default function AdminSubscriptionPlanForm({
                             />
                         </FormField>
 
+                        {/* Credits */}
                         <FormField
                             label="Listing credits"
                             hint="Credits granted when the subscription activates."
@@ -388,30 +433,134 @@ export default function AdminSubscriptionPlanForm({
                                 required
                             />
                         </FormField>
+                    </div>
 
-                        <div className="sm:col-span-2">
-                            <FormField
-                                label="Dealer discount (%)"
-                                hint="Discount available to eligible verified dealers."
-                            >
-                                <input
-                                    type="number"
-                                    min="0"
-                                    max="100"
-                                    step="0.01"
-                                    value={form.dealerDiscountPercent}
-                                    onChange={(event) =>
-                                        updateField(
-                                            "dealerDiscountPercent",
-                                            event.target.value,
-                                        )
-                                    }
-                                    className={inputClass}
-                                />
-                            </FormField>
+                    {/* Discount configuration */}
+                    <div className="space-y-4">
+
+                        <div>
+                            <h3 className="text-sm font-bold text-gray-900">
+                                Customer discounts
+                            </h3>
+
+                            <p className="mt-1 text-xs leading-5 text-gray-500">
+                                Configure separate discounts for normal
+                                customers and verified dealers.
+                            </p>
+                        </div>
+
+                        <div className="grid gap-4 sm:grid-cols-2">
+
+                            {/* Normal user discount */}
+                            <div className="rounded-2xl border border-blue-100 bg-[#F4F9FF] p-4">
+                                <div className="mb-4 flex items-center gap-3">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-[#1491FF] shadow-sm">
+                                        <Users size={19} />
+                                    </div>
+
+                                    <div>
+                                        <p className="text-sm font-bold text-gray-900">
+                                            Normal users
+                                        </p>
+
+                                        <p className="text-xs text-gray-500">
+                                            Standard customer discount
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <FormField
+                                    label="Discount percentage (%)"
+                                    hint="Applied to customers with normal user accounts."
+                                >
+                                    <div className="relative">
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            max="100"
+                                            step="0.01"
+                                            value={
+                                                form.normalUserDiscountPercent
+                                            }
+                                            onChange={(event) =>
+                                                updateField(
+                                                    "normalUserDiscountPercent",
+                                                    event.target.value,
+                                                )
+                                            }
+                                            placeholder="0"
+                                            className={`${inputClass} pr-11`}
+                                        />
+
+                                        <Percent
+                                            size={16}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
+                                        />
+                                    </div>
+                                </FormField>
+                            </div>
+
+                            {/* Verified dealer discount */}
+                            <div className="rounded-2xl border border-blue-100 bg-[#F4F9FF] p-4">
+                                <div className="mb-4 flex items-center gap-3">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-[#1491FF] shadow-sm">
+                                        <ShieldCheck size={19} />
+                                    </div>
+
+                                    <div>
+                                        <p className="text-sm font-bold text-gray-900">
+                                            Verified dealers
+                                        </p>
+
+                                        <p className="text-xs text-gray-500">
+                                            Dealer loyalty discount
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <FormField
+                                    label="Discount percentage (%)"
+                                    hint="Applied only to verified dealer accounts."
+                                >
+                                    <div className="relative">
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            max="100"
+                                            step="0.01"
+                                            value={
+                                                form.dealerDiscountPercent
+                                            }
+                                            onChange={(event) =>
+                                                updateField(
+                                                    "dealerDiscountPercent",
+                                                    event.target.value,
+                                                )
+                                            }
+                                            placeholder="0"
+                                            className={`${inputClass} pr-11`}
+                                        />
+
+                                        <Percent
+                                            size={16}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
+                                        />
+                                    </div>
+                                </FormField>
+                            </div>
+                        </div>
+
+                        <div className="rounded-xl border border-amber-100 bg-amber-50 px-4 py-3">
+                            <p className="text-xs leading-5 text-amber-800">
+                                <strong>Important:</strong> Unverified
+                                dealers do not receive either discount.
+                                Their subscription price remains the
+                                original plan price.
+                            </p>
                         </div>
                     </div>
 
+                    {/* Availability */}
                     {isEditing && (
                         <div className="flex items-center justify-between rounded-xl border border-gray-200 p-4">
                             <div>
@@ -451,6 +600,7 @@ export default function AdminSubscriptionPlanForm({
                         </div>
                     )}
 
+                    {/* Error */}
                     {formError && (
                         <div
                             role="alert"
@@ -460,6 +610,7 @@ export default function AdminSubscriptionPlanForm({
                         </div>
                     )}
 
+                    {/* Actions */}
                     <div className="flex flex-col-reverse gap-3 border-t border-gray-100 pt-5 sm:flex-row sm:justify-end">
                         <button
                             type="button"

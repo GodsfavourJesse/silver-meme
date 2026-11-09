@@ -55,10 +55,13 @@ export function MarketplaceListingSkeleton() {
 function formatCondition(condition?: string | null): string | null {
     if (!condition) return null;
 
-    return condition
-        .toLowerCase()
-        .replaceAll("_", " ")
-        .replace(/\b\w/g, (letter) => letter.toUpperCase());
+    const labels: Record<string, string> = {
+        BRAND_NEW: "Brand New",
+        FOREIGN_USED: "Foreign Used",
+        NIGERIAN_USED: "Nigerian Used",
+    };
+
+    return labels[condition] ?? condition.replaceAll("_", " ");
 }
 
 export function MarketplaceListingCard({

@@ -144,8 +144,11 @@ export async function createAdminSubscriptionPlan(
  * Update an existing subscription plan.
  *
  * Configuration changes such as price, duration,
- * listing credits and dealer discount create a
- * new immutable plan version in the backend.
+ * listing credits, normal-user discount and dealer
+ * discount create a new immutable plan version.
+ *
+ * Normal-user and dealer discounts are independently
+ * configurable.
  *
  * PATCH /api/v1/admin/subscriptions/subscription-plans/:planId
  */

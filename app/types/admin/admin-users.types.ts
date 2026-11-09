@@ -99,14 +99,54 @@ export interface AdminUserListing {
     createdAt: string;
 }
 
+// ============================================================
+// LISTING CREDITS
+// ============================================================
+
+export interface AdminUserCreditSourceBalance {
+    total: number;
+    used: number;
+    remaining: number;
+}
+
+export interface AdminUserCreditBreakdown {
+    free: AdminUserCreditSourceBalance;
+    subscribed: AdminUserCreditSourceBalance;
+    adjustment: AdminUserCreditSourceBalance;
+    totalRemaining: number;
+}
+
+// ============================================================
+// SUBSCRIPTION HISTORY
+// ============================================================
+
 export interface AdminUserSubscription {
     id: string;
+    planId: string;
+    planVersionId: string | null;
+
+    planName: string | null;
+    planVersion: number | null;
+
     status: string;
+
+    originalPrice: string | number;
+    dealerDiscountPercent: string | number | null;
     effectivePrice: string | number;
     currency: string;
+
+    durationDays: number;
+    listingCredits: number;
+
     startsAt: string | null;
     expiresAt: string | null;
+    cancelledAt: string | null;
+    cancellationReason: string | null;
+
+    previousSubscriptionId: string | null;
+
     createdAt: string;
+    updatedAt: string;
 }
 
 export interface AdminUserPayment {
@@ -136,6 +176,7 @@ export interface AdminUserRelatedData {
 }
 
 export interface AdminUserDetails extends AdminUser {
+    credits: AdminUserCreditBreakdown;
     related: AdminUserRelatedData;
 }
 

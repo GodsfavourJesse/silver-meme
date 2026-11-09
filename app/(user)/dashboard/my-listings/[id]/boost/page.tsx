@@ -72,9 +72,6 @@ import type {
     ListingImageRecord,
 } from "@/app/types/user/listings/listing-image.types";
 
-import type {
-    SellerListingDetailResponse,
-} from "@/app/types/user/listings/listing-editor.types";
 import { useVerifyBoostPayment } from "@/app/hooks/user/boost/useVerifyBoostpayment";
 import BoostPlanCard from "@/app/components/userComponents/boost/BoostPlanCard";
 import BoostPaymentSummary from "@/app/components/userComponents/boost/BoostPaymentSummary";
@@ -459,7 +456,12 @@ function BoostListingContent() {
             return;
         }
 
-        if (!selectedPlan) {
+        const hasPendingBoost =
+            currentBoost?.status === "PENDING";
+
+        // A plan is only required when creating a new boost.
+        // An existing pending boost already has its plan snapshot.
+        if (!hasPendingBoost && !selectedPlan) {
             setActionError(
                 "Please select a boost plan before continuing.",
             );
@@ -485,11 +487,18 @@ function BoostListingContent() {
         setActionError(null);
 
         try {
-            // Reuse an existing pending boost instead of creating
-            // a second boost for the same listing.
-            let boostId = currentBoost?.id;
+            let boostId: string;
 
-            if (!boostId) {
+            if (hasPendingBoost && currentBoost) {
+                // Preserve and reuse the existing pending boost.
+                boostId = currentBoost.id;
+            } else {
+                if (!selectedPlan) {
+                    throw new Error(
+                        "Please select a boost plan.",
+                    );
+                }
+
                 const boost = await createBoost.mutateAsync({
                     listingId,
                     boostPlanId: selectedPlan.id,
@@ -501,9 +510,29 @@ function BoostListingContent() {
             const payment =
                 await initializePayment.mutateAsync(boostId);
 
+            if (payment.status === "SUCCESS") {
+                setPaymentVerified(true);
+
+                await Promise.all([
+                    listingQuery.refetch(),
+                    historyQuery.refetch(),
+                ]);
+
+                return;
+            }
+
+            if (
+                payment.status === "FAILED" ||
+                payment.status === "ABANDONED"
+            ) {
+                throw new Error(
+                    "The previous payment attempt has ended. Please retry payment.",
+                );
+            }
+
             if (!payment.authorizationUrl) {
                 throw new Error(
-                    "The payment provider did not return a payment URL. Please try again.",
+                    "Your existing payment session is being recovered. Please try again shortly. Do not create another boost request.",
                 );
             }
 

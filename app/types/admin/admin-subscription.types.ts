@@ -2,7 +2,10 @@
    ADMIN SUBSCRIPTION STATUS
 ========================================= */
 
-import { SubscriptionPlanVersion, SubscriptionStatus } from "../user/subscription/subscription.types";
+import {
+    SubscriptionPlanVersion,
+    SubscriptionStatus,
+} from "../user/subscription/subscription.types";
 
 export type AdminSubscriptionStatus = SubscriptionStatus;
 
@@ -50,7 +53,11 @@ export interface AdminSubscription {
     status: AdminSubscriptionStatus;
 
     originalPrice: string;
+
+    normalUserDiscountPercent: string;
     dealerDiscountPercent: string;
+    appliedDiscountPercent: string;
+
     effectivePrice: string;
     currency: string;
 
@@ -105,6 +112,8 @@ export interface CreateAdminSubscriptionPlanPayload {
     currency?: string;
     durationDays: number;
     listingCredits: number;
+
+    normalUserDiscountPercent?: number;
     dealerDiscountPercent?: number;
 }
 
@@ -123,7 +132,10 @@ export interface UpdateAdminSubscriptionPlanPayload {
     currency?: string;
     durationDays?: number;
     listingCredits?: number;
+
+    normalUserDiscountPercent?: number;
     dealerDiscountPercent?: number;
+
     active?: boolean;
 }
 

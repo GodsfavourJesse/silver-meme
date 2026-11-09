@@ -95,6 +95,18 @@ export function formatMileage(mileage?: number | null) {
     return `${mileage.toLocaleString("en-NG")} km`;
 }
 
+export function getConditionLabel(condition?: string | null) {
+    if (!condition) return "Not specified";
+
+    const labels: Record<string, string> = {
+        BRAND_NEW: "Brand New",
+        FOREIGN_USED: "Foreign Used",
+        NIGERIAN_USED: "Nigerian Used",
+    };
+
+    return labels[condition] ?? condition.replaceAll("_", " ");
+}
+
 export function getStatusLabel(status: string) {
     const labels: Record<string, string> = {
         DRAFT: "Draft",

@@ -1,3 +1,7 @@
+import type {
+    VehicleCondition,
+} from "./listing-form.types";
+
 export type ListingStatus =
     | "DRAFT"
     | "PENDING_REVIEW"
@@ -19,6 +23,43 @@ export type ListingLifecycleAction =
     | "RESTORE"
     | "REACTIVATE"
     | "DELETE";
+
+export type ListingCreditSource =
+    | "FREE_TRIAL"
+    | "SUBSCRIPTION_CREDIT"
+    | "ADMIN_ADJUSTMENT";
+
+export interface ListingCreditPool {
+    total: number;
+    used: number;
+    remaining: number;
+}
+
+export interface ListingCreditBreakdown {
+    total: number;
+    used: number;
+    remaining: number;
+
+    free: ListingCreditPool;
+    subscription: ListingCreditPool;
+    adjustment: ListingCreditPool;
+}
+
+export interface ListingCreditConsumption {
+    consumed: boolean;
+    inserted: boolean;
+
+    consumedSource: ListingCreditSource | null;
+
+    remaining: ListingCreditBreakdown;
+
+    subscriptionCreditsExhausted: boolean;
+
+    freeCreditsRemaining: number;
+    subscriptionCreditsRemaining: number;
+    adjustmentCreditsRemaining: number;
+    totalRemaining: number;
+}
 
 export interface ListingSummary {
     DRAFT: number;
@@ -108,20 +149,69 @@ export interface SellerListingImageAnalysis {
 export interface ListingRecord {
     id: string;
     sellerId: string;
-    vehicleVariantId: string;
+
+    /*
+     * Catalogue reference.
+     *
+     * Null means the seller entered the vehicle manually.
+     */
+
+    vehicleVariantId: string | null;
+
+    /*
+     * Vehicle identity snapshots.
+     */
+
+    makeName: string;
+    modelName: string;
+    year: number;
+
+    generationName: string | null;
+    variantName: string | null;
+
+    /*
+     * Vehicle specification snapshots.
+     */
+
+    bodyStyle: string | null;
+    fuelType: string | null;
+    transmission: string | null;
+    driveType: string | null;
+
+    engineCapacity: number | null;
+    horsepower: number | null;
+
+    exteriorColor: string | null;
+    interiorColor: string | null;
+
+    seats: number | null;
+    doors: number | null;
+
+    specifications?: Record<string, unknown> | null;
+
+    /*
+     * Listing details.
+     */
+
     title: string;
     description: string;
+
     price: string | number;
     currency: string;
+
     mileage: number | null;
-    condition: "NEW" | "USED";
+    condition: VehicleCondition;
+
     country: string;
     state: string | null;
     city: string | null;
+
     status: ListingStatus;
+
     rejectionReason?: string | null;
     publishedAt?: string | null;
     expiresAt?: string | null;
+
     createdAt: string;
     updatedAt: string;
 }
@@ -129,10 +219,15 @@ export interface ListingRecord {
 export interface SellerListingItem {
     listing: ListingRecord;
 
-    vehicleVariant: ListingVehicleVariant;
-    vehicleGeneration: ListingVehicleGeneration;
-    vehicleModel: ListingVehicleModel;
-    vehicleMake: ListingVehicleMake;
+    /*
+     * Catalogue relations are optional because manually
+     * entered listings do not have these relations.
+     */
+
+    vehicleVariant?: ListingVehicleVariant | null;
+    vehicleGeneration?: ListingVehicleGeneration | null;
+    vehicleModel?: ListingVehicleModel | null;
+    vehicleMake?: ListingVehicleMake | null;
 
     coverImage?: ListingImage | null;
 
@@ -161,8 +256,11 @@ export interface SellerListingsResponse {
 export interface ListingMutationResponse {
     success: boolean;
     message?: string;
+
     data?: {
         listing?: ListingRecord;
+        replayed?: boolean;
+        creditConsumption?: ListingCreditConsumption | null;
     };
 }
 
@@ -179,4 +277,3 @@ export interface ListingStatusOption {
     label: string;
     value: ListingStatus | "ALL";
 }
-

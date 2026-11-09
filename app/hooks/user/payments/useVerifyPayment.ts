@@ -1,10 +1,27 @@
-import { verifySubscriptionPayment } from "@/app/services/user/payment/payment.service";
-import { FulfilledPaymentResult } from "@/app/types/user/subscription/subscription.types";
 import {
     useMutation,
     useQueryClient,
 } from "@tanstack/react-query";
-import { currentSubscriptionKeys } from "../subscriptions/useCurrentSubscription";
+
+import {
+    verifySubscriptionPayment,
+} from "@/app/services/user/payment/payment.service";
+
+import type {
+    FulfilledPaymentResult,
+} from "@/app/types/user/subscription/subscription.types";
+
+import {
+    currentSubscriptionKeys,
+} from "../subscriptions/useCurrentSubscription";
+
+import {
+    boostKeys,
+} from "../boost/useBoost";
+
+import {
+    paymentHistoryKeys,
+} from "./usePaymentHistory";
 
 export function useVerifyPayment() {
     const queryClient = useQueryClient();
@@ -27,7 +44,11 @@ export function useVerifyPayment() {
                 }),
 
                 queryClient.invalidateQueries({
-                    queryKey: ["payments", "history"],
+                    queryKey: boostKeys.all,
+                }),
+
+                queryClient.invalidateQueries({
+                    queryKey: paymentHistoryKeys.all,
                 }),
             ]);
         },

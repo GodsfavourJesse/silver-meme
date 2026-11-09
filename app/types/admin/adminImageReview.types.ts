@@ -18,8 +18,9 @@ export type AdminImageReviewSort =
     | "newest";
 
 export type AdminListingCondition =
-    | "NEW"
-    | "USED";
+    | "BRAND_NEW"
+    | "FOREIGN_USED"
+    | "NIGERIAN_USED";
 
 export type AdminSellerAccountType =
     | "USER"

@@ -153,6 +153,12 @@ export default function MobileBottomNav() {
                 icon: CreditCard,
             },
 
+            {
+                          label: "Boost History",
+                          href: "/dashboard/boost-history",
+                          icon: Rocket,
+                      },
+
             // Dealer-specific navigation.
             ...(isDealer
                 ? [
@@ -161,11 +167,11 @@ export default function MobileBottomNav() {
                           href: "/dashboard/dealer",
                           icon: Building2,
                       },
-                      {
-                          label: "Boost History",
-                          href: "/dashboard/boost-history",
-                          icon: Rocket,
-                      },
+                    //   {
+                    //       label: "Boost History",
+                    //       href: "/dashboard/boost-history",
+                    //       icon: Rocket,
+                    //   },
                   ]
                 : [
                       {

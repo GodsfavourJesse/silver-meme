@@ -1,24 +1,24 @@
 "use client";
 
-import { useMarketplaceSearch } from "@/app/hooks/user/useMarketplaceSearch";
+import { useHomepageVehicles } from "@/app/hooks/user/homepage/useHomePageVehicles";
 import { DesktopHome } from "./Desktop/DesktopHome";
 import { MobileHome } from "./Mobile/MobileHome";
 
-export type MarketplaceHomeState = ReturnType<
-    typeof useMarketplaceSearch
->;
-
 export function MarketplaceHomeClient() {
-    const marketplace = useMarketplaceSearch();
+    const homepageVehicles = useHomepageVehicles();
 
     return (
         <>
             <div className="hidden md:block">
-                <DesktopHome marketplace={marketplace} />
+                <DesktopHome
+                    homepageVehicles={homepageVehicles}
+                />
             </div>
 
             <div className="block md:hidden">
-                <MobileHome marketplace={marketplace} />
+                <MobileHome
+                    homepageVehicles={homepageVehicles}
+                />
             </div>
         </>
     );

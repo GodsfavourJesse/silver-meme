@@ -1,11 +1,6 @@
-import type { MarketplaceSearchParams } from "@/app/types/user/marketplace.types";
+import type { MarketplaceCondition, MarketplaceSearchParams } from "@/app/types/user/marketplace.types";
 
-/*
- * ============================================================
- * CONSTANTS
- * ============================================================
- */
-
+// CONSTANTS
 export const PAGE_SIZE = 12;
 
 export type SortOption = NonNullable<MarketplaceSearchParams["sort"]>;
@@ -33,22 +28,27 @@ export const SORT_OPTIONS: {
 ];
 
 export const CONDITION_OPTIONS = [
-    "NEW",
+    "BRAND_NEW",
     "FOREIGN_USED",
     "NIGERIAN_USED",
-];
+] as const satisfies readonly MarketplaceCondition[];
 
 export const FUEL_OPTIONS = [
     "PETROL",
     "DIESEL",
-    "ELECTRIC",
     "HYBRID",
+    "PLUG_IN_HYBRID",
+    "ELECTRIC",
+    "CNG",
+    "LPG",
 ];
 
 export const TRANSMISSION_OPTIONS = [
     "AUTOMATIC",
     "MANUAL",
     "CVT",
+    "DCT",
+    "AMT",
 ];
 
 export const BODY_STYLE_OPTIONS = [
@@ -59,7 +59,10 @@ export const BODY_STYLE_OPTIONS = [
     "TRUCK",
     "VAN",
     "WAGON",
+    "MPV",
+    "PICKUP",
     "CONVERTIBLE",
+    "BUS",
 ];
 
 /*
@@ -83,7 +86,7 @@ export type MarketplaceFilterState = {
     minYear: string;
     maxYear: string;
 
-    condition: string;
+    condition: MarketplaceCondition | "";
     fuelType: string;
     transmission: string;
     bodyStyle: string;
@@ -124,6 +127,17 @@ export const INITIAL_FILTERS: MarketplaceFilterState = {
 
 export type MarketplaceFilterKey = keyof MarketplaceFilterState;
 
+function isMarketplaceCondition(
+    value: string | null,
+): value is MarketplaceCondition {
+    return (
+        value === "BRAND_NEW" ||
+        value === "FOREIGN_USED" ||
+        value === "NIGERIAN_USED"
+    );
+}
+
+
 export function countActiveFilters(
     filters: MarketplaceFilterState,
 ): number {
@@ -150,18 +164,23 @@ export function countActiveFilters(
 
 function formatOptionLabel(value: string): string {
     const labels: Record<string, string> = {
-        NEW: "Brand new",
-        FOREIGN_USED: "Foreign used",
-        NIGERIAN_USED: "Nigerian used",
+        BRAND_NEW: "Brand New",
+        FOREIGN_USED: "Foreign Used",
+        NIGERIAN_USED: "Nigerian Used",
 
         PETROL: "Petrol",
         DIESEL: "Diesel",
         ELECTRIC: "Electric",
         HYBRID: "Hybrid",
+        PLUG_IN_HYBRID: "Plug-in hybrid",
+        CNG: "CNG",
+        LPG: "LPG",
 
         AUTOMATIC: "Automatic",
         MANUAL: "Manual",
         CVT: "CVT",
+        DCT: "DCT",
+        AMT: "AMT",
 
         SUV: "SUV",
         SEDAN: "Sedan",
@@ -170,7 +189,10 @@ function formatOptionLabel(value: string): string {
         TRUCK: "Truck",
         VAN: "Van",
         WAGON: "Wagon",
+        MPV: "MPV",
+        PICKUP: "Pickup",
         CONVERTIBLE: "Convertible",
+        BUS: "Bus",
     };
 
     return (
@@ -456,9 +478,6 @@ export function buildSearchParams(
 
     /*
      * Vehicle catalog IDs.
-     *
-     * generationId is intentionally not submitted because
-     * MarketplaceSearchParams does not currently support it.
      */
 
     if (filters.makeId) {
@@ -467,6 +486,10 @@ export function buildSearchParams(
 
     if (filters.modelId) {
         params.modelId = filters.modelId;
+    }
+
+    if (filters.generationId) {
+        params.generationId = filters.generationId;
     }
 
     if (filters.variantId) {
@@ -584,6 +607,13 @@ export function readFiltersFromUrl(): {
         window.location.search,
     );
 
+    const requestedCondition = params.get("condition");
+
+    const condition: MarketplaceCondition | "" =
+        isMarketplaceCondition(requestedCondition)
+            ? requestedCondition
+            : "";
+
     const filters: MarketplaceFilterState = {
         makeId: params.get("makeId") ?? "",
         modelId: params.get("modelId") ?? "",
@@ -599,7 +629,7 @@ export function readFiltersFromUrl(): {
         minYear: params.get("minYear") ?? "",
         maxYear: params.get("maxYear") ?? "",
 
-        condition: params.get("condition") ?? "",
+        condition,
         fuelType: params.get("fuelType") ?? "",
         transmission: params.get("transmission") ?? "",
         bodyStyle: params.get("bodyStyle") ?? "",
@@ -627,7 +657,7 @@ export function readFiltersFromUrl(): {
         filters,
         sort: validSort
             ? (requestedSort as SortOption)
-            : "newest",
+            : (params.get("q")?.trim() ? "relevance" : "newest"),
         page:
             Number.isInteger(requestedPage) &&
             requestedPage > 0

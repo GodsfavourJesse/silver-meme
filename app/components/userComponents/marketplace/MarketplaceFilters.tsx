@@ -220,16 +220,16 @@ function CatalogSelect<T extends { id: string }>({
     );
 }
 
-function FilterSelect({
+function FilterSelect<T extends string>({
     label,
     value,
     options,
     onChange,
 }: {
     label: string;
-    value: string;
-    options: string[];
-    onChange: (value: string) => void;
+    value: T | "";
+    options: readonly T[];
+    onChange: (value: T | "") => void;
 }) {
     const selectId = `marketplace-filter-${label
         .toLowerCase()
@@ -248,7 +248,9 @@ function FilterSelect({
                 <select
                     id={selectId}
                     value={value}
-                    onChange={(event) => onChange(event.target.value)}
+                    onChange={(event) =>
+                        onChange(event.target.value as T | "")
+                    }
                     className={SELECT_CLASS}
                 >
                     <option value="">

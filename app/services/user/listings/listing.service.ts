@@ -141,6 +141,22 @@ export async function updateSellerListing(
     input: Partial<Pick<
         ListingRecord,
         | "vehicleVariantId"
+        | "makeName"
+        | "modelName"
+        | "year"
+        | "generationName"
+        | "variantName"
+        | "bodyStyle"
+        | "fuelType"
+        | "transmission"
+        | "driveType"
+        | "engineCapacity"
+        | "horsepower"
+        | "exteriorColor"
+        | "interiorColor"
+        | "seats"
+        | "doors"
+        | "specifications"
         | "title"
         | "description"
         | "price"
@@ -152,6 +168,10 @@ export async function updateSellerListing(
         | "city"
     >>,
 ): Promise<ListingMutationResponse> {
+    if (!listingId.trim()) {
+        throw new Error("A listing ID is required.");
+    }
+
     const csrfToken = await getUserCsrfToken();
 
     return apiRequest<ListingMutationResponse>(
@@ -321,12 +341,6 @@ export async function getSellerListingDetail(
             method: "GET",
         },
     );
-
-    console.log(
-        "[getSellerListingDetail] Response:",
-        response,
-    );
-
     return response;
 }
 

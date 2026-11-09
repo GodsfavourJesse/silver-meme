@@ -37,9 +37,15 @@ export async function initializeSubscriptionPayment(
         },
     });
 
-    if (!response.success || !response.data?.reference) {
+    if (
+        !response.success ||
+        !response.data?.paymentId ||
+        !response.data?.reference ||
+        !response.data?.status
+    ) {
         throw new Error(
-            response.message ?? "Unable to initialize subscription payment.",
+            response.message ??
+            "Unable to initialize subscription payment.",
         );
     }
 
@@ -135,7 +141,12 @@ export async function initializeBoostPayment(
         },
     });
 
-    if (!response.success || !response.data) {
+    if (
+        !response.success ||
+        !response.data?.paymentId ||
+        !response.data?.reference ||
+        !response.data?.status
+    ) {
         throw new Error(
             response.message || "Unable to initialize boost payment.",
         );

@@ -202,57 +202,127 @@ export function MobileMarketplace() {
 
     return (
         <main className="min-h-screen overflow-x-clip bg-[#F7F9FC] pb-[calc(8rem+env(safe-area-inset-bottom))] text-slate-950">
-            {/* ================================================== */}
-            {/* MOBILE HEADER */}
-            {/* ================================================== */}
 
-            <header className="sticky top-0 z-30 border-b border-slate-200/70 bg-white/95 backdrop-blur-xl">
-                <div className="mx-auto flex h-[66px] max-w-7xl items-center justify-between px-4 sm:px-6">
+            {/* BLUE MARKETPLACE HEADER */}
+            <header className="relative z-30 bg-[#1491FF] text-white shadow-[0_5px_20px_rgba(0,95,185,0.12)]">
+
+                {/* TOP NAVIGATION */}
+                <div className="flex items-center justify-between gap-3 px-5 pb-3 pt-[max(13px,env(safe-area-inset-top))]">
+
                     <Link
                         href="/"
                         aria-label="KARMASS home"
                         className="group flex min-w-0 items-center gap-2.5"
                     >
-                        <span
-                            className="
-                                flex h-10 w-10 shrink-0
-                                items-center justify-center
-                                border border-[#E6EDF5] bg-white
-                                text-[16px] font-semibold
-                                tracking-[-0.08em]
-                                text-[#1491FF]
-                                transition-colors
-                                group-hover:border-[#1491FF]
-                            "
-                        >
+                        <span className="
+                            flex h-10 w-10 shrink-0
+                            items-center justify-center
+                            rounded-[13px] bg-white
+                            text-[17px] font-extrabold
+                            tracking-[-0.08em] text-[#1491FF]
+                            shadow-[0_5px_14px_rgba(0,65,130,0.16)]
+                            transition-transform group-hover:scale-[1.03]
+                        ">
                             K.
                         </span>
 
                         <span className="min-w-0">
-                            <span className="block text-[15px] font-semibold leading-5 tracking-[0.15em] text-[#20201F]">
+                            <span className="block text-[14px] font-extrabold leading-5 tracking-[0.13em] text-white">
                                 KARMASS
                             </span>
 
-                            <span className="mt-0.5 block text-[8px] font-medium uppercase tracking-[0.17em] text-[#8491A3]">
+                            <span className="mt-0.5 block text-[8px] font-semibold uppercase tracking-[0.16em] text-white/75">
                                 Find your drive
                             </span>
                         </span>
                     </Link>
 
                     <Link
-                        href="/login"
-                        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-[#1491FF] px-3.5 text-xs font-bold text-white shadow-sm shadow-blue-500/15 transition hover:bg-[#0876D1] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100"
+                        href="/sell"
+                        className="
+                            inline-flex min-h-10 shrink-0 items-center
+                            justify-center rounded-xl
+                            border border-white/25 bg-white/10
+                            px-3.5 text-[11px] font-bold text-white
+                            transition hover:bg-white/20
+                            active:scale-[0.98]
+                        "
                     >
-                        Sell your car
+                        Sell a car
                     </Link>
+                </div>
+
+                {/* SEARCH BAR */}
+                <div className="px-4 pb-5 pt-4">
+                    <form
+                        onSubmit={handleSearch}
+                        role="search"
+                        className="
+                            flex min-h-[54px] items-center gap-2
+                            rounded-[15px] bg-white
+                            p-1.5 pl-4
+                            shadow-[0_6px_20px_rgba(0,50,110,0.13)]
+                            transition-all
+                            focus-within:ring-2 focus-within:ring-white/30
+                        "
+                    >
+                        <Search
+                            size={19}
+                            className="shrink-0 text-[#8292A6]"
+                        />
+
+                        <input
+                            value={query}
+                            onChange={(event) => setQuery(event.target.value)}
+                            placeholder="Search make, model or location"
+                            aria-label="Search vehicles"
+                            autoComplete="off"
+                            enterKeyHint="search"
+                            className="
+                                min-w-0 flex-1 bg-transparent
+                                py-2 text-[12px] font-medium
+                                text-[#243247] outline-none
+                                placeholder:text-[#9AA5B4]
+                            "
+                        />
+
+                        {query && (
+                            <button
+                                type="button"
+                                onClick={clearSearch}
+                                aria-label="Clear search"
+                                className="
+                                    flex h-8 w-8 shrink-0
+                                    items-center justify-center
+                                    rounded-full text-[#8491A3]
+                                    transition hover:bg-gray-100
+                                "
+                            >
+                                <X size={15} />
+                            </button>
+                        )}
+
+                        <button
+                            type="submit"
+                            aria-label="Search vehicles"
+                            className="
+                                flex h-10 w-10 shrink-0
+                                items-center justify-center
+                                rounded-xl bg-[#1491FF]
+                                text-white shadow-sm
+                                transition hover:bg-[#0877D9]
+                                active:scale-95
+                            "
+                        >
+                            <Search size={18} strokeWidth={2.2} />
+                        </button>
+                    </form>
                 </div>
             </header>
 
             <div className="mx-auto max-w-7xl px-4 pt-5 sm:px-6 sm:pt-7 lg:px-8">
-                {/* ================================================== */}
+    
                 {/* BREADCRUMB */}
-                {/* ================================================== */}
-
                 {/* <nav aria-label="Breadcrumb">
                     <Link
                         href="/"
@@ -267,37 +337,9 @@ export function MobileMarketplace() {
                     </Link>
                 </nav> */}
 
-                {/* ================================================== */}
-                {/* PAGE INTRODUCTION */}
-                {/* ================================================== */}
-
-                <section className="mt-5">
-                    {/* <div className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5">
-                        <span className="size-1.5 rounded-full bg-[#1491FF]" />
-
-                        <span className="text-[10px] font-bold uppercase tracking-[0.13em] text-[#0876D1]">
-                            KARMASS Marketplace
-                        </span>
-                    </div> */}
-
-                    <h1 className="mt-3 text-[27px] font-bold leading-[1.18] tracking-[-0.045em] text-slate-950 sm:text-3xl">
-                        Find a car that
-                        <span className="block text-[#1491FF]">
-                            feels right.
-                        </span>
-                    </h1>
-
-                    <p className="mt-2.5 max-w-sm text-[13px] leading-[1.8] text-slate-500 sm:text-sm">
-                        Discover cars for every journey, from trusted sellers
-                        across Nigeria.
-                    </p>
-                </section>
-
-                {/* ================================================== */}
+    
                 {/* SEARCH BAR */}
-                {/* ================================================== */}
-
-                <form
+                {/* <form
                     onSubmit={handleSearch}
                     role="search"
                     className="mt-5 flex items-center gap-2 rounded-2xl border border-slate-200/90 bg-white p-1.5 shadow-[0_4px_20px_rgba(15,23,42,0.035)] transition focus-within:border-[#1491FF]/70 focus-within:ring-4 focus-within:ring-blue-100/70"
@@ -334,12 +376,9 @@ export function MobileMarketplace() {
                     >
                         <Search size={18} strokeWidth={2.2} />
                     </button>
-                </form>
+                </form> */}
 
-                {/* ================================================== */}
                 {/* RESULTS SUMMARY */}
-                {/* ================================================== */}
-
                 <section
                     aria-label="Marketplace results"
                     className="mt-7"
@@ -389,9 +428,9 @@ export function MobileMarketplace() {
                         )}
                     </div>
 
-                    {/* ================================================== */}
+        
                     {/* RESULTS */}
-                    {/* ================================================== */}
+        
 
                     <div className="mt-4">
                         <MarketplaceResultsPanel
@@ -413,9 +452,9 @@ export function MobileMarketplace() {
                 </section>
             </div>
 
-            {/* ================================================== */}
+
             {/* FLOATING FILTER BUTTON */}
-            {/* ================================================== */}
+
 
             <button
                 ref={filterTriggerRef}
@@ -455,9 +494,9 @@ export function MobileMarketplace() {
                 )}
             </button>
 
-            {/* ================================================== */}
+
             {/* FILTER DIALOG */}
-            {/* ================================================== */}
+
 
             {mounted &&
                 filtersOpen &&

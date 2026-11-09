@@ -2,12 +2,12 @@
 
 import {
     CheckCircle2,
-    Clock3,
     Edit3,
     Layers3,
-    MoreHorizontal,
     Power,
     Tag,
+    Users,
+    BadgeCheck,
 } from "lucide-react";
 
 import type {
@@ -55,6 +55,34 @@ function StatusBadge({
     );
 }
 
+function DiscountBadge({
+    percent,
+    type,
+}: {
+    percent: number | string | undefined;
+    type: "normal" | "dealer";
+}) {
+    const value = Number(percent ?? 0);
+
+    return (
+        <span
+            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold ${
+                value > 0
+                    ? "bg-blue-50 text-[#0877D9]"
+                    : "bg-gray-100 text-gray-500"
+            }`}
+        >
+            {type === "normal" ? (
+                <Users size={13} />
+            ) : (
+                <BadgeCheck size={13} />
+            )}
+
+            {value}%
+        </span>
+    );
+}
+
 function TableSkeleton() {
     return (
         <div className="divide-y divide-gray-100">
@@ -92,7 +120,7 @@ export default function AdminSubscriptionPlansTable({
                     </h2>
 
                     <p className="mt-1 text-sm text-gray-500">
-                        Manage your subscription offerings and pricing.
+                        Manage your subscription offerings, pricing and discounts.
                     </p>
                 </div>
 
@@ -128,9 +156,16 @@ export default function AdminSubscriptionPlansTable({
                                     <th className="px-6 py-4">Price</th>
                                     <th className="px-6 py-4">Duration</th>
                                     <th className="px-6 py-4">Credits</th>
-                                    <th className="px-6 py-4">Dealer discount</th>
+                                    <th className="px-6 py-4">
+                                        Normal user discount
+                                    </th>
+                                    <th className="px-6 py-4">
+                                        Dealer discount
+                                    </th>
                                     <th className="px-6 py-4">Status</th>
-                                    <th className="px-6 py-4 text-right">Action</th>
+                                    <th className="px-6 py-4 text-right">
+                                        Action
+                                    </th>
                                 </tr>
                             </thead>
 
@@ -187,13 +222,17 @@ export default function AdminSubscriptionPlansTable({
                                             </td>
 
                                             <td className="px-6 py-5">
-                                                <span className="inline-flex items-center gap-1.5 text-sm text-gray-700">
-                                                    <Tag
-                                                        size={14}
-                                                        className="text-gray-400"
-                                                    />
-                                                    {version?.dealerDiscountPercent ?? 0}%
-                                                </span>
+                                                <DiscountBadge
+                                                    percent={version?.normalUserDiscountPercent}
+                                                    type="normal"
+                                                />
+                                            </td>
+
+                                            <td className="px-6 py-5">
+                                                <DiscountBadge
+                                                    percent={version?.dealerDiscountPercent}
+                                                    type="dealer"
+                                                />
                                             </td>
 
                                             <td className="px-6 py-5">
@@ -279,12 +318,28 @@ export default function AdminSubscriptionPlansTable({
 
                                         <div>
                                             <p className="text-xs text-gray-400">
-                                                Dealer discount
+                                                Normal user discount
                                             </p>
 
-                                            <p className="mt-1 font-semibold text-gray-900">
-                                                {version?.dealerDiscountPercent ?? 0}%
+                                            <div className="mt-1">
+                                                <DiscountBadge
+                                                    percent={version?.normalUserDiscountPercent}
+                                                    type="normal"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <p className="text-xs text-gray-400">
+                                                Verified dealer discount
                                             </p>
+
+                                            <div className="mt-1">
+                                                <DiscountBadge
+                                                    percent={version?.dealerDiscountPercent}
+                                                    type="dealer"
+                                                />
+                                            </div>
                                         </div>
                                     </div>
 

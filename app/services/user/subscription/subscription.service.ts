@@ -50,8 +50,12 @@ export async function getCurrentSubscription() {
 /**
  * Fetch personalized pricing for a subscription plan.
  *
- * The backend determines dealer eligibility and applies
- * the appropriate discount for verified dealers.
+ * The backend determines the user's account type and
+ * eligibility, then applies the appropriate discount:
+ *
+ * - Normal users: normalUserDiscountPercent.
+ * - Verified dealers: dealerDiscountPercent.
+ * - Unverified dealers: 0% discount.
  *
  * GET /api/v1/subscriptions/plans/:planId/price
  */

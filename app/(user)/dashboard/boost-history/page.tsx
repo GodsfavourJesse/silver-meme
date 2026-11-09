@@ -641,7 +641,7 @@ function BoostHistoryCard({
                         className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#1491FF]/20 bg-[#F4F9FF] px-3.5 py-2.5 text-xs font-bold text-[#0877D9] transition hover:border-[#1491FF] hover:bg-[#EAF5FF]"
                     >
                         {canContinuePayment
-                            ? "Complete payment"
+                            ? "Resume payment"
                             : canBoostAgain
                                 ? "Boost again"
                                 : "View boost"}

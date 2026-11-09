@@ -158,11 +158,34 @@ export default function BoostListingModal({
                 boostId,
             );
 
-            if (!payment.authorizationUrl) {
+            if (payment.status === "SUCCESS") {
+                toast.success(
+                    "Your boost payment has already been completed.",
+                );
+
+                window.location.assign(
+                    "/dashboard/boost-history",
+                );
+
+                return;
+            }
+
+            if (
+                payment.status === "FAILED" ||
+                payment.status === "ABANDONED"
+            ) {
                 throw new Error(
-                    "The payment provider did not return a checkout URL. Please try again.",
+                    "The previous payment attempt has ended. Please try initializing payment again.",
                 );
             }
+
+            if (!payment.authorizationUrl) {
+                throw new Error(
+                    "Your boost payment session is being recovered. Please retry shortly. Your existing boost request has been preserved.",
+                );
+            }
+
+            toast.success("Redirecting to secure checkout...");
 
             window.location.assign(
                 payment.authorizationUrl,
@@ -177,7 +200,6 @@ export default function BoostListingModal({
             );
         }
     };
-
     // ============================================
     // CREATE BOOST + INITIALIZE PAYMENT
     // ============================================

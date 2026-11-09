@@ -39,6 +39,7 @@ import {
     formatDate,
     formatMileage,
     formatPrice,
+    getConditionLabel,
     ImageSummaryBar,
     ListingEditorViewProps,
 } from "./listing-editor.shared";
@@ -73,7 +74,7 @@ export default function ListingEditorDesktop(
     const { listing, images } = editor;
 
     const listingEditUrl =
-        `/my-listings/${encodeURIComponent(listing.id)}/edit-details`;
+        `/dashboard/my-listings/${encodeURIComponent(listing.id)}/edit`;
 
     const checklist = [
         {
@@ -279,7 +280,7 @@ export default function ListingEditorDesktop(
                                 <InfoItem
                                     icon={<CarFront />}
                                     label="Condition"
-                                    value={listing.condition || "Not specified"}
+                                    value={getConditionLabel(listing.condition)}
                                 />
 
                                 <InfoItem

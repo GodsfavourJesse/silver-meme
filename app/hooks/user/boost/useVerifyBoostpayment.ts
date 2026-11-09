@@ -9,11 +9,11 @@ import {
 
 import {
     boostKeys,
-} from "@/app/hooks/user/boost/useBoost";
+} from "./useBoost";
 
-// ============================================
-// VERIFY BOOST PAYMENT
-// ============================================
+import {
+    paymentHistoryKeys,
+} from "../payments/usePaymentHistory";
 
 export function useVerifyBoostPayment() {
     const queryClient = useQueryClient();
@@ -39,10 +39,7 @@ export function useVerifyBoostPayment() {
                 }),
 
                 queryClient.invalidateQueries({
-                    queryKey: [
-                        "payments",
-                        "history",
-                    ],
+                    queryKey: paymentHistoryKeys.all,
                 }),
             ]);
         },

@@ -1,9 +1,9 @@
 "use client";
 
 import {
+    CheckCircle2,
     ChevronDown,
     LoaderCircle,
-    CheckCircle2,
 } from "lucide-react";
 
 export interface VehicleSelectOption {
@@ -21,6 +21,7 @@ interface VehicleCatalogSelectProps {
     disabled?: boolean;
     loading?: boolean;
     error?: string | null;
+    required?: boolean;
     onChange: (value: string) => void;
 }
 
@@ -33,6 +34,7 @@ export function VehicleCatalogSelect({
     disabled = false,
     loading = false,
     error,
+    required = false,
     onChange,
 }: VehicleCatalogSelectProps) {
     const selectId =
@@ -46,10 +48,6 @@ export function VehicleCatalogSelect({
     const statusId = `${selectId}-status`;
 
     const isDisabled = disabled || loading;
-
-    const hasSelectedOption = options.some(
-        (option) => option.id === value,
-    );
 
     const selectedOption = options.find(
         (option) => option.id === value,
@@ -68,9 +66,15 @@ export function VehicleCatalogSelect({
         <div className="min-w-0 space-y-2">
             <label
                 htmlFor={selectId}
-                className="block text-sm font-medium text-[#393044]"
+                className="block text-sm font-medium text-slate-700"
             >
                 {label}
+
+                {required && (
+                    <span className="ml-1 text-[#1491FF]">
+                        *
+                    </span>
+                )}
             </label>
 
             <div className="relative">
@@ -85,23 +89,22 @@ export function VehicleCatalogSelect({
                     }
                     className={[
                         "h-12 w-full appearance-none rounded-xl border",
-                        "bg-white px-4 pr-12 text-base",
-                        "text-[#21172E] outline-none",
-                        "transition-colors duration-150",
-                        "focus:border-[#7008E7]",
-                        "focus:ring-4 focus:ring-[#7008E7]/[0.08]",
+                        "bg-white px-4 pr-12 text-sm",
+                        "text-slate-900 outline-none",
+                        "transition-all duration-150",
+                        "focus:border-[#1491FF]",
+                        "focus:ring-4 focus:ring-[#1491FF]/10",
                         "disabled:cursor-not-allowed",
-                        "disabled:bg-[#F7F5FA]",
-                        "disabled:text-[#9993A2]",
-                        "disabled:opacity-100",
+                        "disabled:bg-slate-50",
+                        "disabled:text-slate-400",
                         error
                             ? "border-red-300 focus:border-red-400 focus:ring-red-100"
-                            : "border-[#E5DFED]",
+                            : "border-slate-200 hover:border-slate-300",
                     ].join(" ")}
                 >
                     <option
                         value=""
-                        className="bg-white text-[#8B8495]"
+                        className="bg-white text-slate-400"
                     >
                         {placeholder}
                     </option>
@@ -110,7 +113,7 @@ export function VehicleCatalogSelect({
                         <option
                             key={option.id}
                             value={option.id}
-                            className="bg-white text-[#21172E]"
+                            className="bg-white text-slate-900"
                         >
                             {option.label}
                         </option>
@@ -122,9 +125,9 @@ export function VehicleCatalogSelect({
                         <LoaderCircle
                             size={18}
                             aria-hidden="true"
-                            className="animate-spin text-[#7008E7]"
+                            className="animate-spin text-[#1491FF]"
                         />
-                    ) : hasSelectedOption ? (
+                    ) : selectedOption ? (
                         <CheckCircle2
                             size={17}
                             aria-hidden="true"
@@ -134,7 +137,7 @@ export function VehicleCatalogSelect({
                         <ChevronDown
                             size={18}
                             aria-hidden="true"
-                            className="text-[#8B8495]"
+                            className="text-slate-400"
                         />
                     )}
                 </div>
@@ -158,11 +161,11 @@ export function VehicleCatalogSelect({
                 <p
                     id={statusId}
                     role="status"
-                    className="flex items-center gap-1.5 text-xs leading-5 text-[#777080]"
+                    className="flex items-center gap-1.5 text-xs leading-5 text-slate-500"
                 >
                     <LoaderCircle
                         size={13}
-                        className="animate-spin text-[#7008E7]"
+                        className="animate-spin text-[#1491FF]"
                     />
 
                     Loading available options...
@@ -174,7 +177,7 @@ export function VehicleCatalogSelect({
                 options.length === 0 && (
                     <p
                         id={statusId}
-                        className="text-xs leading-5 text-[#8B8495]"
+                        className="text-xs leading-5 text-slate-400"
                     >
                         {value
                             ? "The selected option is not in the available options."
@@ -185,7 +188,7 @@ export function VehicleCatalogSelect({
             {!error &&
                 !loading &&
                 selectedOption?.description && (
-                    <p className="text-xs leading-5 text-[#777080]">
+                    <p className="text-xs leading-5 text-slate-500">
                         {selectedOption.description}
                     </p>
                 )}

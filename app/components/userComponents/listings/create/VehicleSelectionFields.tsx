@@ -1,6 +1,11 @@
 "use client";
 
 import {
+    AnimatePresence,
+    motion,
+} from "framer-motion";
+
+import {
     useCallback,
     useEffect,
     useMemo,
@@ -11,6 +16,7 @@ import {
 import {
     AlertCircle,
     CarFront,
+    Pencil,
     Check,
     LoaderCircle,
     RotateCcw,
@@ -34,6 +40,14 @@ import type {
     VehicleSelectOption,
 } from "./VehicleCatalogSelect";
 
+import {
+    VehicleManualEntryFields,
+} from "./VehicleManualEntryFields";
+
+import type {
+    ManualVehicleValues,
+} from "./VehicleManualEntryFields";
+
 import type {
     VehicleGenerationOption,
     VehicleMakeOption,
@@ -49,6 +63,10 @@ import type {
 interface VehicleSelectionFieldsProps {
     value: string;
     onChange: (vehicleVariantId: string) => void;
+    onVehicleSelected?: (title: string | null) => void;
+    manualValue: ManualVehicleValues;
+    onManualVehicleChange: (field: keyof ManualVehicleValues, value: string) => void;
+    onVehicleDetailsChange?: (details: Partial<ManualVehicleValues>) => void;
     disabled?: boolean;
     error?: string;
 }
@@ -63,9 +81,10 @@ const INITIAL_REQUEST_STATE: RequestState = {
     error: null,
 };
 
-function getErrorMessage(
-    error: unknown,
-): string {
+const BRAND = "#1491FF";
+const BRAND_HOVER = "#0877D9";
+
+function getErrorMessage(error: unknown): string {
     if (error instanceof Error) {
         return error.message;
     }
@@ -156,12 +175,38 @@ function getSearchResultDetails(
         .join(" · ");
 }
 
+const fadeIn = {
+    initial: {
+        opacity: 0,
+        y: 8,
+    },
+    animate: {
+        opacity: 1,
+        y: 0,
+    },
+    exit: {
+        opacity: 0,
+        y: -6,
+    },
+    transition: {
+        duration: 0.2,
+        ease: "easeOut" as const,
+    },
+};
+
 export function VehicleSelectionFields({
     value,
     onChange,
+    onVehicleSelected,
+    manualValue,
+    onManualVehicleChange,
+    onVehicleDetailsChange,
     disabled = false,
     error,
 }: VehicleSelectionFieldsProps) {
+    const [selectionMode, setSelectionMode] =
+        useState<"catalog" | "manual">("catalog");
+
     /*
      * =========================================================
      * CATALOG DATA
@@ -228,9 +273,6 @@ export function VehicleSelectionFields({
     const [showAllMakes, setShowAllMakes] =
         useState(false);
 
-    /*
-     * Nigerian-market filtering.
-     */
     const [catalogMarket, setCatalogMarket] =
         useState(true);
 
@@ -299,9 +341,10 @@ export function VehicleSelectionFields({
         useState(0);
 
     /*
-     * Request counters prevent older searches from
-     * overwriting the latest search results.
+     * Prevent outdated search requests from
+     * overwriting newer search results.
      */
+
     const searchRequestId = useRef(0);
 
     /*
@@ -323,10 +366,6 @@ export function VehicleSelectionFields({
                 let result =
                     await getVehicleMakes(true);
 
-                /*
-                 * Fall back to the complete catalog only
-                 * if the Nigerian-market catalog is empty.
-                 */
                 if (result.length === 0) {
                     result =
                         await getVehicleMakes(false);
@@ -552,9 +591,6 @@ export function VehicleSelectionFields({
      * =========================================================
      * LOAD MODEL YEARS
      * =========================================================
-     *
-     * Years are loaded from the model-year endpoint.
-     * They are NOT derived from the variants array.
      */
 
     useEffect(() => {
@@ -639,10 +675,6 @@ export function VehicleSelectionFields({
      * =========================================================
      * LOAD VARIANTS
      * =========================================================
-     *
-     * Only request variants after the user selects a year.
-     * This prevents the dropdown from mixing variants
-     * belonging to different model years.
      */
 
     useEffect(() => {
@@ -736,7 +768,8 @@ export function VehicleSelectionFields({
         if (
             query.length < 2 ||
             query === "/" ||
-            showAllMakes
+            showAllMakes ||
+            searchSelection
         ) {
             setSearchResults([]);
 
@@ -811,6 +844,7 @@ export function VehicleSelectionFields({
         searchQuery,
         catalogMarket,
         showAllMakes,
+        searchSelection,
     ]);
 
     /*
@@ -854,6 +888,22 @@ export function VehicleSelectionFields({
                 })),
             [variants],
         );
+
+    /*
+     * =========================================================
+     * CLEAR SEARCH SELECTION
+     * =========================================================
+     */
+
+    const clearSearchSelection = useCallback(() => {
+        if (searchSelection) {
+            setSearchSelection(null);
+            onVehicleSelected?.(null);
+        }
+    }, [
+        onVehicleSelected,
+        searchSelection,
+    ]);
 
     /*
      * =========================================================
@@ -904,7 +954,33 @@ export function VehicleSelectionFields({
         );
 
         onChange("");
-    }, [onChange]);
+        onVehicleSelected?.(null);
+        onVehicleDetailsChange?.({
+            makeName: "", modelName: "", year: "",
+            generationName: "", variantName: "",
+        });
+    }, [
+        onChange,
+        onVehicleSelected,
+        onVehicleDetailsChange,
+    ]);
+
+    const clearVehicleDetails = useCallback(() => {
+        onVehicleDetailsChange?.({
+            makeName: "", modelName: "", year: "",
+            generationName: "", variantName: "",
+        });
+    }, [onVehicleDetailsChange]);
+
+    const switchSelectionMode = useCallback(
+        (mode: "catalog" | "manual") => {
+            if (disabled || mode === selectionMode) return;
+            resetSelection();
+            setSelectionMode(mode);
+            if (mode === "catalog") clearVehicleDetails();
+        },
+        [clearVehicleDetails, disabled, resetSelection, selectionMode],
+    );
 
     /*
      * =========================================================
@@ -917,7 +993,7 @@ export function VehicleSelectionFields({
         setCatalogMarket(false);
 
         setSearchResults([]);
-        setSearchSelection(null);
+        clearSearchSelection();
 
         setSearchRequest(
             INITIAL_REQUEST_STATE,
@@ -949,7 +1025,7 @@ export function VehicleSelectionFields({
                 ),
             });
         }
-    }, []);
+    }, [clearSearchSelection]);
 
     /*
      * =========================================================
@@ -977,8 +1053,14 @@ export function VehicleSelectionFields({
             setCatalogMarket(true);
 
             onChange("");
+            onVehicleSelected?.(null);
+            clearVehicleDetails();
         },
-        [onChange],
+        [
+            clearVehicleDetails,
+            onChange,
+            onVehicleSelected,
+        ],
     );
 
     /*
@@ -989,6 +1071,9 @@ export function VehicleSelectionFields({
 
     const selectSearchResult = useCallback(
         (result: VehicleSearchResult) => {
+            const vehicleTitle =
+                getSearchResultLabel(result);
+
             setSearchSelection(result);
 
             setSelectedMakeId("");
@@ -1000,17 +1085,26 @@ export function VehicleSelectionFields({
 
             setShowAllMakes(false);
 
-            setSearchQuery(
-                getSearchResultLabel(result),
-            );
-
+            setSearchQuery(vehicleTitle);
             setSearchResults([]);
 
             setCatalogError(null);
 
             onChange(result.variantId);
+            onVehicleSelected?.(vehicleTitle);
+            onVehicleDetailsChange?.({
+                makeName: result.makeName,
+                modelName: result.modelName,
+                year: String(result.year),
+                generationName: result.generationName ?? "",
+                variantName: result.variantName,
+            });
         },
-        [onChange],
+        [
+            onChange,
+            onVehicleDetailsChange,
+            onVehicleSelected,
+        ],
     );
 
     /*
@@ -1033,8 +1127,33 @@ export function VehicleSelectionFields({
             setCatalogError(null);
 
             onChange(variantId);
+            onVehicleSelected?.(null);
+            if (variant) {
+                const make = makes.find((item) => item.id === selectedMakeId);
+                const model = models.find((item) => item.id === selectedModelId);
+                const generation = generations.find((item) => item.id === selectedGenerationId);
+                onVehicleDetailsChange?.({
+                    makeName: make?.name ?? "",
+                    modelName: model?.name ?? "",
+                    year: selectedYear,
+                    generationName: generation?.name ?? "",
+                    variantName: variant.name,
+                });
+            }
         },
-        [onChange, variants],
+        [
+            generations,
+            makes,
+            models,
+            onChange,
+            onVehicleDetailsChange,
+            onVehicleSelected,
+            selectedGenerationId,
+            selectedMakeId,
+            selectedModelId,
+            selectedYear,
+            variants,
+        ],
     );
 
     /*
@@ -1047,16 +1166,6 @@ export function VehicleSelectionFields({
         setCatalogError(null);
 
         if (searchRequest.error) {
-            setSearchQuery((current) => {
-                const query = current.trim();
-
-                return query;
-            });
-
-            /*
-             * Force a new search request without requiring
-             * the user to modify the search text.
-             */
             setSearchResults([]);
 
             setSearchRequest({
@@ -1067,6 +1176,9 @@ export function VehicleSelectionFields({
             const query = searchQuery.trim();
 
             if (query.length >= 2) {
+                const requestId =
+                    ++searchRequestId.current;
+
                 void searchVehicleCatalog(
                     query,
                     {
@@ -1075,6 +1187,13 @@ export function VehicleSelectionFields({
                     },
                 )
                     .then((result) => {
+                        if (
+                            requestId !==
+                            searchRequestId.current
+                        ) {
+                            return;
+                        }
+
                         setSearchResults(result);
 
                         setSearchRequest({
@@ -1083,6 +1202,13 @@ export function VehicleSelectionFields({
                         });
                     })
                     .catch((requestError: unknown) => {
+                        if (
+                            requestId !==
+                            searchRequestId.current
+                        ) {
+                            return;
+                        }
+
                         setSearchRequest({
                             loading: false,
                             error: getErrorMessage(
@@ -1090,6 +1216,10 @@ export function VehicleSelectionFields({
                             ),
                         });
                     });
+            } else {
+                setSearchRequest(
+                    INITIAL_REQUEST_STATE,
+                );
             }
 
             return;
@@ -1151,32 +1281,45 @@ export function VehicleSelectionFields({
 
     /*
      * =========================================================
-     * RENDER
+     * DERIVED SELECTION STATE
      * =========================================================
      */
 
     const hasSelectedVehicle = Boolean(value);
 
+    const hasSearchSelection = Boolean(
+        searchSelection &&
+        value === searchSelection.variantId,
+    );
+
+    /*
+     * =========================================================
+     * RENDER
+     * =========================================================
+     */
+
     return (
-        <section className="space-y-5 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
-            {/* Header */}
+        <section className="space-y-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-900/[0.02] sm:p-5">
+
+            {/* HEADER */}
 
             <div className="flex items-start gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#7008E7]/10 bg-[#7008E7]/[0.07]">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#EAF5FF]">
                     <CarFront
                         size={21}
-                        className="text-[#7008E7]"
+                        strokeWidth={1.8}
+                        className="text-[#1491FF]"
                     />
                 </div>
 
                 <div className="min-w-0 flex-1">
-                    <h2 className="text-base font-semibold text-slate-900">
+                    <h2 className="text-base font-semibold tracking-tight text-slate-900">
                         Vehicle details
                     </h2>
 
-                    <p className="mt-1 text-sm leading-6 text-slate-500">
-                        Select your vehicle or search
-                        the catalog for its exact variant.
+                    <p className="mt-1 max-w-lg text-sm leading-5 text-slate-500">
+                        Find your vehicle in the catalog
+                        or select its details manually.
                     </p>
                 </div>
 
@@ -1185,7 +1328,7 @@ export function VehicleSelectionFields({
                         type="button"
                         disabled={disabled}
                         onClick={resetSelection}
-                        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 disabled:opacity-40"
+                        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                         <RotateCcw size={13} />
                         Reset
@@ -1193,7 +1336,25 @@ export function VehicleSelectionFields({
                 )}
             </div>
 
-            {/* General catalog error */}
+            <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1">
+                <button type="button" disabled={disabled} onClick={() => switchSelectionMode("catalog")} className={`flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold transition ${selectionMode === "catalog" ? "bg-white text-[#0877D9] shadow-sm" : "text-slate-500 hover:text-slate-800"}`}>
+                    <CarFront size={16} /> Vehicle catalog
+                </button>
+                <button type="button" disabled={disabled} onClick={() => switchSelectionMode("manual")} className={`flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold transition ${selectionMode === "manual" ? "bg-white text-[#0877D9] shadow-sm" : "text-slate-500 hover:text-slate-800"}`}>
+                    <Pencil size={15} /> Enter manually
+                </button>
+            </div>
+
+            {selectionMode === "manual" && (
+                <VehicleManualEntryFields
+                    value={manualValue}
+                    onChange={onManualVehicleChange}
+                    disabled={disabled}
+                />
+            )}
+
+            {selectionMode === "catalog" && (<>
+            {/* GENERAL CATALOG ERROR */}
 
             {catalogError && (
                 <div
@@ -1214,7 +1375,7 @@ export function VehicleSelectionFields({
                             type="button"
                             disabled={disabled}
                             onClick={retryCatalog}
-                            className="mt-2 text-xs font-semibold text-[#7008E7] disabled:opacity-50"
+                            className="mt-2 text-xs font-semibold text-[#0877D9] hover:underline disabled:opacity-50"
                         >
                             Try again
                         </button>
@@ -1222,19 +1383,27 @@ export function VehicleSelectionFields({
                 </div>
             )}
 
-            {/* Search */}
+            {/* SEARCH SECTION */}
 
-            <div className="space-y-2">
-                <label
-                    htmlFor="vehicle-catalog-search"
-                    className="block text-sm font-medium text-slate-700"
-                >
-                    Search vehicle catalog
-                </label>
+            <div className="space-y-3">
+                <div>
+                    <label
+                        htmlFor="vehicle-catalog-search"
+                        className="block text-sm font-medium text-slate-700"
+                    >
+                        Search vehicle catalog
+                    </label>
+
+                    <p className="mt-1 text-xs leading-5 text-slate-500">
+                        Search by make, model, year or
+                        variant name.
+                    </p>
+                </div>
 
                 <div className="relative">
                     <Search
                         size={18}
+                        strokeWidth={1.8}
                         className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
                     />
 
@@ -1247,9 +1416,19 @@ export function VehicleSelectionFields({
                             const nextValue =
                                 event.target.value;
 
-                            setSearchQuery(nextValue);
+                            /*
+                             * Editing a selected search result
+                             * clears the old catalog selection.
+                             */
+                            clearSearchSelection();
 
-                            setSearchSelection(null);
+                            if (selectedVariant) {
+                                setSelectedVariant(null);
+                                onChange("");
+                                clearVehicleDetails();
+                            }
+
+                            setSearchQuery(nextValue);
                             setCatalogError(null);
 
                             if (
@@ -1261,27 +1440,28 @@ export function VehicleSelectionFields({
 
                             setShowAllMakes(false);
                         }}
-                        placeholder="Search make, model, year or variant"
+                        placeholder="e.g. Toyota Camry 2020"
                         autoComplete="off"
-                        className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-11 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-[#7008E7]/60 focus:ring-2 focus:ring-[#7008E7]/10 disabled:opacity-50"
+                        className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-11 text-sm text-slate-900 outline-none transition-all duration-200 placeholder:text-slate-400 hover:border-slate-300 focus:border-[#1491FF] focus:ring-4 focus:ring-[#1491FF]/10 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:opacity-60"
                     />
 
                     {searchRequest.loading && (
                         <LoaderCircle
                             size={17}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 animate-spin text-[#7008E7]"
+                            className="absolute right-4 top-1/2 -translate-y-1/2 animate-spin text-[#1491FF]"
                         />
                     )}
                 </div>
 
-                <p className="text-xs text-slate-500">
-                    Search by make, model, generation,
-                    year or vehicle variant. Enter / to
-                    browse all active makes.
+                <p className="text-xs leading-5 text-slate-400">
+                    You can also enter / to browse all
+                    active vehicle makes.
                 </p>
 
+                {/* SEARCH ERROR */}
+
                 {searchRequest.error && (
-                    <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-3 rounded-lg bg-red-50 px-3 py-2.5">
                         <p
                             role="alert"
                             className="text-xs text-red-600"
@@ -1293,134 +1473,185 @@ export function VehicleSelectionFields({
                             type="button"
                             disabled={disabled}
                             onClick={retryCatalog}
-                            className="text-xs font-medium text-[#7008E7] hover:underline"
+                            className="shrink-0 text-xs font-semibold text-red-700 hover:underline disabled:opacity-50"
                         >
-                            Retry search
+                            Retry
                         </button>
                     </div>
                 )}
 
-                {/* All makes */}
+                {/* ALL MAKES */}
 
-                {showAllMakes && (
-                    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-                        <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-                            <div>
-                                <p className="text-sm font-semibold text-slate-900">
-                                    All active vehicle makes
-                                </p>
+                <AnimatePresence>
+                    {showAllMakes && (
+                        <motion.div
+                            {...fadeIn}
+                            className="overflow-hidden rounded-xl border border-slate-200 bg-white"
+                        >
+                            <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+                                <div>
+                                    <p className="text-sm font-semibold text-slate-900">
+                                        All vehicle makes
+                                    </p>
 
-                                <p className="mt-1 text-xs text-slate-500">
-                                    {makes.length} makes available
-                                </p>
+                                    <p className="mt-0.5 text-xs text-slate-500">
+                                        Browse the complete catalog
+                                    </p>
+                                </div>
+
+                                {makesRequest.loading && (
+                                    <LoaderCircle
+                                        size={17}
+                                        className="animate-spin text-[#1491FF]"
+                                    />
+                                )}
                             </div>
 
-                            {makesRequest.loading && (
-                                <LoaderCircle
-                                    size={17}
-                                    className="animate-spin text-[#7008E7]"
-                                />
-                            )}
-                        </div>
+                            {makesRequest.error && (
+                                <div className="p-4">
+                                    <p
+                                        role="alert"
+                                        className="text-sm text-red-600"
+                                    >
+                                        {makesRequest.error}
+                                    </p>
 
-                        {makesRequest.error && (
-                            <div className="p-4">
-                                <p
-                                    role="alert"
-                                    className="text-sm text-red-600"
-                                >
-                                    {makesRequest.error}
-                                </p>
-
-                                <button
-                                    type="button"
-                                    disabled={disabled}
-                                    onClick={() => {
-                                        void openAllMakes();
-                                    }}
-                                    className="mt-3 text-sm font-medium text-[#7008E7] hover:underline disabled:opacity-50"
-                                >
-                                    Try again
-                                </button>
-                            </div>
-                        )}
-
-                        {!makesRequest.loading &&
-                            !makesRequest.error &&
-                            makes.length === 0 && (
-                                <p className="p-4 text-sm text-slate-500">
-                                    No active vehicle makes found.
-                                </p>
+                                    <button
+                                        type="button"
+                                        disabled={disabled}
+                                        onClick={() => {
+                                            void openAllMakes();
+                                        }}
+                                        className="mt-3 text-sm font-semibold text-[#0877D9] hover:underline disabled:opacity-50"
+                                    >
+                                        Try again
+                                    </button>
+                                </div>
                             )}
 
-                        {!makesRequest.error &&
-                            makes.length > 0 && (
+                            {selectionMode === "catalog" && !makesRequest.loading &&
+                                !makesRequest.error &&
+                                makes.length === 0 && (
+                                    <p className="p-4 text-sm text-slate-500">
+                                        No active vehicle makes found.
+                                    </p>
+                                )}
+
+                            {!makesRequest.error &&
+                                makes.length > 0 && (
+                                    <div className="max-h-72 overflow-y-auto">
+                                        {makes.map((make) => (
+                                            <button
+                                                key={make.id}
+                                                type="button"
+                                                disabled={disabled}
+                                                onClick={() => {
+                                                    setCatalogMarket(false);
+                                                    setShowAllMakes(false);
+
+                                                    setSearchQuery("");
+                                                    setSearchResults([]);
+
+                                                    setSelectedMakeId(
+                                                        make.id,
+                                                    );
+
+                                                    setSelectedModelId("");
+                                                    setSelectedGenerationId("");
+                                                    setSelectedYear("");
+
+                                                    setSelectedVariant(null);
+                                                    setSearchSelection(null);
+
+                                                    onChange("");
+                                                    onVehicleSelected?.(null);
+                                                }}
+                                                className="flex w-full items-center justify-between border-b border-slate-100 px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-[#F4F9FF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#1491FF]/30 disabled:opacity-50"
+                                            >
+                                                <span className="text-sm font-medium text-slate-800">
+                                                    {make.name}
+                                                </span>
+
+                                                <span className="text-xs font-medium text-[#0877D9]">
+                                                    Select
+                                                </span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* SEARCH RESULTS */}
+
+                <AnimatePresence>
+                    {searchResults.length > 0 &&
+                        !showAllMakes && (
+                            <motion.div
+                                {...fadeIn}
+                                className="overflow-hidden rounded-xl border border-slate-200 bg-white"
+                            >
+                                <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+                                    <p className="text-xs font-semibold text-slate-500">
+                                        MATCHING VEHICLES
+                                    </p>
+
+                                    <span className="text-xs text-slate-400">
+                                        {searchResults.length} results
+                                    </span>
+                                </div>
+
                                 <div className="max-h-72 overflow-y-auto">
-                                    {makes.map((make) => (
+                                    {searchResults.map((result) => (
                                         <button
-                                            key={make.id}
+                                            key={result.variantId}
                                             type="button"
                                             disabled={disabled}
                                             onClick={() => {
-                                                setCatalogMarket(
-                                                    false,
+                                                selectSearchResult(
+                                                    result,
                                                 );
-
-                                                setShowAllMakes(
-                                                    false,
-                                                );
-
-                                                setSearchQuery(
-                                                    "",
-                                                );
-
-                                                setSearchResults(
-                                                    [],
-                                                );
-
-                                                setSelectedMakeId(
-                                                    make.id,
-                                                );
-
-                                                setSelectedModelId(
-                                                    "",
-                                                );
-
-                                                setSelectedGenerationId(
-                                                    "",
-                                                );
-
-                                                setSelectedYear(
-                                                    "",
-                                                );
-
-                                                setSelectedVariant(
-                                                    null,
-                                                );
-
-                                                setSearchSelection(
-                                                    null,
-                                                );
-
-                                                onChange("");
                                             }}
-                                            className="flex w-full items-center justify-between border-b border-slate-100 px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-[#7008E7]/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#7008E7]/30 disabled:opacity-50"
+                                            className="group flex w-full items-start gap-3 border-b border-slate-100 px-4 py-3.5 text-left transition-colors last:border-b-0 hover:bg-[#F4F9FF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#1491FF]/30 disabled:opacity-50"
                                         >
-                                            <span className="text-sm font-medium text-slate-900">
-                                                {make.name}
-                                            </span>
+                                            <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 transition-colors group-hover:bg-[#EAF5FF]">
+                                                <CarFront
+                                                    size={17}
+                                                    strokeWidth={1.8}
+                                                    className="text-slate-500 transition-colors group-hover:text-[#1491FF]"
+                                                />
+                                            </div>
 
-                                            <span className="text-xs text-slate-400">
+                                            <div className="min-w-0 flex-1">
+                                                <p className="text-sm font-medium leading-5 text-slate-900">
+                                                    {getSearchResultLabel(
+                                                        result,
+                                                    )}
+                                                </p>
+
+                                                {getSearchResultDetails(
+                                                    result,
+                                                ) && (
+                                                    <p className="mt-1 text-xs leading-5 text-slate-500">
+                                                        {getSearchResultDetails(
+                                                            result,
+                                                        )}
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            <span className="mt-1 shrink-0 text-xs font-medium text-[#0877D9] opacity-0 transition-opacity group-hover:opacity-100">
                                                 Select
                                             </span>
                                         </button>
                                     ))}
                                 </div>
-                            )}
-                    </div>
-                )}
+                            </motion.div>
+                        )}
+                </AnimatePresence>
 
-                {/* Search results */}
+                {/* NO SEARCH RESULTS */}
 
                 {searchQuery.trim().length >= 2 &&
                     searchQuery.trim() !== "/" &&
@@ -1429,279 +1660,323 @@ export function VehicleSelectionFields({
                     !searchRequest.error &&
                     searchResults.length === 0 &&
                     !searchSelection && (
-                        <p className="text-xs text-slate-500">
+                        <motion.p
+                            {...fadeIn}
+                            className="rounded-lg bg-slate-50 px-3 py-3 text-xs leading-5 text-slate-500"
+                        >
                             No matching vehicles found.
-                            Try another search.
-                        </p>
+                            Try another make, model or year.
+                        </motion.p>
                     )}
 
-                {searchResults.length > 0 &&
-                    !showAllMakes && (
-                        <div className="max-h-64 overflow-y-auto rounded-xl border border-slate-200 bg-white">
-                            {searchResults.map((result) => (
-                                <button
-                                    key={result.variantId}
-                                    type="button"
-                                    disabled={disabled}
-                                    onClick={() => {
-                                        selectSearchResult(
-                                            result,
-                                        );
-                                    }}
-                                    className="flex w-full items-start gap-3 border-b border-slate-100 px-4 py-3 text-left last:border-b-0 hover:bg-[#7008E7]/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#7008E7]/30 disabled:opacity-50"
-                                >
-                                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100">
-                                        <CarFront
-                                            size={16}
-                                            className="text-[#7008E7]"
+                {/* SEARCH-SELECTED VEHICLE */}
+
+                <AnimatePresence mode="wait">
+                    {hasSearchSelection &&
+                        searchSelection && (
+                            <motion.div
+                                key={searchSelection.variantId}
+                                {...fadeIn}
+                                className="rounded-xl border border-[#1491FF]/20 bg-[#F4F9FF] p-4"
+                            >
+                                <div className="flex items-start gap-3">
+                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-[#1491FF] shadow-sm shadow-blue-900/5">
+                                        <Check
+                                            size={19}
+                                            strokeWidth={2.2}
                                         />
                                     </div>
 
                                     <div className="min-w-0 flex-1">
-                                        <p className="text-sm font-medium text-slate-900">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <p className="text-sm font-semibold text-slate-900">
+                                                Vehicle selected
+                                            </p>
+
+                                            <span className="rounded-md bg-[#1491FF]/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#0877D9]">
+                                                Catalog match
+                                            </span>
+                                        </div>
+
+                                        <p className="mt-1.5 text-sm font-medium leading-6 text-slate-800">
                                             {getSearchResultLabel(
-                                                result,
+                                                searchSelection,
                                             )}
                                         </p>
 
                                         {getSearchResultDetails(
-                                            result,
+                                            searchSelection,
                                         ) && (
-                                            <p className="mt-1 text-xs text-slate-500">
+                                            <p className="mt-1 text-xs leading-5 text-slate-500">
                                                 {getSearchResultDetails(
-                                                    result,
+                                                    searchSelection,
                                                 )}
                                             </p>
                                         )}
+
+                                        <p className="mt-2 text-xs font-medium text-[#0877D9]">
+                                            Exact vehicle variant selected
+                                        </p>
                                     </div>
-                                </button>
-                            ))}
+
+                                    <button
+                                        type="button"
+                                        disabled={disabled}
+                                        onClick={resetSelection}
+                                        className="shrink-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition-colors hover:border-[#1491FF]/40 hover:bg-[#EAF5FF] hover:text-[#0877D9] disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        Change
+                                    </button>
+                                </div>
+                            </motion.div>
+                        )}
+                </AnimatePresence>
+            </div>
+
+            </>)}
+
+            {/* CATALOG CASCADING SELECTORS */}
+
+            {selectionMode === "catalog" && (
+            <AnimatePresence initial={false}>
+                {!hasSearchSelection && (
+                    <motion.div
+                        key="manual-selection"
+                        initial={{
+                            opacity: 0,
+                            height: 0,
+                        }}
+                        animate={{
+                            opacity: 1,
+                            height: "auto",
+                        }}
+                        exit={{
+                            opacity: 0,
+                            height: 0,
+                        }}
+                        transition={{
+                            duration: 0.25,
+                            ease: "easeInOut",
+                        }}
+                        className="overflow-hidden"
+                    >
+                        <div className="space-y-5 pt-1">
+
+                            {/* DIVIDER */}
+
+                            <div className="flex items-center gap-3">
+                                <div className="h-px flex-1 bg-slate-200" />
+
+                                <span className="text-[11px] font-semibold tracking-wider text-slate-400">
+                                    SELECT VEHICLE DETAILS
+                                </span>
+
+                                <div className="h-px flex-1 bg-slate-200" />
+                            </div>
+
+                            {/* MANUAL FIELDS */}
+
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+
+                                <VehicleCatalogSelect
+                                    label="Make"
+                                    value={selectedMakeId}
+                                    placeholder={
+                                        makesRequest.loading
+                                            ? "Loading makes..."
+                                            : "Select make"
+                                    }
+                                    options={makes.map((make) => ({
+                                        id: make.id,
+                                        label: make.name,
+                                    }))}
+                                    loading={makesRequest.loading}
+                                    disabled={disabled}
+                                    error={makesRequest.error}
+                                    onChange={selectMake}
+                                />
+
+                                <VehicleCatalogSelect
+                                    label="Model"
+                                    value={selectedModelId}
+                                    placeholder={
+                                        !selectedMakeId
+                                            ? "Select make first"
+                                            : modelsRequest.loading
+                                              ? "Loading models..."
+                                              : "Select model"
+                                    }
+                                    options={models.map((model) => ({
+                                        id: model.id,
+                                        label: model.name,
+                                    }))}
+                                    loading={modelsRequest.loading}
+                                    disabled={
+                                        disabled ||
+                                        !selectedMakeId
+                                    }
+                                    error={modelsRequest.error}
+                                    onChange={(modelId) => {
+                                        setSelectedModelId(modelId);
+
+                                        setSelectedGenerationId("");
+                                        setSelectedYear("");
+
+                                        setSelectedVariant(null);
+                                        setSearchSelection(null);
+
+                                        onChange("");
+                                        onVehicleSelected?.(null);
+                                    }}
+                                />
+
+                                <VehicleCatalogSelect
+                                    label="Generation"
+                                    value={selectedGenerationId}
+                                    placeholder={
+                                        !selectedModelId
+                                            ? "Select model first"
+                                            : generationsRequest.loading
+                                              ? "Loading generations..."
+                                              : "Select generation"
+                                    }
+                                    options={generationOptions}
+                                    loading={
+                                        generationsRequest.loading
+                                    }
+                                    disabled={
+                                        disabled ||
+                                        !selectedModelId
+                                    }
+                                    error={
+                                        generationsRequest.error
+                                    }
+                                    onChange={(generationId) => {
+                                        setSelectedGenerationId(
+                                            generationId,
+                                        );
+
+                                        setSelectedYear("");
+
+                                        setSelectedVariant(null);
+                                        setSearchSelection(null);
+
+                                        onChange("");
+                                        onVehicleSelected?.(null);
+                                    }}
+                                />
+
+                                <VehicleCatalogSelect
+                                    label="Model year"
+                                    value={selectedYear}
+                                    placeholder={
+                                        !selectedGenerationId
+                                            ? "Select generation first"
+                                            : yearsRequest.loading
+                                              ? "Loading model years..."
+                                              : modelYears.length === 0
+                                                ? "No model years available"
+                                                : "Select model year"
+                                    }
+                                    options={yearOptions}
+                                    loading={yearsRequest.loading}
+                                    disabled={
+                                        disabled ||
+                                        !selectedGenerationId ||
+                                        modelYears.length === 0
+                                    }
+                                    error={yearsRequest.error}
+                                    onChange={(year) => {
+                                        setSelectedYear(year);
+
+                                        setSelectedVariant(null);
+                                        setSearchSelection(null);
+
+                                        onChange("");
+                                        onVehicleSelected?.(null);
+                                    }}
+                                />
+
+                                <div className="sm:col-span-2">
+                                    <VehicleCatalogSelect
+                                        label="Vehicle variant"
+                                        value={
+                                            selectedVariant?.id ?? ""
+                                        }
+                                        placeholder={
+                                            !selectedGenerationId
+                                                ? "Select generation first"
+                                                : !selectedYear
+                                                  ? "Select model year first"
+                                                  : variantsRequest.loading
+                                                    ? "Loading variants..."
+                                                    : variants.length === 0
+                                                      ? "No variants available"
+                                                      : "Select vehicle variant"
+                                        }
+                                        options={variantOptions}
+                                        loading={
+                                            variantsRequest.loading
+                                        }
+                                        disabled={
+                                            disabled ||
+                                            !selectedGenerationId ||
+                                            !selectedYear ||
+                                            variants.length === 0
+                                        }
+                                        error={variantsRequest.error}
+                                        onChange={selectVariant}
+                                    />
+                                </div>
+                            </div>
                         </div>
-                    )}
-
-                {/* Search-selected vehicle */}
-
-                {searchSelection && (
-                    <div className="flex items-start gap-3 rounded-xl border border-[#7008E7]/20 bg-[#7008E7]/[0.04] p-3">
-                        <Check
-                            size={18}
-                            className="mt-0.5 shrink-0 text-[#7008E7]"
-                        />
-
-                        <div className="min-w-0">
-                            <p className="text-sm font-medium text-slate-900">
-                                Vehicle selected
-                            </p>
-
-                            <p className="mt-1 text-sm text-slate-600">
-                                {getSearchResultLabel(
-                                    searchSelection,
-                                )}
-                            </p>
-                        </div>
-                    </div>
+                    </motion.div>
                 )}
-            </div>
-
-            {/* Divider */}
-
-            <div className="flex items-center gap-3">
-                <div className="h-px flex-1 bg-slate-200" />
-
-                <span className="text-xs text-slate-400">
-                    OR SELECT MANUALLY
-                </span>
-
-                <div className="h-px flex-1 bg-slate-200" />
-            </div>
-
-            {/* Manual vehicle selection */}
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <VehicleCatalogSelect
-                    label="Make"
-                    value={selectedMakeId}
-                    placeholder={
-                        makesRequest.loading
-                            ? "Loading makes..."
-                            : "Select make"
-                    }
-                    options={makes.map((make) => ({
-                        id: make.id,
-                        label: make.name,
-                    }))}
-                    loading={makesRequest.loading}
-                    disabled={disabled}
-                    error={makesRequest.error}
-                    onChange={selectMake}
-                />
-
-                <VehicleCatalogSelect
-                    label="Model"
-                    value={selectedModelId}
-                    placeholder={
-                        !selectedMakeId
-                            ? "Select make first"
-                            : modelsRequest.loading
-                              ? "Loading models..."
-                              : "Select model"
-                    }
-                    options={models.map((model) => ({
-                        id: model.id,
-                        label: model.name,
-                    }))}
-                    loading={modelsRequest.loading}
-                    disabled={
-                        disabled ||
-                        !selectedMakeId
-                    }
-                    error={modelsRequest.error}
-                    onChange={(modelId) => {
-                        setSelectedModelId(modelId);
-
-                        setSelectedGenerationId("");
-                        setSelectedYear("");
-
-                        setSelectedVariant(null);
-                        setSearchSelection(null);
-
-                        onChange("");
-                    }}
-                />
-
-                <VehicleCatalogSelect
-                    label="Generation"
-                    value={selectedGenerationId}
-                    placeholder={
-                        !selectedModelId
-                            ? "Select model first"
-                            : generationsRequest.loading
-                              ? "Loading generations..."
-                              : "Select generation"
-                    }
-                    options={generationOptions}
-                    loading={
-                        generationsRequest.loading
-                    }
-                    disabled={
-                        disabled ||
-                        !selectedModelId
-                    }
-                    error={generationsRequest.error}
-                    onChange={(generationId) => {
-                        setSelectedGenerationId(
-                            generationId,
-                        );
-
-                        setSelectedYear("");
-
-                        setSelectedVariant(null);
-                        setSearchSelection(null);
-
-                        onChange("");
-                    }}
-                />
-
-                <VehicleCatalogSelect
-                    label="Model year"
-                    value={selectedYear}
-                    placeholder={
-                        !selectedGenerationId
-                            ? "Select generation first"
-                            : yearsRequest.loading
-                              ? "Loading model years..."
-                              : modelYears.length === 0
-                                ? "No model years available"
-                                : "Select model year"
-                    }
-                    options={yearOptions}
-                    loading={yearsRequest.loading}
-                    disabled={
-                        disabled ||
-                        !selectedGenerationId ||
-                        modelYears.length === 0
-                    }
-                    error={yearsRequest.error}
-                    onChange={(year) => {
-                        setSelectedYear(year);
-
-                        setSelectedVariant(null);
-                        setSearchSelection(null);
-
-                        onChange("");
-                    }}
-                />
-
-                <div className="sm:col-span-2">
-                    <VehicleCatalogSelect
-                        label="Vehicle variant"
-                        value={
-                            selectedVariant?.id ?? ""
-                        }
-                        placeholder={
-                            !selectedGenerationId
-                                ? "Select generation first"
-                                : !selectedYear
-                                  ? "Select model year first"
-                                  : variantsRequest.loading
-                                    ? "Loading variants..."
-                                    : variants.length === 0
-                                      ? "No variants available"
-                                      : "Select vehicle variant"
-                        }
-                        options={variantOptions}
-                        loading={
-                            variantsRequest.loading
-                        }
-                        disabled={
-                            disabled ||
-                            !selectedGenerationId ||
-                            !selectedYear ||
-                            variants.length === 0
-                        }
-                        error={variantsRequest.error}
-                        onChange={selectVariant}
-                    />
-                </div>
-            </div>
-
-            {/* Selected variant preview */}
-
-            {selectedVariant && (
-                <div className="rounded-xl border border-[#7008E7]/15 bg-[#7008E7]/[0.04] p-4">
-                    <div className="flex items-start gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#7008E7]/[0.08]">
-                            <Check
-                                size={19}
-                                className="text-[#7008E7]"
-                            />
-                        </div>
-
-                        <div className="min-w-0 flex-1">
-                            <p className="text-sm font-semibold text-slate-900">
-                                {selectedVariant.year}{" "}
-                                {selectedVariant.name}
-                            </p>
-
-                            {getVariantDescription(
-                                selectedVariant,
-                            ) && (
-                                <p className="mt-1 text-xs leading-5 text-slate-500">
-                                    {getVariantDescription(
-                                        selectedVariant,
-                                    )}
-                                </p>
-                            )}
-
-                            <p className="mt-2 text-xs text-[#7008E7]">
-                                Vehicle variant selected
-                            </p>
-                        </div>
-                    </div>
-                </div>
+            </AnimatePresence>
             )}
 
-            {/* Form validation error */}
+            {/* MANUALLY SELECTED VARIANT */}
+
+            <AnimatePresence>
+                {selectionMode === "catalog" && selectedVariant && (
+                    <motion.div
+                        {...fadeIn}
+                        className="rounded-xl border border-[#1491FF]/20 bg-[#F4F9FF] p-4"
+                    >
+                        <div className="flex items-start gap-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-[#1491FF] shadow-sm shadow-blue-900/5">
+                                <Check
+                                    size={19}
+                                    strokeWidth={2.2}
+                                />
+                            </div>
+
+                            <div className="min-w-0 flex-1">
+                                <p className="text-sm font-semibold text-slate-900">
+                                    {selectedVariant.year}{" "}
+                                    {selectedVariant.name}
+                                </p>
+
+                                {getVariantDescription(
+                                    selectedVariant,
+                                ) && (
+                                    <p className="mt-1 text-xs leading-5 text-slate-500">
+                                        {getVariantDescription(
+                                            selectedVariant,
+                                        )}
+                                    </p>
+                                )}
+
+                                <p className="mt-2 text-xs font-medium text-[#0877D9]">
+                                    Vehicle variant selected
+                                </p>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* FORM VALIDATION ERROR */}
 
             {error && (
                 <p
@@ -1713,38 +1988,40 @@ export function VehicleSelectionFields({
                 </p>
             )}
 
-            {/* Empty catalog warning */}
+            {/* EMPTY CATALOG WARNING */}
 
-            {!makesRequest.loading &&
+            {selectionMode === "catalog" &&
+                !makesRequest.loading &&
                 !makesRequest.error &&
                 makes.length === 0 && (
                     <p
                         role="status"
-                        className="text-xs text-amber-700"
+                        className="text-xs leading-5 text-amber-700"
                     >
                         The vehicle catalog has no active
                         makes yet. Please try again later.
                     </p>
                 )}
 
-            {makesRequest.error &&
+            {selectionMode === "catalog" && makesRequest.error &&
                 makes.length === 0 && (
                     <button
                         type="button"
                         onClick={retryCatalog}
                         disabled={disabled}
-                        className="text-sm font-medium text-[#7008E7] hover:underline disabled:opacity-50"
+                        className="text-sm font-semibold text-[#0877D9] hover:underline disabled:opacity-50"
                     >
                         Retry loading vehicle makes
                     </button>
                 )}
 
-            {!hasSelectedVehicle && (
-                <p className="text-xs leading-5 text-slate-500">
+            {/* HELPER TEXT */}
+
+            {selectionMode === "catalog" && !hasSelectedVehicle && (
+                <p className="border-t border-slate-100 pt-4 text-xs leading-5 text-slate-500">
                     Select the exact variant of your
-                    vehicle. This helps buyers find your
-                    listing using accurate vehicle
-                    specifications.
+                    vehicle. Accurate vehicle details help
+                    buyers find your listing more easily.
                 </p>
             )}
         </section>

@@ -1,6 +1,6 @@
 import type { CreateListingPayload } from "@/app/types/user/listings/listing-form.types";
 
-import type { ListingFormSchemaValues } from "@/app/lib/user/listing/listing-form.schema";
+import type { ListingFormSchemaValues } from "@/app/schema/listing/listing-form.schema";
 
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                     */
@@ -18,11 +18,34 @@ export interface FormError {
 
 export const DEFAULT_VALUES: ListingFormSchemaValues = {
     vehicleVariantId: "",
+
+    // Vehicle identity
+    makeName: "",
+    modelName: "",
+    year: "",
+    generationName: "",
+    variantName: "",
+
+    // Vehicle specifications
+    bodyStyle: "",
+    fuelType: "",
+    transmission: "",
+    driveType: "",
+    engineCapacity: "",
+    horsepower: "",
+    exteriorColor: "",
+    interiorColor: "",
+    seats: "",
+    doors: "",
+
+    // Listing details
     title: "",
     description: "",
     price: "",
     mileage: "",
-    condition: "USED",
+
+    // Location and condition
+    condition: "NIGERIAN_USED",
     country: "Nigeria",
     state: "",
     city: "",
@@ -191,9 +214,20 @@ export function buildCreateListingPayload(
     const mileage = values.mileage.trim();
     const state = values.state.trim();
     const city = values.city.trim();
+    const makeName = values.makeName.trim();
+    const modelName = values.modelName.trim();
+    const year = values.year.trim();
+    const generationName = values.generationName.trim();
+    const variantName = values.variantName.trim();
+    const vehicleVariantId = values.vehicleVariantId.trim();
 
     return {
-        vehicleVariantId: values.vehicleVariantId,
+        ...(vehicleVariantId ? { vehicleVariantId } : {}),
+        makeName,
+        modelName,
+        year: Number(year),
+        ...(generationName ? { generationName } : {}),
+        ...(variantName ? { variantName } : {}),
         title: values.title.trim(),
         description: values.description.trim(),
         price: Number(values.price),

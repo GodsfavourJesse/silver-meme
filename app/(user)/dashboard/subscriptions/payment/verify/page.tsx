@@ -19,6 +19,7 @@ import { UserSubscription } from "@/app/types/user/subscription/subscription.typ
 type VerificationStatus =
     | "verifying"
     | "success"
+    | "pending"
     | "failed";
 
 function formatCurrency(
@@ -87,12 +88,12 @@ function PaymentVerificationContent() {
             setSubscription(result.subscription ?? null);
             setStatus("success");
         } catch (error) {
-            setStatus("failed");
+            setStatus("pending");
 
             setErrorMessage(
                 error instanceof Error
                     ? error.message
-                    : "We couldn't verify your payment. Please try again.",
+                    : "We couldn't verify your payment yet. Please try again shortly.",
             );
         }
     };
@@ -243,6 +244,79 @@ function PaymentVerificationContent() {
                                     className="rotate-180"
                                 />
                             </Link>
+                        </>
+                    )}
+
+                    {status === "pending" && (
+                        <>
+                            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-amber-50">
+                                <Clock
+                                    size={34}
+                                    className="text-amber-600"
+                                />
+                            </div>
+
+                            <h2 className="mt-6 text-xl font-bold text-gray-950">
+                                Payment confirmation is pending
+                            </h2>
+
+                            <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-gray-500">
+                                We haven't received final confirmation from
+                                our payment provider yet. This does not mean
+                                your payment failed.
+                            </p>
+
+                            <div className="mt-6 rounded-xl border border-amber-100 bg-amber-50 p-4 text-left">
+                                <p className="text-sm font-semibold text-amber-900">
+                                    Please don't pay again.
+                                </p>
+
+                                <p className="mt-1 text-xs leading-5 text-amber-800">
+                                    Your existing payment reference is being
+                                    preserved. Retry verification to check
+                                    whether Paystack has confirmed the payment.
+                                </p>
+                            </div>
+
+                            {reference && (
+                                <div className="mt-6 rounded-xl border border-gray-200 bg-gray-50 p-4 text-left">
+                                    <p className="text-xs font-medium text-gray-400">
+                                        Payment reference
+                                    </p>
+
+                                    <p className="mt-1 break-all font-mono text-xs text-gray-700">
+                                        {reference}
+                                    </p>
+                                </div>
+                            )}
+
+                            <div className="mt-7 flex flex-col gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => void verify()}
+                                    disabled={verifyPayment.isPending}
+                                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#1491FF] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#0877D9] disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                    {verifyPayment.isPending ? (
+                                        <LoaderCircle
+                                            size={17}
+                                            className="animate-spin"
+                                        />
+                                    ) : (
+                                        <RefreshCw size={17} />
+                                    )}
+
+                                    Retry verification
+                                </button>
+
+                                <Link
+                                    href="/dashboard/subscriptions"
+                                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 px-5 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+                                >
+                                    <ArrowLeft size={17} />
+                                    Back to subscription
+                                </Link>
+                            </div>
                         </>
                     )}
 

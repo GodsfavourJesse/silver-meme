@@ -19,6 +19,12 @@ import {
     AlertCircle,
     RefreshCw,
     FileText,
+    Coins,
+    TrendingUp,
+    Wallet,
+    BadgeCheck,
+    CalendarClock,
+    History,
 } from "lucide-react";
 
 import type {
@@ -215,6 +221,355 @@ function RelatedRecordsPlaceholder({
     );
 }
 
+function formatNumber(value: number) {
+    return value.toLocaleString("en-NG");
+}
+
+function CreditBalanceCard({
+    title,
+    description,
+    total,
+    used,
+    remaining,
+    accent = "blue",
+}: {
+    title: string;
+    description: string;
+    total: number;
+    used: number;
+    remaining: number;
+    accent?: "blue" | "emerald" | "amber";
+}) {
+    const styles = {
+        blue: {
+            container: "border-blue-100 bg-blue-50/60",
+            icon: "bg-blue-100 text-blue-700",
+            label: "text-blue-700",
+            progress: "bg-[#1491FF]",
+        },
+        emerald: {
+            container: "border-emerald-100 bg-emerald-50/60",
+            icon: "bg-emerald-100 text-emerald-700",
+            label: "text-emerald-700",
+            progress: "bg-emerald-500",
+        },
+        amber: {
+            container: "border-amber-100 bg-amber-50/60",
+            icon: "bg-amber-100 text-amber-700",
+            label: "text-amber-700",
+            progress: "bg-amber-500",
+        },
+    }[accent];
+
+    const percentage =
+        total > 0
+            ? Math.min(100, Math.max(0, (used / total) * 100))
+            : 0;
+
+    return (
+        <div className={`rounded-2xl border p-4 sm:p-5 ${styles.container}`}>
+            <div className="flex items-start justify-between gap-3">
+                <div>
+                    <p className="text-sm font-semibold text-gray-800">
+                        {title}
+                    </p>
+
+                    <p className="mt-1 text-xs text-gray-500">
+                        {description}
+                    </p>
+                </div>
+
+                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${styles.icon}`}>
+                    <Coins className="h-5 w-5" />
+                </div>
+            </div>
+
+            <div className="mt-5 flex items-end justify-between gap-3">
+                <div>
+                    <p className="text-3xl font-bold tracking-tight text-gray-950">
+                        {formatNumber(remaining)}
+                    </p>
+
+                    <p className="mt-1 text-xs text-gray-500">
+                        Credits remaining
+                    </p>
+                </div>
+
+                <p className={`text-sm font-semibold ${styles.label}`}>
+                    {formatNumber(used)} / {formatNumber(total)} used
+                </p>
+            </div>
+
+            <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/80">
+                <div
+                    className={`h-full rounded-full transition-all ${styles.progress}`}
+                    style={{ width: `${percentage}%` }}
+                />
+            </div>
+
+            <div className="mt-2 flex justify-between text-xs text-gray-500">
+                <span>{percentage.toFixed(0)}% used</span>
+                <span>{formatNumber(total)} allocated</span>
+            </div>
+        </div>
+    );
+}
+
+function UserCreditsSection({
+    credits,
+}: {
+    credits: NonNullable<
+        import("@/app/types/admin/admin-users.types").AdminUserDetails["credits"]
+    >;
+}) {
+    return (
+        <SectionCard
+            title="Listing credits"
+            description="Credit allocation, usage and remaining balances for this account."
+            icon={<Wallet className="h-5 w-5" />}
+        >
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                <CreditBalanceCard
+                    title="Free credits"
+                    description="Credits provided through free registration."
+                    total={credits.free.total}
+                    used={credits.free.used}
+                    remaining={credits.free.remaining}
+                    accent="emerald"
+                />
+
+                <CreditBalanceCard
+                    title="Subscription credits"
+                    description="Credits allocated through purchased plans."
+                    total={credits.subscribed.total}
+                    used={credits.subscribed.used}
+                    remaining={credits.subscribed.remaining}
+                    accent="blue"
+                />
+
+                <CreditBalanceCard
+                    title="Admin adjustments"
+                    description="Credits manually granted by administrators."
+                    total={credits.adjustment.total}
+                    used={credits.adjustment.used}
+                    remaining={credits.adjustment.remaining}
+                    accent="amber"
+                />
+            </div>
+
+            <div className="mt-5 rounded-2xl border border-[#D5EAFE] bg-[#F4F9FF] p-5">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#EAF5FF] text-[#1491FF]">
+                            <TrendingUp className="h-5 w-5" />
+                        </div>
+
+                        <div>
+                            <p className="text-sm font-semibold text-gray-800">
+                                Total available credits
+                            </p>
+
+                            <p className="mt-1 text-xs text-gray-500">
+                                Combined balance across all credit sources.
+                            </p>
+                        </div>
+                    </div>
+
+                    <p className="text-3xl font-bold tracking-tight text-[#0877D9]">
+                        {formatNumber(credits.totalRemaining)}
+                    </p>
+                </div>
+            </div>
+
+            <div className="mt-4 rounded-xl border border-gray-100 bg-gray-50 p-4">
+                <p className="text-sm font-semibold text-gray-800">
+                    Credit consumption policy
+                </p>
+
+                <p className="mt-1 text-sm leading-6 text-gray-500">
+                    Subscription credits are consumed first, followed by
+                    free credits and then administrator adjustments.
+                    Unused subscription credits remain available after
+                    their subscription expires.
+                </p>
+            </div>
+        </SectionCard>
+    );
+}
+
+function SubscriptionHistorySection({
+    subscriptions,
+}: {
+    subscriptions: import("@/app/types/admin/admin-users.types").AdminUserSubscription[];
+}) {
+    function getSubscriptionStatus(status: string) {
+        switch (status) {
+            case "ACTIVE":
+                return "bg-emerald-50 text-emerald-700";
+
+            case "PENDING":
+                return "bg-amber-50 text-amber-700";
+
+            case "EXPIRED":
+                return "bg-gray-100 text-gray-600";
+
+            case "CANCELLED":
+                return "bg-red-50 text-red-700";
+
+            default:
+                return "bg-gray-100 text-gray-600";
+        }
+    }
+
+    function formatMoney(
+        amount: string | number,
+        currency: string,
+    ) {
+        const numericAmount = Number(amount);
+
+        if (!Number.isFinite(numericAmount)) {
+            return `${currency} ${amount}`;
+        }
+
+        return new Intl.NumberFormat("en-NG", {
+            style: "currency",
+            currency,
+            maximumFractionDigits: 2,
+        }).format(numericAmount);
+    }
+
+    return (
+        <SectionCard
+            title="Subscription history"
+            description="Plans purchased by this user, including their allocated credits and subscription periods."
+            icon={<History className="h-5 w-5" />}
+        >
+            {subscriptions.length === 0 ? (
+                <div className="flex flex-col items-center py-10 text-center">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#EAF5FF] text-[#1491FF]">
+                        <CalendarClock className="h-6 w-6" />
+                    </div>
+
+                    <h3 className="mt-4 font-semibold text-gray-900">
+                        No subscription history
+                    </h3>
+
+                    <p className="mt-1 max-w-sm text-sm leading-6 text-gray-500">
+                        This user has not purchased a subscription plan yet.
+                    </p>
+                </div>
+            ) : (
+                <div className="space-y-4">
+                    {subscriptions.map((subscription) => (
+                        <div
+                            key={subscription.id}
+                            className="rounded-2xl border border-gray-100 bg-white p-4 transition hover:border-[#C8E3FF] sm:p-5"
+                        >
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                                <div className="min-w-0">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <h3 className="text-base font-semibold text-gray-950">
+                                            {subscription.planName ?? "Subscription plan"}
+                                        </h3>
+
+                                        {subscription.planVersion !== null && (
+                                            <span className="rounded-lg bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">
+                                                Version {subscription.planVersion}
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    <p className="mt-1 break-all text-xs text-gray-400">
+                                        Subscription ID: {subscription.id}
+                                    </p>
+                                </div>
+
+                                <span
+                                    className={`inline-flex w-fit items-center rounded-full px-3 py-1.5 text-xs font-semibold ${getSubscriptionStatus(subscription.status)}`}
+                                >
+                                    {subscription.status}
+                                </span>
+                            </div>
+
+                            <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-4">
+                                <DetailItem
+                                    label="Listing credits"
+                                    value={
+                                        <span className="inline-flex items-center gap-1.5 text-[#0877D9]">
+                                            <BadgeCheck className="h-4 w-4" />
+                                            {formatNumber(subscription.listingCredits)}
+                                        </span>
+                                    }
+                                />
+
+                                <DetailItem
+                                    label="Plan duration"
+                                    value={`${subscription.durationDays} days`}
+                                />
+
+                                <DetailItem
+                                    label="Original price"
+                                    value={formatMoney(
+                                        subscription.originalPrice,
+                                        subscription.currency,
+                                    )}
+                                />
+
+                                <DetailItem
+                                    label="Amount paid"
+                                    value={formatMoney(
+                                        subscription.effectivePrice,
+                                        subscription.currency,
+                                    )}
+                                />
+                            </div>
+
+                            {Number(subscription.dealerDiscountPercent ?? 0) > 0 && (
+                                <p className="mt-4 text-xs font-medium text-emerald-700">
+                                    Dealer discount: {subscription.dealerDiscountPercent}%
+                                </p>
+                            )}
+
+                            <div className="mt-5 grid gap-4 border-t border-gray-100 pt-4 sm:grid-cols-3">
+                                <DetailItem
+                                    label="Start date"
+                                    value={formatDate(subscription.startsAt)}
+                                />
+
+                                <DetailItem
+                                    label="Expiry date"
+                                    value={formatDate(subscription.expiresAt)}
+                                />
+
+                                <DetailItem
+                                    label="Cancellation date"
+                                    value={formatDate(subscription.cancelledAt)}
+                                />
+                            </div>
+
+                            {subscription.cancellationReason && (
+                                <div className="mt-4 rounded-xl bg-red-50 p-3">
+                                    <p className="text-xs font-semibold text-red-700">
+                                        Cancellation reason
+                                    </p>
+
+                                    <p className="mt-1 text-sm text-red-600">
+                                        {subscription.cancellationReason}
+                                    </p>
+                                </div>
+                            )}
+
+                            <p className="mt-4 text-xs text-gray-400">
+                                Purchased: {formatDate(subscription.createdAt)}
+                            </p>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </SectionCard>
+    );
+}
+
 // ============================================================
 // PAGE
 // ============================================================
@@ -332,7 +687,7 @@ export default function AdminUserDetailsPage() {
 
                 <button
                     type="button"
-                    onClick={() => router.push("/admin/users")}
+                    onClick={() => router.push("/ops-center-7k9x/dashboard/users")}
                     className="inline-flex items-center gap-2 text-sm font-semibold text-gray-600 transition hover:text-purple-700"
                 >
                     <ArrowLeft className="h-4 w-4" />
@@ -473,6 +828,16 @@ export default function AdminUserDetailsPage() {
                         />
                     </div>
                 </SectionCard>
+
+                {/* LISTING CREDITS */}
+
+                <UserCreditsSection credits={user.credits} />
+
+                {/* SUBSCRIPTION HISTORY */}
+
+                <SubscriptionHistorySection
+                    subscriptions={user.related.recentSubscriptions}
+                />
 
                 {/* ROLES AND ACCESS */}
 

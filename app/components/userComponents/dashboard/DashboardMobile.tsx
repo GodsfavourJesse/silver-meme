@@ -401,7 +401,7 @@ function MobileActionGrid({
               {
                   label: "Subscriptions",
                   description: "Plans and billing",
-                  href: "/subscriptions",
+                  href: "/dashboard/subscriptions",
                   icon: CreditCard,
               },
               {

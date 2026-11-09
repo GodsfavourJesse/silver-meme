@@ -208,7 +208,13 @@ function getListingLocation(listing: DealerListing): string {
 function getConditionLabel(condition?: string | null): string {
     if (!condition) return "Vehicle";
 
-    return condition
+    const labels: Record<string, string> = {
+        BRAND_NEW: "Brand New",
+        FOREIGN_USED: "Foreign Used",
+        NIGERIAN_USED: "Nigerian Used",
+    };
+
+    return labels[condition] ?? condition
         .replace(/[_-]/g, " ")
         .replace(/\b\w/g, (character) => character.toUpperCase());
 }

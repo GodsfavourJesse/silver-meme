@@ -34,6 +34,7 @@ import {
     formatDate,
     formatMileage,
     formatPrice,
+    getConditionLabel,
     ImageSummaryBar,
     ListingEditorViewProps,
 } from "./listing-editor.shared";
@@ -68,7 +69,7 @@ export default function ListingEditorMobile(
     const { listing, images } = editor;
 
     const listingEditUrl =
-        `/my-listings/${encodeURIComponent(listing.id)}/edit-details`;
+        `/dashboard/my-listings/${encodeURIComponent(listing.id)}/edit`;
 
     const readinessItems = [
         {
@@ -302,7 +303,7 @@ export default function ListingEditorMobile(
 
                         <MobileDetail
                             label="Condition"
-                            value={listing.condition || "Not specified"}
+                            value={getConditionLabel(listing.condition)}
                         />
 
                         <MobileDetail

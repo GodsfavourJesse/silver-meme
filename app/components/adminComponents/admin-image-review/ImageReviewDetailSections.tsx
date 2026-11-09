@@ -27,6 +27,7 @@ import type {
     AdminImageAnalysis,
     AdminImageReviewDetailResponse,
 } from "@/app/types/admin/adminImageReview.types";
+import { formatEnum } from "@/app/lib/user/vehicle/vehicle-details-format";
 
 type ImageDetails = AdminImageReviewDetailResponse["image"];
 type ListingDetails = AdminImageReviewDetailResponse["listing"];
@@ -320,7 +321,7 @@ function ListingInformation({
 
                 <MetadataRow
                     label="Condition"
-                    value={listing.condition}
+                    value={formatEnum(listing.condition)}
                 />
 
                 <MetadataRow

@@ -1,5 +1,7 @@
 "use client";
 
+import { usePathname, useRouter } from "next/navigation";
+
 import {
     useCallback,
     useEffect,
@@ -55,6 +57,8 @@ const MARKETPLACE_ERROR =
 /* -------------------------------------------------------------------------- */
 
 export function useMarketplaceSearch() {
+    const router = useRouter();
+    const pathname = usePathname();
     /* ---------------------------------------------------------------------- */
     /* Search state                                                           */
     /* ---------------------------------------------------------------------- */
@@ -543,11 +547,30 @@ export function useMarketplaceSearch() {
 
             loadingMoreRef.current = false;
 
+            const nextQuery = query.trim();
+
             setPage(1);
             setError("");
-            setSubmittedQuery(query.trim());
+            setQuery(nextQuery);
+            setSubmittedQuery(nextQuery);
+
+            if (pathname !== "/marketplace") {
+                const params = new URLSearchParams();
+
+                if (nextQuery) {
+                    params.set("q", nextQuery);
+                }
+
+                router.push(
+                    params.size
+                        ? `/marketplace?${params.toString()}`
+                        : "/marketplace",
+                );
+
+                return;
+            }
         },
-        [query],
+        [query, pathname, router],
     );
 
     /* ---------------------------------------------------------------------- */
@@ -667,10 +690,10 @@ export function useMarketplaceSearch() {
                     limit: MARKETPLACE_PAGE_SIZE,
 
                     /**
-                     * Boosted vehicles are fetched separately
-                     * and displayed in the Featured Vehicles section.
+                     * Boosted listings remain part of the normal
+                     * marketplace inventory. Active boosts only affect
+                     * ranking and featured placement, never eligibility.
                      */
-                    excludeBoosted: true,
                 });
 
                 if (!isCurrentRequest()) return;
@@ -745,7 +768,7 @@ export function useMarketplaceSearch() {
     /* ---------------------------------------------------------------------- */
 
     useEffect(() => {
-        if (!initialized) return;
+        if (!initialized || pathname !== "/marketplace") return;
 
         const searchParams = buildSearchParams(
             submittedQuery,
@@ -770,23 +793,11 @@ export function useMarketplaceSearch() {
             params.set(key, String(value));
         }
 
-        /**
-         * generationId is preserved in the URL for filter restoration,
-         * even though the current marketplace search API does not
-         * accept generationId as a search parameter.
-         */
-        if (filters.generationId) {
-            params.set(
-                "generationId",
-                filters.generationId,
-            );
-        }
-
         const queryString = params.toString();
 
         const nextUrl = queryString
-            ? `/?${queryString}`
-            : "/";
+            ? `/marketplace?${queryString}`
+            : "/marketplace";
 
         const currentUrl =
             `${window.location.pathname}${window.location.search}`;
@@ -800,6 +811,7 @@ export function useMarketplaceSearch() {
         }
     }, [
         initialized,
+        pathname,
         submittedQuery,
         filters,
         sort,

@@ -129,15 +129,23 @@ export default function SubscriptionPlanCard({
 
     const initializePayment = useInitializeSubscriptionPayment();
 
-    const hasCurrentSubscription =
-        currentSubscription?.status === "ACTIVE" ||
+    const isActiveSubscription =
+        currentSubscription?.status === "ACTIVE";
+
+    const isPendingSubscription =
         currentSubscription?.status === "PENDING";
 
-    const isCurrentPlan =
-        currentSubscription?.planId === plan.id &&
-        hasCurrentSubscription;
+    const isPendingForThisPlan =
+        isPendingSubscription &&
+        currentSubscription?.planId === plan.id;
 
-    const isPending = currentSubscription?.status === "PENDING";
+    const hasBlockingSubscription =
+        isActiveSubscription ||
+        (isPendingSubscription && !isPendingForThisPlan);
+
+    const isCurrentPlan =
+        isActiveSubscription &&
+        currentSubscription?.planId === plan.id;
 
     const discount = Number(price?.dealerDiscountPercent ?? 0);
     const hasDiscount = discount > 0;
@@ -148,11 +156,11 @@ export default function SubscriptionPlanCard({
             return;
         }
 
-        if (hasCurrentSubscription) {
+        if (hasBlockingSubscription) {
             toast.error(
-                isPending
-                    ? "You already have a pending subscription payment."
-                    : "You already have an active subscription.",
+                isActiveSubscription
+                    ? "You already have an active subscription."
+                    : "You already have another subscription awaiting payment.",
             );
 
             return;
@@ -163,16 +171,42 @@ export default function SubscriptionPlanCard({
         try {
             const result = await initializePayment.mutateAsync(plan.id);
 
-            if (!result.authorizationUrl) {
+            if (result.status === "SUCCESS") {
+                toast.success("Your subscription payment is already complete.");
+
+                window.location.assign(
+                    "/dashboard/subscriptions",
+                );
+
+                return;
+            }
+
+            if (
+                result.status === "FAILED" ||
+                result.status === "ABANDONED"
+            ) {
                 toast.error(
-                    "Payment was initialized, but the checkout link is unavailable. Please contact support before trying again.",
+                    "Your previous payment attempt has ended. Please try again.",
                 );
 
                 setCheckoutStarted(false);
                 return;
             }
 
-            toast.success("Redirecting you to secure checkout...");
+            if (!result.authorizationUrl) {
+                toast.error(
+                    "Your payment session is being recovered. Please try again shortly. Do not create another subscription.",
+                );
+
+                setCheckoutStarted(false);
+                return;
+            }
+
+            toast.success(
+                isPendingForThisPlan
+                    ? "Resuming your existing payment..."
+                    : "Redirecting you to secure checkout...",
+            );
 
             window.location.assign(result.authorizationUrl);
         } catch (error) {
@@ -362,12 +396,12 @@ export default function SubscriptionPlanCard({
                             priceLoading ||
                             priceError ||
                             isProcessing ||
-                            hasCurrentSubscription
+                            hasBlockingSubscription
                         }
                         className={`flex min-h-12 w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition duration-200 active:scale-[0.98] disabled:cursor-not-allowed ${
                             isCurrentPlan
                                 ? "border border-blue-200 bg-white text-[#0877D9]"
-                                : hasCurrentSubscription
+                                : hasBlockingSubscription
                                   ? "border border-slate-200 bg-slate-100 text-slate-400"
                                   : "bg-[#1491FF] text-white shadow-[0_4px_12px_rgba(20,145,255,0.2)] hover:bg-[#0877D9] hover:shadow-[0_6px_16px_rgba(20,145,255,0.25)] disabled:bg-blue-200 disabled:shadow-none"
                         }`}
@@ -385,21 +419,22 @@ export default function SubscriptionPlanCard({
                                 <CheckCircle2 size={17} />
                                 Current plan
                             </>
-                        ) : hasCurrentSubscription ? (
-                            isPending ? (
-                                "Payment pending"
-                            ) : (
-                                "Subscription active"
-                            )
+                        ) : hasBlockingSubscription ? (
+                            isActiveSubscription
+                                ? "Subscription active"
+                                : "Another payment is pending"
                         ) : (
                             <>
-                                Continue to payment
+                                {isPendingForThisPlan
+                                    ? "Resume payment"
+                                    : "Continue to payment"}
+
                                 <ArrowRight size={17} />
                             </>
                         )}
                     </button>
 
-                    {!hasCurrentSubscription && (
+                    {!hasBlockingSubscription && (
                         <div className="mt-3 flex items-center justify-center gap-1.5 text-center">
                             <ShieldCheck
                                 size={13}

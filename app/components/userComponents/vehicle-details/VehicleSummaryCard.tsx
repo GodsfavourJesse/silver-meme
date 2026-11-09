@@ -34,6 +34,18 @@ interface VehicleSummaryCardProps {
     onContact: () => void;
 }
 
+function formatCondition(condition?: string | null): string | null {
+    if (!condition) return null;
+
+    const labels: Record<string, string> = {
+        BRAND_NEW: "Brand New",
+        FOREIGN_USED: "Foreign Used",
+        NIGERIAN_USED: "Nigerian Used",
+    };
+
+    return labels[condition] ?? formatEnum(condition);
+}
+
 export function VehicleSummaryCard({
     details,
     title,
@@ -63,7 +75,7 @@ export function VehicleSummaryCard({
                 <div className="flex flex-wrap items-center gap-2">
                     {listing.condition && (
                         <span className="rounded-md bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-600">
-                            {formatEnum(listing.condition)}
+                            {formatCondition(listing.condition)}
                         </span>
                     )}
 

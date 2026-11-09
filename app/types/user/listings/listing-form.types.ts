@@ -1,13 +1,52 @@
-export type VehicleCondition = "NEW" | "USED";
+export type VehicleCondition =
+    | "BRAND_NEW"
+    | "FOREIGN_USED"
+    | "NIGERIAN_USED";
 
 export interface ListingFormValues {
+    /*
+     * VEHICLE IDENTITY
+     */
+
     vehicleVariantId: string;
+
+    makeName: string;
+    modelName: string;
+    year: string;
+
+    generationName: string;
+    variantName: string;
+
+    /*
+     * VEHICLE SPECIFICATIONS
+     */
+
+    bodyStyle: string;
+    fuelType: string;
+    transmission: string;
+    driveType: string;
+
+    engineCapacity: string;
+    horsepower: string;
+
+    exteriorColor: string;
+    interiorColor: string;
+
+    seats: string;
+    doors: string;
+
+    /*
+     * LISTING DETAILS
+     */
+
     title: string;
     description: string;
     price: string;
     currency: "NGN";
     mileage: string;
+
     condition: VehicleCondition;
+
     country: string;
     state: string;
     city: string;
@@ -57,18 +96,22 @@ export interface VehicleVariantOption {
     year: number;
     name: string;
     slug?: string;
+
     engineId?: string | null;
     engine?: VehicleEngineOption | null;
     engineName?: string | null;
     engineDisplacementCc?: number | null;
     variantCylinders?: number | null;
     variantHorsepower?: number | null;
+
     fuelType?: string | null;
     transmission?: string | null;
     driveType?: string | null;
     bodyStyle?: string | null;
+
     seats?: number | null;
     doors?: number | null;
+
     aliases?: string[] | null;
     nigeriaMarket?: boolean;
     active?: boolean;
@@ -98,6 +141,7 @@ export interface VehicleSearchResult {
     fuelType?: string | null;
     transmission?: string | null;
     driveType?: string | null;
+
     seats?: number | null;
     doors?: number | null;
 
@@ -124,13 +168,54 @@ export interface VehicleCatalogResponse<T> {
 }
 
 export interface CreateListingPayload {
-    vehicleVariantId: string;
+    /*
+     * Catalogue reference is optional for manual listings.
+     */
+
+    vehicleVariantId?: string;
+
+    /*
+     * Vehicle identity snapshots.
+     */
+
+    makeName: string;
+    modelName: string;
+    year: number;
+
+    generationName?: string;
+    variantName?: string;
+
+    /*
+     * Vehicle specification snapshots.
+     */
+
+    bodyStyle?: string;
+    fuelType?: string;
+    transmission?: string;
+    driveType?: string;
+
+    engineCapacity?: number;
+    horsepower?: number;
+
+    exteriorColor?: string;
+    interiorColor?: string;
+
+    seats?: number;
+    doors?: number;
+
+    /*
+     * Listing details.
+     */
+
     title: string;
     description: string;
+
     price: number;
     currency: "NGN";
+
     mileage?: number;
     condition: VehicleCondition;
+
     country: string;
     state?: string;
     city?: string;

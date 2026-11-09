@@ -1,3 +1,8 @@
+export type MarketplaceCondition =
+    | "BRAND_NEW"
+    | "FOREIGN_USED"
+    | "NIGERIAN_USED";
+
 export interface MarketplaceListing {
     id: string;
     sellerId: string;
@@ -7,7 +12,7 @@ export interface MarketplaceListing {
     price: string | number;
     currency: string;
     mileage: number | null;
-    condition: string | null;
+    condition: MarketplaceCondition | null;
     state: string | null;
     city: string | null;
     status: string;
@@ -122,7 +127,7 @@ export interface MarketplaceSearchParams {
     minYear?: number;
     maxYear?: number;
 
-    condition?: string;
+    condition?: MarketplaceCondition;
     fuelType?: string;
     transmission?: string;
     bodyStyle?: string;
@@ -134,9 +139,9 @@ export interface MarketplaceSearchParams {
     verifiedDealerOnly?: boolean;
 
     /**
-     * Exclude listings with currently active boosts.
-     * Used for the homepage's ordinary Latest Vehicles
-     * and Search Results sections.
+     * Optional administrative/special-purpose exclusion.
+     * Normal marketplace and latest-vehicle results include boosted
+     * listings; boosts affect placement, not listing eligibility.
      */
     excludeBoosted?: boolean;
 
@@ -144,5 +149,6 @@ export interface MarketplaceSearchParams {
 
     makeId?: string;
     modelId?: string;
+    generationId?: string;
     variantId?: string;
 }

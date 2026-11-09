@@ -1,6 +1,9 @@
+import { PaymentSessionResult } from "../subscription/subscription.types";
+
 // ============================================
 // BOOST STATUS
 // ============================================
+
 
 export type BoostStatus =
     | "PENDING"
@@ -133,13 +136,5 @@ export interface BoostHistoryParams {
 // BOOST PAYMENT
 // ============================================
 
-export interface BoostPaymentResult {
-    paymentId: string;
-    reference: string;
-
-    amount: number;
-    currency: string;
-
-    authorizationUrl?: string;
-    accessCode?: string;
-}
+export interface BoostPaymentResult
+    extends PaymentSessionResult {}

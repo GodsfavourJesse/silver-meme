@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { apiRequest } from "@/app/lib/api/api-client";
 import { ApiError } from "@/app/lib/api/api-error";
+import { getUserCsrfToken } from "@/app/services/user/auth/csrf.service";
 
 type PaymentVerificationData = {
     payment?: {
@@ -90,6 +91,8 @@ export default function PaymentCallbackClient() {
             });
 
             try {
+                const csrfToken = await getUserCsrfToken();
+
                 const response =
                     await apiRequest<{
                         success: boolean;
@@ -97,6 +100,7 @@ export default function PaymentCallbackClient() {
                         data?: PaymentVerificationData;
                     }>("/payments/verify", {
                         method: "POST",
+                        csrfToken,
                         body: {
                             reference,
                         },
@@ -162,11 +166,13 @@ export default function PaymentCallbackClient() {
                         ? error.message
                         : error instanceof Error
                             ? error.message
-                            : "We could not verify your payment.";
+                            : "We could not reach the payment verification service.";
 
                 setResult({
-                    state: "failed",
-                    message,
+                    state: "pending",
+                    message:
+                        `${message} Your payment has not been confirmed yet. ` +
+                        "Please retry verification shortly. Do not make another payment.",
                     reference,
                 });
             }

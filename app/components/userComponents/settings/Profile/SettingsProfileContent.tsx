@@ -33,6 +33,10 @@ import {
     Eye,
     CircleHelp,
     LogOut,
+    Wallet,
+    CreditCard,
+    BadgeCheck,
+    CalendarDays,
 } from "lucide-react";
 
 import { queryKeys } from "@/app/lib/query/query-keys";
@@ -437,6 +441,528 @@ function ProfileAvatar({
         >
             {initials}
         </div>
+    );
+}
+
+function CreditSourceRow({
+    title,
+    description,
+    total,
+    used,
+    remaining,
+    color,
+}: {
+    title: string;
+    description: string;
+    total: number;
+    used: number;
+    remaining: number;
+    color: string;
+}) {
+    const percentage =
+        total > 0
+            ? Math.min(100, Math.max(0, (used / total) * 100))
+            : 0;
+
+    return (
+        <div className="rounded-xl border border-slate-200 p-4">
+            <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                    <p className="text-sm font-semibold text-slate-900">
+                        {title}
+                    </p>
+
+                    <p className="mt-1 text-xs leading-5 text-slate-500">
+                        {description}
+                    </p>
+                </div>
+
+                <div className="shrink-0 text-right">
+                    <p className="text-xl font-bold text-slate-900">
+                        {remaining.toLocaleString("en-NG")}
+                    </p>
+
+                    <p className="text-[11px] text-slate-500">
+                        remaining
+                    </p>
+                </div>
+            </div>
+
+            <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100">
+                <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{
+                        width: `${percentage}%`,
+                        backgroundColor: color,
+                    }}
+                />
+            </div>
+
+            <div className="mt-2 flex items-center justify-between text-[11px] text-slate-500">
+                <span>{used.toLocaleString("en-NG")} used</span>
+                <span>{total.toLocaleString("en-NG")} allocated</span>
+            </div>
+        </div>
+    );
+}
+
+function formatSubscriptionPrice(
+    amount: string | number,
+    currency: string,
+): string {
+    const numericAmount = Number(amount);
+
+    if (!Number.isFinite(numericAmount)) {
+        return "Not available";
+    }
+
+    try {
+        return new Intl.NumberFormat("en-NG", {
+            style: "currency",
+            currency,
+            maximumFractionDigits: 2,
+        }).format(numericAmount);
+    } catch {
+        return `${currency} ${numericAmount.toLocaleString("en-NG")}`;
+    }
+}
+
+function getCountdownParts(milliseconds: number) {
+    const totalSeconds = Math.max(
+        0,
+        Math.floor(milliseconds / 1000),
+    );
+
+    const days = Math.floor(totalSeconds / 86400);
+    const hours = Math.floor((totalSeconds % 86400) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    return { days, hours, minutes, seconds };
+}
+
+function ListingCreditsCard({
+    credits,
+}: {
+    credits: {
+        free: {
+            total: number;
+            used: number;
+            remaining: number;
+        };
+        subscribed: {
+            total: number;
+            used: number;
+            remaining: number;
+        };
+        adjustment: {
+            total: number;
+            used: number;
+            remaining: number;
+        };
+        totalRemaining: number;
+    };
+}) {
+    return (
+        <Panel>
+            <SectionHeading
+                eyebrow="Your listing allowance"
+                title="Listing credits"
+                description="Keep track of the credits available for publishing your vehicle listings."
+            />
+
+            <div className="rounded-2xl bg-[#1491FF] p-5 text-white sm:p-6">
+                <div className="flex items-center justify-between gap-3">
+                    <div>
+                        <p className="text-sm font-medium text-white/80">
+                            Total available credits
+                        </p>
+
+                        <p className="mt-2 text-4xl font-bold tracking-tight">
+                            {credits.totalRemaining.toLocaleString("en-NG")}
+                        </p>
+
+                        <p className="mt-2 text-xs text-white/80">
+                            Credits available for vehicle listings
+                        </p>
+                    </div>
+
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/15">
+                        <Wallet size={24} />
+                    </div>
+                </div>
+            </div>
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <CreditSourceRow
+                    title="Free credits"
+                    description="Credits provided through your account."
+                    {...credits.free}
+                    color="#1491FF"
+                />
+
+                <CreditSourceRow
+                    title="Subscription credits"
+                    description="Credits allocated through your subscription."
+                    {...credits.subscribed}
+                    color="#10B981"
+                />
+
+                <CreditSourceRow
+                    title="Admin adjustments"
+                    description="Additional credits granted by KARMASS."
+                    {...credits.adjustment}
+                    color="#F59E0B"
+                />
+            </div>
+
+            <div className="mt-5 flex items-start gap-2.5 rounded-xl border border-[#1491FF]/15 bg-[#1491FF]/5 p-3.5">
+                <Info
+                    size={17}
+                    className="mt-0.5 shrink-0"
+                    style={{ color: BRAND }}
+                />
+
+                <p className="text-xs leading-5 text-slate-600">
+                    Unused subscription credits remain in your account
+                    after your subscription expires. They are not
+                    automatically removed when your subscription ends.
+                </p>
+            </div>
+        </Panel>
+    );
+}
+
+function CurrentSubscriptionCard({
+    subscription,
+    onBrowsePlans,
+}: {
+    subscription: {
+        id: string;
+        planName: string;
+        planVersion: number | null;
+        status: string;
+        originalPrice: string | number;
+        dealerDiscountPercent: string | number | null;
+        effectivePrice: string | number;
+        currency: string;
+        durationDays: number;
+        listingCredits: number;
+        startsAt: string | null;
+        expiresAt: string | null;
+    } | null;
+    onBrowsePlans: () => void;
+}) {
+    const [now, setNow] = useState(() => Date.now());
+
+    useEffect(() => {
+        if (!subscription?.expiresAt) return;
+
+        const interval = window.setInterval(() => {
+            setNow(Date.now());
+        }, 1000);
+
+        return () => window.clearInterval(interval);
+    }, [subscription?.expiresAt]);
+
+    if (!subscription) {
+        return (
+            <Panel>
+                <SectionHeading
+                    eyebrow="Membership"
+                    title="Current subscription"
+                    description="Manage your listing allowance and discover subscription benefits."
+                />
+
+                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center">
+                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#1491FF]/10">
+                        <CreditCard
+                            size={25}
+                            style={{ color: BRAND }}
+                        />
+                    </div>
+
+                    <h3 className="mt-4 text-base font-bold text-slate-900">
+                        No active subscription
+                    </h3>
+
+                    <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">
+                        You're currently using the free listing allowance.
+                        Explore our plans to unlock more listing credits
+                        and additional benefits.
+                    </p>
+
+                    <button
+                        type="button"
+                        onClick={onBrowsePlans}
+                        className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#0877D9]"
+                        style={{ backgroundColor: BRAND }}
+                    >
+                        Explore subscription plans
+                        <ArrowRight size={16} />
+                    </button>
+                </div>
+            </Panel>
+        );
+    }
+
+    const expiryTime = subscription.expiresAt
+        ? new Date(subscription.expiresAt).getTime()
+        : null;
+
+    const validExpiry =
+        expiryTime !== null && Number.isFinite(expiryTime);
+
+    const remainingMilliseconds = validExpiry
+        ? expiryTime - now
+        : null;
+
+    const isExpired =
+        remainingMilliseconds !== null &&
+        remainingMilliseconds <= 0;
+
+    const isExpiringSoon =
+        remainingMilliseconds !== null &&
+        remainingMilliseconds > 0 &&
+        remainingMilliseconds <= 5 * 24 * 60 * 60 * 1000;
+
+    const countdown =
+        remainingMilliseconds !== null
+            ? getCountdownParts(remainingMilliseconds)
+            : null;
+
+    const discount = Number(
+        subscription.dealerDiscountPercent ?? 0,
+    );
+
+    return (
+        <Panel>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                    <p
+                        className="text-[11px] font-bold uppercase tracking-[0.13em]"
+                        style={{ color: BRAND }}
+                    >
+                        Membership
+                    </p>
+
+                    <h2 className="mt-1.5 text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
+                        Current subscription
+                    </h2>
+
+                    <p className="mt-1.5 text-sm text-slate-500">
+                        Your active KARMASS subscription details.
+                    </p>
+                </div>
+
+                <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
+                    <BadgeCheck size={14} />
+                    {isExpired ? "Expired" : "Active"}
+                </span>
+            </div>
+
+            <div className="mt-5 rounded-2xl border border-[#1491FF]/15 bg-gradient-to-br from-[#EAF5FF] to-white p-5">
+                <div className="flex items-start justify-between gap-3">
+                    <div>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-[#0877D9]">
+                            Your plan
+                        </p>
+
+                        <h3 className="mt-2 text-2xl font-bold text-slate-950">
+                            {subscription.planName}
+                        </h3>
+
+                        {subscription.planVersion !== null && (
+                            <p className="mt-1 text-xs text-slate-500">
+                                Plan version {subscription.planVersion}
+                            </p>
+                        )}
+                    </div>
+
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white text-[#1491FF] shadow-sm">
+                        <CreditCard size={23} />
+                    </div>
+                </div>
+
+                <div className="mt-5 grid grid-cols-2 gap-3">
+                    <div className="rounded-xl border border-white bg-white/80 p-3.5">
+                        <p className="text-xs text-slate-500">
+                            Listing credits
+                        </p>
+
+                        <p className="mt-1.5 text-2xl font-bold text-slate-900">
+                            {subscription.listingCredits.toLocaleString("en-NG")}
+                        </p>
+                    </div>
+
+                    <div className="rounded-xl border border-white bg-white/80 p-3.5">
+                        <p className="text-xs text-slate-500">
+                            Duration
+                        </p>
+
+                        <p className="mt-1.5 text-2xl font-bold text-slate-900">
+                            {subscription.durationDays}
+                            <span className="ml-1 text-sm font-medium text-slate-500">
+                                days
+                            </span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                <div>
+                    <p className="text-xs font-medium text-slate-500">
+                        Subscription price
+                    </p>
+
+                    <p className="mt-1 text-lg font-bold text-slate-900">
+                        {formatSubscriptionPrice(
+                            subscription.effectivePrice,
+                            subscription.currency,
+                        )}
+                    </p>
+
+                    {discount > 0 && (
+                        <div className="mt-1 flex flex-wrap items-center gap-2">
+                            <span className="text-xs text-slate-400 line-through">
+                                {formatSubscriptionPrice(
+                                    subscription.originalPrice,
+                                    subscription.currency,
+                                )}
+                            </span>
+
+                            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                                {discount}% discount
+                            </span>
+                        </div>
+                    )}
+                </div>
+
+                <div>
+                    <p className="text-xs font-medium text-slate-500">
+                        Subscription status
+                    </p>
+
+                    <p className="mt-1 text-sm font-semibold capitalize text-slate-900">
+                        {isExpired ? "Expired" : "Active"}
+                    </p>
+                </div>
+            </div>
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <div className="flex items-center gap-3 rounded-xl border border-slate-200 p-3.5">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+                        <CalendarDays size={18} />
+                    </div>
+
+                    <div className="min-w-0">
+                        <p className="text-xs text-slate-500">
+                            Started on
+                        </p>
+
+                        <p className="mt-1 truncate text-sm font-semibold text-slate-900">
+                            {formatDate(subscription.startsAt)}
+                        </p>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-3 rounded-xl border border-slate-200 p-3.5">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+                        <Clock3 size={18} />
+                    </div>
+
+                    <div className="min-w-0">
+                        <p className="text-xs text-slate-500">
+                            Expires on
+                        </p>
+
+                        <p className="mt-1 truncate text-sm font-semibold text-slate-900">
+                            {formatDate(subscription.expiresAt)}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div
+                className={[
+                    "mt-5 rounded-xl border p-4",
+                    isExpired
+                        ? "border-red-200 bg-red-50"
+                        : isExpiringSoon
+                          ? "border-red-200 bg-red-50"
+                          : "border-[#1491FF]/15 bg-[#1491FF]/5",
+                ].join(" ")}
+            >
+                <div className="flex items-center gap-2">
+                    <Clock3
+                        size={17}
+                        className={
+                            isExpired || isExpiringSoon
+                                ? "text-red-600"
+                                : "text-[#1491FF]"
+                        }
+                    />
+
+                    <p
+                        className={[
+                            "text-sm font-semibold",
+                            isExpired || isExpiringSoon
+                                ? "text-red-700"
+                                : "text-slate-900",
+                        ].join(" ")}
+                    >
+                        {isExpired
+                            ? "Your subscription has expired"
+                            : isExpiringSoon
+                              ? "Your subscription is expiring soon"
+                              : "Time remaining on your subscription"}
+                    </p>
+                </div>
+
+                {countdown && !isExpired ? (
+                    <div className="mt-4 grid grid-cols-4 gap-2">
+                        {[
+                            { label: "Days", value: countdown.days },
+                            { label: "Hours", value: countdown.hours },
+                            { label: "Minutes", value: countdown.minutes },
+                            { label: "Seconds", value: countdown.seconds },
+                        ].map((item) => (
+                            <div
+                                key={item.label}
+                                className={[
+                                    "rounded-xl border bg-white p-2 text-center",
+                                    isExpiringSoon
+                                        ? "border-red-100"
+                                        : "border-slate-100",
+                                ].join(" ")}
+                            >
+                                <p
+                                    className={[
+                                        "text-xl font-bold tabular-nums sm:text-2xl",
+                                        isExpiringSoon
+                                            ? "text-red-600"
+                                            : "text-slate-900",
+                                    ].join(" ")}
+                                >
+                                    {String(item.value).padStart(2, "0")}
+                                </p>
+
+                                <p className="mt-1 text-[10px] font-medium text-slate-500">
+                                    {item.label}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="mt-2 text-xs leading-5 text-red-600">
+                        Your subscription period has ended. Any unused
+                        subscription credits remain available in your
+                        listing credit balance.
+                    </p>
+                )}
+            </div>
+        </Panel>
     );
 }
 
@@ -1060,6 +1586,51 @@ export default function SettingsProfileContent({
                                     </div>
                                 ) : null}
                             </Panel>
+                        </motion.section>
+
+                        {/* Listing credits */}
+                        <motion.section
+                            {...pageAnimation}
+                            id="listing-credits"
+                            className="scroll-mt-24"
+                        >
+                            {profileQuery.isLoading ? (
+                                <Panel>
+                                    <SectionHeading
+                                        eyebrow="Your listing allowance"
+                                        title="Listing credits"
+                                        description="Your available vehicle listing credits."
+                                    />
+
+                                    <LoadingPanel message="Loading your listing credits" />
+                                </Panel>
+                            ) : user?.credits ? (
+                                <ListingCreditsCard credits={user.credits} />
+                            ) : null}
+                        </motion.section>
+
+                        {/* Current subscription */}
+                        <motion.section
+                            {...pageAnimation}
+                            id="current-subscription"
+                            className="scroll-mt-24"
+                        >
+                            {profileQuery.isLoading ? (
+                                <Panel>
+                                    <SectionHeading
+                                        eyebrow="Membership"
+                                        title="Current subscription"
+                                        description="Your current subscription details."
+                                    />
+
+                                    <LoadingPanel message="Loading your subscription" />
+                                </Panel>
+                            ) : user ? (
+                                <CurrentSubscriptionCard
+                                    subscription={user.currentSubscription ?? null}
+                                    onBrowsePlans={() => router.push("/dashboard/subscriptions")}
+                                />
+                            ) : null}
                         </motion.section>
 
                         {/* Privacy settings */}

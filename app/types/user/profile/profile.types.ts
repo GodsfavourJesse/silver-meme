@@ -1,17 +1,74 @@
 import type { AuthUser } from "@/app/types/user/auth.types";
 
+export type UserProfileWithMembership = UserProfile & {
+    credits: UserCreditBreakdown;
+    currentSubscription: UserCurrentSubscription | null;
+};
+
+/**
+ * Individual credit pool balance.
+ */
+export interface UserCreditSourceBalance {
+    total: number;
+    used: number;
+    remaining: number;
+}
+
+/**
+ * Complete listing credit breakdown.
+ */
+export interface UserCreditBreakdown {
+    free: UserCreditSourceBalance;
+    subscribed: UserCreditSourceBalance;
+    adjustment: UserCreditSourceBalance;
+    totalRemaining: number;
+}
+
+/**
+ * Currently active subscription.
+ */
+export interface UserCurrentSubscription {
+    id: string;
+
+    planId: string;
+    planVersionId: string | null;
+
+    planName: string;
+    planVersion: number | null;
+
+    status: string;
+
+    originalPrice: string | number;
+    dealerDiscountPercent: string | number | null;
+
+    effectivePrice: string | number;
+    currency: string;
+
+    durationDays: number;
+    listingCredits: number;
+
+    startsAt: string | null;
+    expiresAt: string | null;
+
+    createdAt: string;
+}
+
 /**
  * The user's profile information.
- *
- * Extends the existing authenticated-user type so that
- * we don't unnecessarily duplicate authentication fields.
  */
 export interface UserProfile extends AuthUser {}
 
 /**
+ * Profile data returned by GET /me.
+ */
+export interface UserAccountOverview {
+    user: UserProfile;
+    credits: UserCreditBreakdown;
+    currentSubscription: UserCurrentSubscription | null;
+}
+
+/**
  * Fields editable from the profile page.
- *
- * Keep this aligned with the fields accepted by PATCH /me.
  */
 export interface UpdateUserProfileInput {
     firstName: string;
@@ -20,10 +77,7 @@ export interface UpdateUserProfileInput {
 }
 
 /**
- * The user's privacy preferences and phone visibility eligibility.
- *
- * The eligibility fields are calculated by the backend.
- * They are not user-editable privacy settings.
+ * Privacy preferences and phone visibility eligibility.
  */
 export interface UserPrivacySettings {
     showPhone: boolean;
@@ -37,9 +91,6 @@ export interface UserPrivacySettings {
     canShowPhone: boolean;
 }
 
-/**
- * Fields submitted when the user updates privacy settings.
- */
 export type UpdateUserPrivacyInput =
     Partial<UserPrivacySettings>;
 
@@ -50,6 +101,9 @@ export interface UserProfileResponse {
     success: true;
     data: {
         user: UserProfile;
+        privacy: UserPrivacySettings;
+        credits: UserCreditBreakdown;
+        currentSubscription: UserCurrentSubscription | null;
     };
     message?: string;
 }

@@ -321,7 +321,7 @@ export default function SubscriptionHistoryPage() {
 
                                         <td className="px-5 py-4">
                                             <PaymentStatusBadge
-                                                status={payment.status ?? "PENDING"}
+                                                status={payment.status ?? "STARTED"}
                                             />
                                         </td>
                                     </tr>
@@ -351,7 +351,7 @@ export default function SubscriptionHistoryPage() {
                                     </div>
 
                                     <PaymentStatusBadge
-                                        status={payment.status ?? "PENDING"}
+                                        status={payment.status ?? "STARTED"}
                                     />
                                 </div>
 
