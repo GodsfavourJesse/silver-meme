@@ -1,5 +1,9 @@
 import type { AuthUser } from "@/app/types/user/auth.types";
 
+export type UserProfile = AuthUser & {
+    whatsappPhone: string | null;
+};
+
 export type UserProfileWithMembership = UserProfile & {
     credits: UserCreditBreakdown;
     currentSubscription: UserCurrentSubscription | null;
@@ -54,11 +58,6 @@ export interface UserCurrentSubscription {
 }
 
 /**
- * The user's profile information.
- */
-export interface UserProfile extends AuthUser {}
-
-/**
  * Profile data returned by GET /me.
  */
 export interface UserAccountOverview {
@@ -74,23 +73,27 @@ export interface UpdateUserProfileInput {
     firstName: string;
     lastName: string;
     phone?: string | null;
+    whatsappPhone?: string | null;
 }
 
 /**
- * Privacy preferences and phone visibility eligibility.
+ * User privacy preferences.
  */
 export interface UserPrivacySettings {
     showPhone: boolean;
+    showWhatsapp: boolean;
     showEmail: boolean;
+
     allowDirectMessages: boolean;
     showOnlineStatus: boolean;
+
     allowMarketingEmails: boolean;
     allowMarketingSms: boolean;
-
-    isVerifiedDealer: boolean;
-    canShowPhone: boolean;
 }
 
+/**
+ * Partial privacy update.
+ */
 export type UpdateUserPrivacyInput =
     Partial<UserPrivacySettings>;
 

@@ -65,6 +65,7 @@ interface Notice {
 interface PrivacyOption {
     key:
         | "showPhone"
+        | "showWhatsapp"
         | "showEmail"
         | "allowDirectMessages"
         | "showOnlineStatus"
@@ -78,38 +79,37 @@ const PRIVACY_OPTIONS: PrivacyOption[] = [
     {
         key: "showPhone",
         title: "Show my phone number",
-        description:
-            "Allow your phone number to appear publicly where supported.",
+        description: "Allow your phone number to appear publicly.",
+    },
+    {
+        key: "showWhatsapp",
+        title: "Show my WhatsApp number",
+        description: "Allow buyers to contact you through WhatsApp.",
     },
     {
         key: "showEmail",
         title: "Show my email address",
-        description:
-            "Allow your email address to be displayed on supported profile areas.",
+        description: "Allow your email address to appear publicly.",
     },
     {
         key: "allowDirectMessages",
         title: "Allow direct messages",
-        description:
-            "Let other users contact you through available messaging features.",
+        description: "Let other users contact you through KARMASS.",
     },
     {
         key: "showOnlineStatus",
         title: "Show online status",
-        description:
-            "Allow other users to see your online status where supported.",
+        description: "Allow other users to see your online status.",
     },
     {
         key: "allowMarketingEmails",
         title: "Marketing emails",
-        description:
-            "Receive product news, updates, and occasional offers from KARMASS.",
+        description: "Receive product news, updates, and occasional offers.",
     },
     {
         key: "allowMarketingSms",
         title: "Marketing SMS",
-        description:
-            "Receive promotional text messages from KARMASS.",
+        description: "Receive promotional text messages from KARMASS.",
     },
 ];
 
@@ -989,6 +989,7 @@ export default function SettingsProfileContent({
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [phone, setPhone] = useState("");
+    const [whatsappPhone, setWhatsappPhone] = useState("");
 
     const [notice, setNotice] = useState<Notice | null>(null);
     const [privacyError, setPrivacyError] = useState("");
@@ -1008,11 +1009,13 @@ export default function SettingsProfileContent({
         setFirstName(user.firstName ?? "");
         setLastName(user.lastName ?? "");
         setPhone(user.phone ?? "");
+        setWhatsappPhone(user.whatsappPhone ?? "");
     }, [
         user?.id,
         user?.firstName,
         user?.lastName,
         user?.phone,
+        user?.whatsappPhone,
     ]);
 
     useEffect(() => {
@@ -1048,7 +1051,8 @@ export default function SettingsProfileContent({
             (
                 firstName !== (user.firstName ?? "") ||
                 lastName !== (user.lastName ?? "") ||
-                phone !== (user.phone ?? "")
+                phone !== (user.phone ?? "") ||
+                whatsappPhone !== (user.whatsappPhone ?? "")
             ),
     );
 
@@ -1076,6 +1080,7 @@ export default function SettingsProfileContent({
         const normalizedFirstName = firstName.trim();
         const normalizedLastName = lastName.trim();
         const normalizedPhone = phone.trim();
+        const normalizedWhatsappPhone = whatsappPhone.trim();
 
         if (
             normalizedFirstName.length < 2 ||
@@ -1114,6 +1119,21 @@ export default function SettingsProfileContent({
             return;
         }
 
+        if (
+            normalizedWhatsappPhone &&
+            (
+                normalizedWhatsappPhone.length < 7 ||
+                normalizedWhatsappPhone.length > 30 ||
+                !/^[+0-9().\-\s]+$/.test(normalizedWhatsappPhone)
+            )
+        ) {
+            setNotice({
+                type: "error",
+                message: "Enter a valid WhatsApp number.",
+            });
+            return;
+        }
+
         setNotice(null);
 
         try {
@@ -1121,6 +1141,7 @@ export default function SettingsProfileContent({
                 firstName: normalizedFirstName,
                 lastName: normalizedLastName,
                 phone: normalizedPhone || null,
+                whatsappPhone: normalizedWhatsappPhone || null,
             });
 
             setNotice({
@@ -1491,6 +1512,22 @@ export default function SettingsProfileContent({
                                                 maxLength={30}
                                                 help="Leave empty if you don't want a phone number saved."
                                             />
+
+                                            <Field
+                                                id="whatsappPhone"
+                                                label="WhatsApp number"
+                                                icon={Phone}
+                                                value={whatsappPhone}
+                                                onChange={(value) => {
+                                                    setWhatsappPhone(value);
+                                                    setNotice(null);
+                                                }}
+                                                type="tel"
+                                                autoComplete="tel"
+                                                placeholder="+234 800 000 0000"
+                                                maxLength={30}
+                                                help="Enter a separate number if your WhatsApp number is different."
+                                            />
                                         </div>
 
                                         {!isMobile && (
@@ -1680,9 +1717,6 @@ export default function SettingsProfileContent({
                                 ) : privacy ? (
                                     <div className="divide-y divide-slate-100">
                                         {PRIVACY_OPTIONS.map((option) => {
-                                            const isPhoneOption = option.key === "showPhone";
-                                            const phoneToggleDisabled =
-                                                isPhoneOption && !privacy.canShowPhone;
 
                                             return (
                                                 <div
@@ -1697,22 +1731,12 @@ export default function SettingsProfileContent({
                                                         <p className="mt-1 text-xs leading-5 text-slate-500">
                                                             {option.description}
                                                         </p>
-
-                                                        {isPhoneOption && !privacy.canShowPhone && (
-                                                            <p className="mt-2 flex items-start gap-1.5 text-xs leading-5 text-amber-700">
-                                                                <Info size={14} className="mt-0.5 shrink-0" />
-                                                                Dealer verification is required to display your phone number.
-                                                            </p>
-                                                        )}
                                                     </div>
 
                                                     <Toggle
                                                         label={option.title}
                                                         checked={Boolean(privacy[option.key])}
-                                                        disabled={
-                                                            updatePrivacy.isPending ||
-                                                            phoneToggleDisabled
-                                                        }
+                                                        disabled={updatePrivacy.isPending}
                                                         onChange={() => {
                                                             void handlePrivacyChange(
                                                                 option.key,

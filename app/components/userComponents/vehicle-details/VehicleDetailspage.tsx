@@ -336,6 +336,8 @@ export function VehicleDetailsPage({
                     <ContactSellerModal
                         title={title}
                         price={details.listing.price}
+                        sellerPhone={details.seller.phone}
+                        sellerWhatsappPhone={details.seller.whatsappPhone}
                         contact={contact}
                         onClose={closeContact}
                     />

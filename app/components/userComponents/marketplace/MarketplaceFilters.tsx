@@ -2,6 +2,7 @@
 
 import {
     useCallback,
+    useEffect,
     useState,
     type RefObject,
 } from "react";
@@ -27,27 +28,35 @@ import {
 
 import { useSharedMarketplaceSearch } from "@/app/context/user/MarketplaceSearchProvider";
 
-import type {
-    MarketplaceMake,
-    MarketplaceModel,
-    MarketplaceGeneration,
-    MarketplaceVariant,
-} from "@/app/types/user/marketplace.types";
+import { NIGERIAN_STATES } from "@/app/lib/constants/nigeria";
+
+import {
+    apiRequest,
+    type ApiEnvelope,
+} from "@/app/lib/api/api-client";
+
+import type { ExternalVehicleOption } from "@/app/services/user/listings/external-vehicle-catalog.service";
 
 interface MarketplaceFiltersProps {
     filters: MarketplaceFilterState;
+
     onFilterChange: <K extends keyof MarketplaceFilterState>(
         key: K,
         value: MarketplaceFilterState[K],
     ) => void;
+
     onClear: () => void;
     onApply: () => void;
+
     variant?: "sidebar" | "modal";
     onClose?: () => void;
     closeButtonRef?: RefObject<HTMLButtonElement | null>;
 }
 
-const BRAND = "#1491FF";
+interface StateLgasResponse {
+    state: string;
+    lgas: string[];
+}
 
 const INPUT_CLASS = [
     "min-w-0 w-full rounded-xl border border-slate-200 bg-white",
@@ -66,31 +75,6 @@ const SELECT_CLASS = [
     "focus:border-[#1491FF] focus:ring-4 focus:ring-[#1491FF]/10",
     "disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400",
 ].join(" ");
-
-function getCatalogItemLabel(
-    item:
-        | MarketplaceMake
-        | MarketplaceModel
-        | MarketplaceGeneration
-        | MarketplaceVariant,
-): string {
-    const name = "name" in item ? item.name : undefined;
-    const year = "year" in item ? item.year : undefined;
-
-    if (name && year) {
-        return `${year} ${name}`;
-    }
-
-    if (name) {
-        return name;
-    }
-
-    if (year) {
-        return String(year);
-    }
-
-    return "Unnamed vehicle option";
-}
 
 function formatOption(option: string): string {
     return option
@@ -121,7 +105,7 @@ function SectionHeading({
     );
 }
 
-function CatalogSelect<T extends { id: string }>({
+function ExternalCatalogSelect({
     label,
     value,
     items,
@@ -129,18 +113,16 @@ function CatalogSelect<T extends { id: string }>({
     disabled,
     loading,
     error,
-    getLabel,
     onChange,
     onRetry,
 }: {
     label: string;
     value: string;
-    items: T[];
+    items: ExternalVehicleOption[];
     placeholder: string;
     disabled?: boolean;
     loading?: boolean;
     error?: string;
-    getLabel: (item: T) => string;
     onChange: (value: string) => void;
     onRetry?: () => void;
 }) {
@@ -174,8 +156,11 @@ function CatalogSelect<T extends { id: string }>({
                     </option>
 
                     {items.map((item) => (
-                        <option key={item.id} value={item.id}>
-                            {getLabel(item)}
+                        <option
+                            key={`${item.source}:${item.value}`}
+                            value={item.value}
+                        >
+                            {item.label}
                         </option>
                     ))}
                 </select>
@@ -208,7 +193,7 @@ function CatalogSelect<T extends { id: string }>({
                         <button
                             type="button"
                             onClick={onRetry}
-                            className="inline-flex shrink-0 items-center gap-1.5 rounded-md px-1 py-0.5 text-xs font-semibold text-red-700 transition hover:text-red-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
+                            className="inline-flex shrink-0 items-center gap-1.5 rounded-md px-1 py-0.5 text-xs font-semibold text-red-700 transition hover:text-red-900"
                         >
                             <RefreshCw size={12} />
                             Retry
@@ -305,7 +290,10 @@ function RangeFilter({
 
             <div className="grid grid-cols-2 gap-2.5">
                 <div className="min-w-0">
-                    <label className="sr-only" htmlFor={minLabel}>
+                    <label
+                        className="sr-only"
+                        htmlFor={minLabel}
+                    >
                         {minLabel}
                     </label>
 
@@ -316,7 +304,9 @@ function RangeFilter({
                         min={min}
                         {...(max !== undefined ? { max } : {})}
                         value={minValue}
-                        onChange={(event) => onMinChange(event.target.value)}
+                        onChange={(event) =>
+                            onMinChange(event.target.value)
+                        }
                         placeholder={minPlaceholder}
                         aria-label={minLabel}
                         className={INPUT_CLASS}
@@ -324,7 +314,10 @@ function RangeFilter({
                 </div>
 
                 <div className="min-w-0">
-                    <label className="sr-only" htmlFor={maxLabel}>
+                    <label
+                        className="sr-only"
+                        htmlFor={maxLabel}
+                    >
                         {maxLabel}
                     </label>
 
@@ -335,7 +328,9 @@ function RangeFilter({
                         min={min}
                         {...(max !== undefined ? { max } : {})}
                         value={maxValue}
-                        onChange={(event) => onMaxChange(event.target.value)}
+                        onChange={(event) =>
+                            onMaxChange(event.target.value)
+                        }
                         placeholder={maxPlaceholder}
                         aria-label={maxLabel}
                         className={INPUT_CLASS}
@@ -363,7 +358,9 @@ function ToggleFilter({
                 <input
                     type="checkbox"
                     checked={checked}
-                    onChange={(event) => onChange(event.target.checked)}
+                    onChange={(event) =>
+                        onChange(event.target.checked)
+                    }
                     className="peer absolute inset-0 size-full cursor-pointer appearance-none rounded-[5px] border border-slate-300 bg-white transition checked:border-[#1491FF] checked:bg-[#1491FF] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#1491FF]/15"
                 />
 
@@ -401,58 +398,138 @@ export function MarketplaceFilters({
 }: MarketplaceFiltersProps) {
     const [showFilters, setShowFilters] = useState(true);
 
+    // Nigerian location catalogue.
+    const [lgas, setLgas] = useState<string[]>([]);
+    const [lgasLoading, setLgasLoading] = useState(false);
+    const [lgasError, setLgasError] = useState<string | null>(null);
+    const [lgasRetry, setLgasRetry] = useState(0);
+
     const {
         makes,
         models,
-        generations,
-        variants,
         vehicleCatalogLoading,
+        vehicleModelsLoading,
         vehicleCatalogError,
         retryVehicleCatalog,
     } = useSharedMarketplaceSearch();
 
     const activeFilterCount = countActiveFilters(filters);
+
     const isModal = variant === "modal";
 
     const loadingMakes = vehicleCatalogLoading;
     const makesError = vehicleCatalogError;
-
-    const loadingModels = Boolean(
-        filters.makeId && models.length === 0,
-    );
-
-    const loadingGenerations = Boolean(
-        filters.modelId && generations.length === 0,
-    );
-
-    const loadingVariants = Boolean(
-        filters.generationId && variants.length === 0,
-    );
+    const loadingModels = vehicleModelsLoading;
 
     const handleMakeChange = useCallback(
-        (makeId: string) => {
-            onFilterChange("makeId", makeId);
-        },
+        (make: string) => onFilterChange("make", make),
         [onFilterChange],
     );
 
     const handleModelChange = useCallback(
-        (modelId: string) => {
-            onFilterChange("modelId", modelId);
-        },
-        [onFilterChange],
-    );
-
-    const handleGenerationChange = useCallback(
-        (generationId: string) => {
-            onFilterChange("generationId", generationId);
-        },
+        (model: string) => onFilterChange("model", model),
         [onFilterChange],
     );
 
     const handleClear = useCallback(() => {
         onClear();
     }, [onClear]);
+
+    /**
+     * Load LGAs whenever the selected Nigerian state changes.
+     *
+     * Uses the shared backend location catalogue:
+     * GET /api/v1/locations/states/:state/lgas
+     */
+    useEffect(() => {
+        if (!filters.state.trim()) {
+            setLgas([]);
+            setLgasError(null);
+            setLgasLoading(false);
+
+            return;
+        }
+
+        const controller = new AbortController();
+
+        async function fetchLgas() {
+            setLgasLoading(true);
+            setLgasError(null);
+            setLgas([]);
+
+            try {
+                const response = await apiRequest<
+                    ApiEnvelope<StateLgasResponse>
+                >(
+                    `/locations/states/${encodeURIComponent(
+                        filters.state
+                    )}/lgas`,
+                    {
+                        signal: controller.signal,
+                    },
+                );
+
+                if (
+                    !response.success ||
+                    !Array.isArray(response.data?.lgas)
+                ) {
+                    throw new Error(
+                        response.message ||
+                        "Unable to load Local Government Areas.",
+                    );
+                }
+
+                setLgas(response.data.lgas);
+            } catch (error) {
+                if (
+                    error instanceof Error &&
+                    error.name === "AbortError"
+                ) {
+                    return;
+                }
+
+                setLgas([]);
+
+                setLgasError(
+                    error instanceof Error
+                        ? error.message
+                        : "Unable to load Local Government Areas.",
+                );
+            } finally {
+                if (!controller.signal.aborted) {
+                    setLgasLoading(false);
+                }
+            }
+        }
+
+        void fetchLgas();
+
+        return () => {
+            controller.abort();
+        };
+    }, [filters.state, lgasRetry]);
+
+    /**
+     * A state change invalidates the previously selected LGA.
+     *
+     * The existing `city` filter key is intentionally retained
+     * for compatibility with the marketplace search API.
+     */
+    const handleStateChange = useCallback(
+        (state: string) => {
+            onFilterChange("state", state);
+            onFilterChange("city", "");
+
+            setLgas([]);
+            setLgasError(null);
+        },
+        [onFilterChange],
+    );
+
+    const handleLgaRetry = useCallback(() => {
+        setLgasError(null);
+        setLgasRetry((current) => current + 1);
+    }, []);
 
     return (
         <aside
@@ -461,10 +538,10 @@ export function MarketplaceFilters({
                 isModal
                     ? "flex h-full min-h-0 flex-col overflow-hidden bg-white"
                     : [
-                          "flex min-h-0 flex-col overflow-hidden rounded-2xl",
-                          "border border-slate-200 bg-white shadow-sm",
-                          "lg:sticky lg:top-4 lg:max-h-[calc(100dvh-2rem)]",
-                      ].join(" ")
+                        "flex min-h-0 flex-col overflow-hidden rounded-2xl",
+                        "border border-slate-200 bg-white shadow-sm",
+                        "lg:sticky lg:top-4 lg:max-h-[calc(100dvh-2rem)]",
+                    ].join(" ")
             }
         >
             {/* Header */}
@@ -564,51 +641,46 @@ export function MarketplaceFilters({
                             />
 
                             <div className="space-y-4">
-                                <CatalogSelect
+                                <ExternalCatalogSelect
                                     label="Make"
-                                    value={filters.makeId}
+                                    value={filters.make}
                                     items={makes}
                                     placeholder="All makes"
                                     loading={loadingMakes}
                                     error={makesError}
-                                    getLabel={getCatalogItemLabel}
                                     onChange={handleMakeChange}
-                                    onRetry={() => void retryVehicleCatalog()}
+                                    onRetry={() =>
+                                        void retryVehicleCatalog()
+                                    }
                                 />
 
-                                <CatalogSelect
+                                <ExternalCatalogSelect
                                     label="Model"
-                                    value={filters.modelId}
+                                    value={filters.model}
                                     items={models}
                                     placeholder="All models"
-                                    disabled={!filters.makeId}
+                                    disabled={!filters.make}
                                     loading={loadingModels}
-                                    getLabel={getCatalogItemLabel}
-                                    onChange={handleModelChange}
-                                />
-
-                                <CatalogSelect
-                                    label="Generation"
-                                    value={filters.generationId}
-                                    items={generations}
-                                    placeholder="All generations"
-                                    disabled={!filters.modelId}
-                                    loading={loadingGenerations}
-                                    getLabel={getCatalogItemLabel}
-                                    onChange={handleGenerationChange}
-                                />
-
-                                <CatalogSelect
-                                    label="Variant"
-                                    value={filters.variantId}
-                                    items={variants}
-                                    placeholder="All variants"
-                                    disabled={!filters.generationId}
-                                    loading={loadingVariants}
-                                    getLabel={getCatalogItemLabel}
-                                    onChange={(value) =>
-                                        onFilterChange("variantId", value)
+                                    error={
+                                        vehicleCatalogError || undefined
                                     }
+                                    onChange={handleModelChange}
+                                    onRetry={() =>
+                                        void retryVehicleCatalog()
+                                    }
+                                />
+
+                                <input
+                                    value={filters.variant}
+                                    onChange={(event) =>
+                                        onFilterChange(
+                                            "variant",
+                                            event.target.value,
+                                        )
+                                    }
+                                    placeholder="Variant / trim (optional)"
+                                    aria-label="Filter by vehicle variant or trim"
+                                    className={INPUT_CLASS}
                                 />
                             </div>
                         </section>
@@ -716,37 +788,111 @@ export function MarketplaceFilters({
                         <section>
                             <SectionHeading
                                 title="Location"
-                                description="Find vehicles closer to you."
+                                description="Find vehicles in your preferred Nigerian state and Local Government Area."
                             />
 
                             <div className="space-y-3">
-                                <input
+                                {/* State */}
+                                <FilterSelect
+                                    label="Nigerian state"
                                     value={filters.state}
-                                    onChange={(event) =>
-                                        onFilterChange(
-                                            "state",
-                                            event.target.value,
-                                        )
-                                    }
-                                    placeholder="State (e.g. Lagos)"
-                                    aria-label="Filter by state"
-                                    autoComplete="address-level1"
-                                    className={INPUT_CLASS}
+                                    options={NIGERIAN_STATES}
+                                    onChange={handleStateChange}
                                 />
 
-                                <input
-                                    value={filters.city}
-                                    onChange={(event) =>
-                                        onFilterChange(
-                                            "city",
-                                            event.target.value,
-                                        )
-                                    }
-                                    placeholder="City or town"
-                                    aria-label="Filter by city"
-                                    autoComplete="address-level2"
-                                    className={INPUT_CLASS}
-                                />
+                                {/* LGA */}
+                                <div className="min-w-0">
+                                    <label
+                                        htmlFor="marketplace-lga-filter"
+                                        className="mb-2 block text-xs font-medium text-slate-700"
+                                    >
+                                        Local Government Area
+                                    </label>
+
+                                    <div className="relative">
+                                        <select
+                                            id="marketplace-lga-filter"
+                                            value={filters.city}
+                                            disabled={
+                                                !filters.state ||
+                                                lgasLoading ||
+                                                lgas.length === 0
+                                            }
+                                            onChange={(event) =>
+                                                onFilterChange(
+                                                    "city",
+                                                    event.target.value,
+                                                )
+                                            }
+                                            className={SELECT_CLASS}
+                                        >
+                                            <option value="">
+                                                {!filters.state
+                                                    ? "Select a state first"
+                                                    : lgasLoading
+                                                        ? "Loading LGAs..."
+                                                        : lgasError
+                                                            ? "Unable to load LGAs"
+                                                            : lgas.length === 0
+                                                                ? "No LGAs available"
+                                                                : "All LGAs"}
+                                            </option>
+
+                                            {lgas.map((lga) => (
+                                                <option
+                                                    key={lga}
+                                                    value={lga}
+                                                >
+                                                    {lga}
+                                                </option>
+                                            ))}
+                                        </select>
+
+                                        {lgasLoading ? (
+                                            <LoaderCircle
+                                                size={16}
+                                                aria-hidden="true"
+                                                className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 animate-spin text-[#1491FF]"
+                                            />
+                                        ) : (
+                                            <ChevronDown
+                                                size={16}
+                                                aria-hidden="true"
+                                                className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                                            />
+                                        )}
+                                    </div>
+
+                                    {lgasError && (
+                                        <div className="mt-2.5 flex items-start justify-between gap-2 rounded-lg bg-red-50 px-3 py-2">
+                                            <p
+                                                role="alert"
+                                                className="text-xs leading-5 text-red-700"
+                                            >
+                                                {lgasError}
+                                            </p>
+
+                                            <button
+                                                type="button"
+                                                onClick={handleLgaRetry}
+                                                className="inline-flex shrink-0 items-center gap-1.5 rounded-md px-1 py-0.5 text-xs font-semibold text-red-700 transition hover:text-red-900"
+                                            >
+                                                <RefreshCw size={12} />
+                                                Retry
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {filters.state &&
+                                        !lgasLoading &&
+                                        !lgasError && (
+                                            <p className="mt-2 text-xs text-slate-500">
+                                                {lgas.length > 0
+                                                    ? `${lgas.length} LGAs available in ${filters.state}`
+                                                    : "No LGAs available for this state."}
+                                            </p>
+                                        )}
+                                </div>
                             </div>
                         </section>
 
@@ -760,7 +906,10 @@ export function MarketplaceFilters({
                                     description="Show vehicles listed by dealers."
                                     checked={filters.dealerOnly}
                                     onChange={(checked) =>
-                                        onFilterChange("dealerOnly", checked)
+                                        onFilterChange(
+                                            "dealerOnly",
+                                            checked,
+                                        )
                                     }
                                 />
 
@@ -810,6 +959,7 @@ export function MarketplaceFilters({
                         className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#1491FF] px-4 py-3 text-sm font-semibold text-white shadow-sm shadow-[#1491FF]/15 transition hover:bg-[#0876D1] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#1491FF]/20"
                     >
                         Apply filters
+
                         {activeFilterCount > 0 && (
                             <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs">
                                 {activeFilterCount}

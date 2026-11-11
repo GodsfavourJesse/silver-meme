@@ -232,7 +232,6 @@ function StatsStrip({
     );
 }
 
-
 // Loading state
 function ListingSkeleton() {
     return (
@@ -1020,7 +1019,7 @@ export default function MyListingsDashboard() {
 
     // Render
     return (
-        <main className="min-h-screen overflow-x-hidden bg-[#F7F9FC] px-4 py-6 text-zinc-900 sm:px-6 sm:py-8 lg:px-8">
+        <main className="min-h-screen overflow-x-hidden bg-[#F7F9FC] px-4 py-6 text-zinc-900 px-6 sm:py-8 md:px-12">
             <motion.div
                 initial={
                     shouldReduceMotion

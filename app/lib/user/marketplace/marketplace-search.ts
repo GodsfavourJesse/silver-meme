@@ -1,4 +1,5 @@
 import type { MarketplaceCondition, MarketplaceSearchParams } from "@/app/types/user/marketplace.types";
+export { NIGERIAN_STATES } from "@/app/lib/constants/nigeria";
 
 // CONSTANTS
 export const PAGE_SIZE = 12;
@@ -72,10 +73,9 @@ export const BODY_STYLE_OPTIONS = [
  */
 
 export type MarketplaceFilterState = {
-    makeId: string;
-    modelId: string;
-    generationId: string;
-    variantId: string;
+    make: string;
+    model: string;
+    variant: string;
 
     minPrice: string;
     maxPrice: string;
@@ -99,10 +99,9 @@ export type MarketplaceFilterState = {
 };
 
 export const INITIAL_FILTERS: MarketplaceFilterState = {
-    makeId: "",
-    modelId: "",
-    generationId: "",
-    variantId: "",
+    make: "",
+    model: "",
+    variant: "",
 
     minPrice: "",
     maxPrice: "",
@@ -242,7 +241,6 @@ export interface ActiveMarketplaceFilter {
 export interface MarketplaceVehicleFilterLabels {
     make?: string;
     model?: string;
-    generation?: string;
     variant?: string;
 }
 
@@ -252,39 +250,16 @@ export function getActiveMarketplaceFilters(
 ): ActiveMarketplaceFilter[] {
     const activeFilters: ActiveMarketplaceFilter[] = [];
 
-    /*
-     * Vehicle catalog selections.
-     *
-     * Use actual catalog names when available.
-     * Fall back to descriptive labels while catalog data loads.
-     */
-
-    if (filters.makeId) {
-        activeFilters.push({
-            key: "makeId",
-            label: vehicleLabels.make || "Make selected",
-        });
+    if (filters.make) {
+        activeFilters.push({ key: "make", label: filters.make });
     }
 
-    if (filters.modelId) {
-        activeFilters.push({
-            key: "modelId",
-            label: vehicleLabels.model || "Model selected",
-        });
+    if (filters.model) {
+        activeFilters.push({ key: "model", label: filters.model });
     }
 
-    if (filters.generationId) {
-        activeFilters.push({
-            key: "generationId",
-            label: vehicleLabels.generation || "Generation selected",
-        });
-    }
-
-    if (filters.variantId) {
-        activeFilters.push({
-            key: "variantId",
-            label: vehicleLabels.variant || "Variant selected",
-        });
+    if (filters.variant) {
+        activeFilters.push({ key: "variant", label: filters.variant });
     }
 
     /*
@@ -413,7 +388,7 @@ export function getActiveMarketplaceFilters(
     if (filters.city.trim()) {
         activeFilters.push({
             key: "city",
-            label: filters.city.trim(),
+            label: `LGA: ${filters.city.trim()}`,
         });
     }
 
@@ -477,24 +452,11 @@ export function buildSearchParams(
     }
 
     /*
-     * Vehicle catalog IDs.
+     * External vehicle catalogue labels.
      */
-
-    if (filters.makeId) {
-        params.makeId = filters.makeId;
-    }
-
-    if (filters.modelId) {
-        params.modelId = filters.modelId;
-    }
-
-    if (filters.generationId) {
-        params.generationId = filters.generationId;
-    }
-
-    if (filters.variantId) {
-        params.variantId = filters.variantId;
-    }
+    if (filters.make) params.make = filters.make;
+    if (filters.model) params.model = filters.model;
+    if (filters.variant) params.variant = filters.variant;
 
     /*
      * Numeric filters.
@@ -615,10 +577,9 @@ export function readFiltersFromUrl(): {
             : "";
 
     const filters: MarketplaceFilterState = {
-        makeId: params.get("makeId") ?? "",
-        modelId: params.get("modelId") ?? "",
-        generationId: params.get("generationId") ?? "",
-        variantId: params.get("variantId") ?? "",
+        make: params.get("make") ?? "",
+        model: params.get("model") ?? "",
+        variant: params.get("variant") ?? "",
 
         minPrice: params.get("minPrice") ?? "",
         maxPrice: params.get("maxPrice") ?? "",

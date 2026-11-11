@@ -27,17 +27,12 @@ import {
 } from "@/app/services/user/marketplace/marketplace.service";
 
 import {
-    getVehicleMakes,
-    getVehicleModels,
-    getVehicleGenerations,
-    getVehicleVariants,
-} from "@/app/services/user/vehicle/vehicle-catalog.service";
+    getExternalVehicleMakes,
+    getExternalVehicleModels,
+    type ExternalVehicleOption,
+} from "@/app/services/user/listings/external-vehicle-catalog.service";
 
 import type {
-    MarketplaceMake,
-    MarketplaceModel,
-    MarketplaceGeneration,
-    MarketplaceVariant,
     MarketplacePagination,
     MarketplaceSearchResult,
 } from "@/app/types/user/marketplace.types";
@@ -102,12 +97,9 @@ export function useMarketplaceSearch() {
     /* Vehicle catalog                                                        */
     /* ---------------------------------------------------------------------- */
 
-    const [makes, setMakes] = useState<MarketplaceMake[]>([]);
-    const [models, setModels] = useState<MarketplaceModel[]>([]);
-    const [generations, setGenerations] = useState<
-        MarketplaceGeneration[]
-    >([]);
-    const [variants, setVariants] = useState<MarketplaceVariant[]>([]);
+    const [makes, setMakes] = useState<ExternalVehicleOption[]>([]);
+    const [models, setModels] = useState<ExternalVehicleOption[]>([]);
+    const [vehicleModelsLoading, setVehicleModelsLoading] = useState(false);
 
     const [vehicleCatalogLoading, setVehicleCatalogLoading] =
         useState(false);
@@ -213,7 +205,7 @@ export function useMarketplaceSearch() {
             setVehicleCatalogError("");
 
             try {
-                const data = await getVehicleMakes();
+                const data = await getExternalVehicleMakes();
 
                 if (!active) return;
 
@@ -239,184 +231,46 @@ export function useMarketplaceSearch() {
     }, [vehicleCatalogRetryCount]);
 
     /* ---------------------------------------------------------------------- */
-    /* Load models                                                            */
+    /* Load models from the external vehicle providers                       */
     /* ---------------------------------------------------------------------- */
 
     useEffect(() => {
         let active = true;
-
         setModels([]);
-        setGenerations([]);
-        setVariants([]);
 
-        if (!filters.makeId) {
-            return () => {
-                active = false;
-            };
+        if (!filters.make) {
+            setVehicleModelsLoading(false);
+            return () => { active = false; };
         }
 
         async function loadModels() {
+            setVehicleModelsLoading(true);
             setVehicleCatalogError("");
-
             try {
-                const data = await getVehicleModels(
-                    filters.makeId,
-                );
-
-                if (!active) return;
-
-                setModels(data);
+                const data = await getExternalVehicleModels(filters.make);
+                if (active) setModels(data);
             } catch {
-                if (!active) return;
-
-                setVehicleCatalogError(
-                    "Unable to load models for the selected make.",
-                );
+                if (active) {
+                    setVehicleCatalogError("Unable to load models for the selected make.");
+                }
+            } finally {
+                if (active) setVehicleModelsLoading(false);
             }
         }
 
         void loadModels();
-
-        return () => {
-            active = false;
-        };
-    }, [filters.makeId, vehicleCatalogRetryCount]);
-
-    /* ---------------------------------------------------------------------- */
-    /* Load generations                                                       */
-    /* ---------------------------------------------------------------------- */
-
-    useEffect(() => {
-        let active = true;
-
-        setGenerations([]);
-        setVariants([]);
-
-        if (!filters.modelId) {
-            return () => {
-                active = false;
-            };
-        }
-
-        async function loadGenerations() {
-            setVehicleCatalogError("");
-
-            try {
-                const data = await getVehicleGenerations(
-                    filters.modelId,
-                );
-
-                if (!active) return;
-
-                setGenerations(data);
-            } catch {
-                if (!active) return;
-
-                setVehicleCatalogError(
-                    "Unable to load generations for the selected model.",
-                );
-            }
-        }
-
-        void loadGenerations();
-
-        return () => {
-            active = false;
-        };
-    }, [filters.modelId, vehicleCatalogRetryCount]);
-
-    /* ---------------------------------------------------------------------- */
-    /* Load variants                                                          */
-    /* ---------------------------------------------------------------------- */
-
-    useEffect(() => {
-        let active = true;
-
-        setVariants([]);
-
-        if (!filters.generationId) {
-            return () => {
-                active = false;
-            };
-        }
-
-        async function loadVariants() {
-            setVehicleCatalogError("");
-
-            try {
-                const data = await getVehicleVariants(
-                    filters.generationId,
-                );
-
-                if (!active) return;
-
-                setVariants(data);
-            } catch {
-                if (!active) return;
-
-                setVehicleCatalogError(
-                    "Unable to load variants for the selected generation.",
-                );
-            }
-        }
-
-        void loadVariants();
-
-        return () => {
-            active = false;
-        };
-    }, [filters.generationId, vehicleCatalogRetryCount]);
+        return () => { active = false; };
+    }, [filters.make, vehicleCatalogRetryCount]);
 
     /* ---------------------------------------------------------------------- */
     /* Resolve selected vehicle labels                                        */
     /* ---------------------------------------------------------------------- */
 
-    const vehicleLabels: MarketplaceVehicleFilterLabels =
-        useMemo(() => {
-            const selectedVariant = variants.find(
-                (item) => item.id === filters.variantId,
-            );
-
-            const variantName = selectedVariant?.name?.trim();
-            const variantYear = selectedVariant?.year;
-
-            let variant: string | undefined;
-
-            if (variantName && variantYear) {
-                variant = `${variantYear} ${variantName}`;
-            } else {
-                variant =
-                    variantName ||
-                    (variantYear
-                        ? String(variantYear)
-                        : undefined);
-            }
-
-            return {
-                make: makes.find(
-                    (item) => item.id === filters.makeId,
-                )?.name,
-
-                model: models.find(
-                    (item) => item.id === filters.modelId,
-                )?.name,
-
-                generation: generations.find(
-                    (item) => item.id === filters.generationId,
-                )?.name,
-
-                variant,
-            };
-        }, [
-            makes,
-            models,
-            generations,
-            variants,
-            filters.makeId,
-            filters.modelId,
-            filters.generationId,
-            filters.variantId,
-        ]);
+    const vehicleLabels: MarketplaceVehicleFilterLabels = useMemo(() => ({
+        make: filters.make || undefined,
+        model: filters.model || undefined,
+        variant: filters.variant || undefined,
+    }), [filters.make, filters.model, filters.variant]);
 
     /* ---------------------------------------------------------------------- */
     /* Update individual filters                                              */
@@ -433,28 +287,13 @@ export function useMarketplaceSearch() {
                     [key]: value,
                 };
 
-                if (
-                    key === "makeId" &&
-                    value !== current.makeId
-                ) {
-                    next.modelId = "";
-                    next.generationId = "";
-                    next.variantId = "";
+                if (key === "make" && value !== current.make) {
+                    next.model = "";
+                    next.variant = "";
                 }
 
-                if (
-                    key === "modelId" &&
-                    value !== current.modelId
-                ) {
-                    next.generationId = "";
-                    next.variantId = "";
-                }
-
-                if (
-                    key === "generationId" &&
-                    value !== current.generationId
-                ) {
-                    next.variantId = "";
+                if (key === "model" && value !== current.model) {
+                    next.variant = "";
                 }
 
                 return next;
@@ -495,26 +334,19 @@ export function useMarketplaceSearch() {
                         next.maxYear = "";
                         break;
 
-                    case "makeId":
-                        next.makeId = "";
-                        next.modelId = "";
-                        next.generationId = "";
-                        next.variantId = "";
+                    case "make":
+                        next.make = "";
+                        next.model = "";
+                        next.variant = "";
                         break;
 
-                    case "modelId":
-                        next.modelId = "";
-                        next.generationId = "";
-                        next.variantId = "";
+                    case "model":
+                        next.model = "";
+                        next.variant = "";
                         break;
 
-                    case "generationId":
-                        next.generationId = "";
-                        next.variantId = "";
-                        break;
-
-                    case "variantId":
-                        next.variantId = "";
+                    case "variant":
+                        next.variant = "";
                         break;
 
                     case "dealerOnly":
@@ -839,10 +671,9 @@ export function useMarketplaceSearch() {
         // Vehicle catalog
         makes,
         models,
-        generations,
-        variants,
         vehicleLabels,
         vehicleCatalogLoading,
+        vehicleModelsLoading,
         vehicleCatalogError,
         retryVehicleCatalog,
 

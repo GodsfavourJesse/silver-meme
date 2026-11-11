@@ -116,7 +116,6 @@ function getInitials(
 
     return `${first}${last}`.toUpperCase() || "K";
 
-
 }
 
 function getDisplayName(
@@ -141,7 +140,7 @@ function DashboardHeader({ onLogout }: { onLogout: () => void }) {
             {/* Desktop header */}
             <header className="hidden items-center justify-between gap-6 xl:flex">
                 <div className="min-w-0">
-                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.17em] text-slate-400">
+                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.17em] text-[#1491FF]">
                         <span
                             className="h-2 w-2 rounded-full"
                             style={{ backgroundColor: BRAND }}
@@ -172,12 +171,12 @@ function DashboardHeader({ onLogout }: { onLogout: () => void }) {
                     <Link
                         href="/notifications"
                         aria-label="View notifications"
-                        className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-[#B9DEFF] hover:text-[#0877D9]"
+                        className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#D6EBFF] bg-white text-[#1491FF] shadow-sm transition hover:bg-[#EFF7FF] hover:border-[#1491FF]"
                     >
                         <Bell size={19} strokeWidth={1.8} />
                     </Link>
 
-                    <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white py-2 pl-2 pr-4 shadow-sm">
+                    <div className="flex items-center gap-3 rounded-2xl border border-[#D6EBFF] bg-white py-2 pl-2 pr-4 shadow-sm">
                         <div
                             className="flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold"
                             style={{
@@ -205,7 +204,7 @@ function DashboardHeader({ onLogout }: { onLogout: () => void }) {
                     <button
                         type="button"
                         onClick={onLogout}
-                        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl px-3 text-sm font-medium text-slate-500 transition hover:bg-white hover:text-[#0877D9] disabled:cursor-not-allowed disabled:opacity-50"
+                        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl px-3 text-sm font-medium text-slate-500 transition hover:bg-[#EFF7FF] hover:text-[#1491FF] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         <LogOut size={16} />
                         Sign out
@@ -244,7 +243,7 @@ function DashboardHeader({ onLogout }: { onLogout: () => void }) {
                         <Link
                             href="/notifications"
                             aria-label="Notifications"
-                            className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-[#B9DEFF] hover:text-[#0877D9]"
+                            className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-[#D6EBFF] bg-white text-[#1491FF] shadow-sm transition hover:bg-[#EFF7FF] hover:border-[#1491FF]"
                         >
                             <Bell size={19} strokeWidth={1.8} />
                         </Link>
@@ -253,7 +252,7 @@ function DashboardHeader({ onLogout }: { onLogout: () => void }) {
                             type="button"
                             onClick={onLogout}
                             aria-label="Sign out"
-                            className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 transition hover:text-[#0877D9] disabled:opacity-50"
+                            className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#D6EBFF] bg-white text-[#1491FF] transition hover:bg-[#EFF7FF] disabled:opacity-50"
                         >
                             <LogOut size={18} />
                         </button>
@@ -286,16 +285,14 @@ function DashboardHeader({ onLogout }: { onLogout: () => void }) {
                     <Link
                         href="/settings"
                         aria-label="Account settings"
-                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-slate-500 ring-1 ring-slate-200 transition hover:text-[#0877D9]"
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#D6EBFF] bg-white text-[#1491FF] transition hover:bg-[#EFF7FF]"
                     >
                         <UserRound size={18} />
                     </Link>
                 </div>
             </header>
-
         </>
     );
-
 }
 
 function DesktopWelcomeCard() {
@@ -794,7 +791,7 @@ function DesktopHelpfulLinks() {
         },
         {
             title: "Subscriptions and billing",
-            href: "/subscriptions",
+            href: "/dashboard/subscriptions",
             icon: WalletCards,
         },
         {

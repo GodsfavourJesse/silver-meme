@@ -27,12 +27,7 @@ export function useInitializeBoostPayment() {
 
         retry: false,
 
-        onSuccess: (result) => {
-            if (!result.authorizationUrl) {
-                console.warn(
-                    "Boost payment initialized without an authorization URL.",
-                );
-            }
-        },
+        // The calling component handles the payment redirect.
+        // Do not expose payment response details in the browser console.
     });
 }

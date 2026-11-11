@@ -34,6 +34,8 @@ export interface VehicleDetailsSeller {
     id: string;
     firstName: string;
     lastName: string;
+    phone: string | null;
+    whatsappPhone: string | null;
     accountType: string;
     avatarUrl: string | null;
     createdAt: string;
@@ -84,7 +86,7 @@ export interface VehicleDetailsResponse {
     make: VehicleDetailsMake;
     model: VehicleDetailsModel;
     generation: VehicleDetailsGeneration;
-    variant: VehicleDetailsVariant;
+    variant: VehicleDetailsVariant | null;
     isBoosted: boolean;
     images: VehicleDetailsImage[];
 }

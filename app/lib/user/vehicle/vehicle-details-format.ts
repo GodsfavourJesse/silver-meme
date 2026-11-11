@@ -41,7 +41,9 @@ export function formatNumber(value: number | null): string | null {
     return new Intl.NumberFormat("en-NG").format(value);
 }
 
-export function formatEnum(value: string | null | undefined): string | null {
+export function formatEnum(
+    value: string | null | undefined,
+): string | null {
     if (!value) {
         return null;
     }
@@ -50,24 +52,30 @@ export function formatEnum(value: string | null | undefined): string | null {
         .toLowerCase()
         .split("_")
         .map((part) =>
-            part.length > 0 ? part.charAt(0).toUpperCase() + part.slice(1) : part,
+            part.length > 0
+                ? part.charAt(0).toUpperCase() + part.slice(1)
+                : part,
         )
         .join(" ");
 }
 
 export function getLocation(details: VehicleDetailsResponse): string {
-    return [details.listing.city, details.listing.state, details.listing.country]
+    return [
+        details.listing.city,
+        details.listing.state,
+        details.listing.country,
+    ]
         .filter(Boolean)
         .join(", ");
 }
 
 export function getVehicleTitle(details: VehicleDetailsResponse): string {
-    return [
-        details.variant.year,
-        details.make.name,
-        details.model.name,
-        details.generation.name,
-        details.variant.name,
+    const title = [
+        details.variant?.year,
+        details.make?.name,
+        details.model?.name,
+        details.generation?.name,
+        details.variant?.name,
     ]
         .filter(
             (value) =>
@@ -76,6 +84,8 @@ export function getVehicleTitle(details: VehicleDetailsResponse): string {
                 String(value).trim().length > 0,
         )
         .join(" ");
+
+    return title || "Vehicle details unavailable";
 }
 
 export function getErrorMessage(error: unknown): string {

@@ -147,6 +147,10 @@ export interface MarketplaceSearchParams {
 
     sort?: "newest" | "price_asc" | "price_desc" | "relevance";
 
+    make?: string;
+    model?: string;
+    variant?: string;
+
     makeId?: string;
     modelId?: string;
     generationId?: string;

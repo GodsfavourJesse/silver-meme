@@ -15,14 +15,7 @@ export function useInitializeSubscriptionPayment() {
 
         mutationFn: initializeSubscriptionPayment,
 
-        onSuccess: (result) => {
-            // Payment initialization is successful.
-            // The user-facing component handles the Paystack redirect.
-            if (!result.authorizationUrl) {
-                console.warn(
-                    "Payment initialized without an authorization URL.",
-                );
-            }
-        },
+        // Payment initialization is handled by the calling component.
+        // No payment or account details are written to the browser console.
     });
 }

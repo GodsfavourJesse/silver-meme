@@ -1,25 +1,48 @@
 "use client";
 
 import { useState } from "react";
-import { AlertCircle, CarFront, Pencil } from "lucide-react";
+import { CarFront, Check, Pencil, AlertCircle } from "lucide-react";
+
 import { ExternalVehicleSelectionFields } from "./ExternalVehicleSelectionFields";
-import { VehicleManualEntryFields, type ManualVehicleValues } from "./VehicleManualEntryFields";
+
+import {
+    VehicleManualEntryFields,
+    type ManualVehicleValues,
+} from "./VehicleManualEntryFields";
 
 interface VehicleSelectionFieldsProps {
     value: string;
     onChange: (vehicleVariantId: string) => void;
     onVehicleSelected?: (title: string | null) => void;
     manualValue: ManualVehicleValues;
-    onManualVehicleChange: (field: keyof ManualVehicleValues, value: string) => void;
-    onVehicleDetailsChange?: (details: Partial<ManualVehicleValues>) => void;
+    onManualVehicleChange: (
+        field: keyof ManualVehicleValues,
+        value: string
+    ) => void;
+    onVehicleDetailsChange?: (
+        details: Partial<ManualVehicleValues>
+    ) => void;
     disabled?: boolean;
     error?: string;
 }
 
-const tabClass = (active: boolean) =>
-    `flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs font-semibold transition sm:text-sm ${active ? "bg-white text-[#0877D9] shadow-sm" : "text-slate-500 hover:text-slate-800"}`;
+type SelectionMode = "external" | "manual";
+
+const MODES = [
+    {
+        id: "external" as const,
+        title: "Vehicle catalogue",
+        icon: CarFront,
+    },
+    {
+        id: "manual" as const,
+        title: "Manual entry",
+        icon: Pencil,
+    },
+];
 
 export function VehicleSelectionFields({
+    value,
     onChange,
     onVehicleSelected,
     manualValue,
@@ -28,31 +51,75 @@ export function VehicleSelectionFields({
     disabled = false,
     error,
 }: VehicleSelectionFieldsProps) {
-    const [mode, setMode] = useState<"external" | "manual">("external");
+    const [mode, setMode] = useState<SelectionMode>("external");
 
-    const switchMode = (nextMode: "external" | "manual") => {
+    const switchMode = (nextMode: SelectionMode) => {
         if (disabled || mode === nextMode) return;
+
         onChange("");
         onVehicleSelected?.(null);
-        onVehicleDetailsChange?.({ makeName: "", modelName: "", year: "", generationName: "", variantName: "" });
+
+        onVehicleDetailsChange?.({
+            makeName: "",
+            modelName: "",
+            year: "",
+            generationName: "",
+            variantName: "",
+        });
+
         setMode(nextMode);
     };
 
     return (
-        <section className="space-y-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-900/[0.02] sm:p-5">
-            {/* <div className="flex items-start gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#EAF5FF]">
-                    <CarFront size={21} strokeWidth={1.8} className="text-[#1491FF]" />
-                </div>
-                <div className="min-w-0 flex-1">
-                    <h2 className="text-base font-semibold tracking-tight text-slate-900">Vehicle details</h2>
-                    <p className="mt-1 max-w-lg text-sm leading-5 text-slate-500">Select your vehicle using live automotive data. Manual entry is available only when a provider does not return your vehicle.</p>
-                </div>
-            </div> */}
+        <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
+            <div className="mb-4 flex items-center gap-2">
+                <CarFront size={19} className="text-slate-600" />
 
-            <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1">
-                <button type="button" disabled={disabled} onClick={() => switchMode("external")} className={tabClass(mode === "external")}><CarFront size={16} /> Vehicle Cataloge</button>
-                <button type="button" disabled={disabled} onClick={() => switchMode("manual")} className={tabClass(mode === "manual")}><Pencil size={15} /> Manual</button>
+                <h3 className="text-sm font-semibold text-slate-900">
+                    Select your vehicle
+                </h3>
+            </div>
+
+            <div className="mb-5 grid grid-cols-2 gap-2">
+                {MODES.map((item) => {
+                    const Icon = item.icon;
+                    const active = mode === item.id;
+
+                    return (
+                        <button
+                            key={item.id}
+                            type="button"
+                            disabled={disabled}
+                            onClick={() => switchMode(item.id)}
+                            aria-pressed={active}
+                            className={`
+                                flex min-h-11 items-center justify-center gap-2
+                                rounded-lg border px-3 py-2.5
+                                text-xs font-medium transition-colors
+                                focus-visible:outline-none focus-visible:ring-2
+                                focus-visible:ring-blue-500 focus-visible:ring-offset-2
+                                disabled:cursor-not-allowed disabled:opacity-60
+                                sm:text-sm
+                                ${
+                                    active
+                                        ? "border-blue-600 bg-blue-50 text-blue-700"
+                                        : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                                }
+                            `}
+                        >
+                            <Icon size={16} />
+
+                            <span>{item.title}</span>
+
+                            {active && (
+                                <Check
+                                    size={15}
+                                    className="ml-auto shrink-0"
+                                />
+                            )}
+                        </button>
+                    );
+                })}
             </div>
 
             {mode === "external" ? (
@@ -71,7 +138,19 @@ export function VehicleSelectionFields({
                 />
             )}
 
-            {error && <p role="alert" className="flex items-center gap-2 text-sm text-red-600"><AlertCircle size={16} />{error}</p>}
+            {error && (
+                <div
+                    role="alert"
+                    className="mt-4 flex items-start gap-2 rounded-lg bg-red-50 px-3 py-2.5 text-sm text-red-700"
+                >
+                    <AlertCircle
+                        size={16}
+                        className="mt-0.5 shrink-0"
+                    />
+
+                    <p>{error}</p>
+                </div>
+            )}
         </section>
     );
 }

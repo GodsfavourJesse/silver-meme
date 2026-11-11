@@ -314,7 +314,7 @@ export default function DashboardSidebar() {
                             href={
                                 isDealer
                                     ? "/dashboard/dealer"
-                                    : "/dealer-registration"
+                                    : "/dashboard/dealer"
                             }
                             className="
                                 mt-4 inline-flex min-h-10 w-full

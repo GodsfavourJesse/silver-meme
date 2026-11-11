@@ -3,7 +3,7 @@ import type { LucideIcon } from "lucide-react";
 import type { PendingListing } from "./admin-listings.types";
 
 export const PUBLIC_STORAGE_URL =
-  process.env.NEXT_PUBLIC_STORAGE_PUBLIC_URL?.replace(/\/+$/, "");
+    process.env.NEXT_PUBLIC_STORAGE_PUBLIC_URL?.replace(/\/+$/, "");
 
 export function formatMoney(value: string | number, currency = "NGN") {
   const amount = Number(value);
@@ -39,8 +39,23 @@ export function imageStatus(status: string): { label: string; Icon: LucideIcon; 
   return { label: "Scanning", Icon: Clock3, className: "border-sky-200 bg-sky-50 text-sky-700" };
 }
 
-export function imageUrl(objectKey: string) {
-  return PUBLIC_STORAGE_URL
-    ? `${PUBLIC_STORAGE_URL}/${objectKey.split("/").map(encodeURIComponent).join("/")}`
-    : null;
+export function imageUrl(objectKey?: string | null) {
+    if (!objectKey) return null;
+
+    // Support URLs that are already absolute.
+    if (/^https?:\/\//i.test(objectKey)) {
+        return objectKey;
+    }
+
+    if (!PUBLIC_STORAGE_URL) {
+        return null;
+    }
+
+    const normalizedKey = objectKey
+        .replace(/^\/+/, "")
+        .split("/")
+        .map(encodeURIComponent)
+        .join("/");
+
+    return `${PUBLIC_STORAGE_URL}/${normalizedKey}`;
 }

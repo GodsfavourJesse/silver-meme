@@ -23,16 +23,15 @@ export function useDashboardLogout() {
 
         try {
             await authService.logout();
-        } catch (error) {
+        } catch {
             // Continue with local cleanup even if the API request fails.
-            console.error("Logout request failed:", error);
         } finally {
             try {
                 await queryClient.cancelQueries({
                     queryKey: queryKeys.auth.all,
                 });
-            } catch (error) {
-                console.error("Failed to cancel auth queries:", error);
+            } catch {
+                // Continue with local cleanup if query cancellation fails.
             } finally {
                 queryClient.removeQueries({
                     queryKey: queryKeys.auth.all,
