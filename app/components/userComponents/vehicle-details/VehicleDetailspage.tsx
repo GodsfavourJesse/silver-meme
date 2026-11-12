@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import { ShieldAlert } from "lucide-react";
 
 import { ContactSellerModal } from "./ContactSellerModal";
@@ -12,7 +12,6 @@ import { VehicleDescription } from "./VehicleDescription";
 import { VehicleDetailsError } from "./VehicleDetailsError";
 import { VehicleDetailsSkeleton } from "./VehicleDetailsSkeleton";
 import { VehicleImageGallery } from "./VehicleImageGallery";
-import { VehicleMobileActionBar } from "./VehicleMobileActionBar";
 import { VehicleSafetyNotice } from "./VehicleSafetyNotice";
 import { VehicleSellerCard } from "./VehicleSellerCard";
 import { VehicleSpecifications } from "./VehicleSpecifications";
@@ -111,19 +110,6 @@ export function VehicleDetailsPage({
         setReportOpen(false);
     }
 
-    if (loading) {
-        return <VehicleDetailsSkeleton />;
-    }
-
-    if (pageError || !details) {
-        return (
-            <VehicleDetailsError
-                message={pageError}
-                onRetry={() => void reload()}
-            />
-        );
-    }
-
     function openConversation(conversationId: string) {
         if (!conversationId.trim()) {
             return;
@@ -135,6 +121,19 @@ export function VehicleDetailsPage({
             `/messages?conversationId=${encodeURIComponent(
                 conversationId,
             )}`,
+        );
+    }
+
+    if (loading) {
+        return <VehicleDetailsSkeleton />;
+    }
+
+    if (pageError || !details) {
+        return (
+            <VehicleDetailsError
+                message={pageError}
+                onRetry={() => void reload()}
+            />
         );
     }
 
@@ -154,13 +153,17 @@ export function VehicleDetailsPage({
 
     return (
         <main className="min-h-screen bg-[#F7F9FC] pb-28 md:pb-12">
-            {/* Subtle page background */}
+            {/* Page background */}
             <div className="pointer-events-none fixed inset-x-0 top-0 -z-0 h-[420px] bg-gradient-to-b from-blue-50/70 via-white/50 to-transparent" />
 
             <div className="relative mx-auto w-full max-w-[1440px] px-4 pb-8 pt-4 sm:px-6 sm:pt-6 lg:px-10 lg:pt-8">
                 {/* Breadcrumb */}
                 <motion.div
-                    initial={shouldReduceMotion ? false : { opacity: 0, y: -6 }}
+                    initial={
+                        shouldReduceMotion
+                            ? false
+                            : { opacity: 0, y: -6 }
+                    }
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.35 }}
                     className="mb-5 sm:mb-7"
@@ -276,6 +279,7 @@ export function VehicleDetailsPage({
                                     <p className="text-xs font-semibold text-slate-700">
                                         Something not right?
                                     </p>
+
                                     <p className="mt-0.5 text-[11px] text-slate-500">
                                         Help us keep KARMASS safe.
                                     </p>
@@ -295,7 +299,11 @@ export function VehicleDetailsPage({
 
                 {/* Safety information */}
                 <motion.section
-                    initial={shouldReduceMotion ? false : { opacity: 0, y: 14 }}
+                    initial={
+                        shouldReduceMotion
+                            ? false
+                            : { opacity: 0, y: 14 }
+                    }
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, amount: 0.15 }}
                     transition={{ duration: 0.4 }}
@@ -322,15 +330,7 @@ export function VehicleDetailsPage({
                 )}
             </div>
 
-            {/* Mobile sticky action bar */}
-            <VehicleMobileActionBar
-                favorite={actions.favorite}
-                favoriteLoading={actions.favoriteLoading}
-                onFavorite={() => void actions.toggleFavorite()}
-                onContact={openContact}
-            />
-
-            {/* Modals */}
+            {/* Contact and report modals */}
             <AnimatePresence>
                 {contactOpen && (
                     <ContactSellerModal

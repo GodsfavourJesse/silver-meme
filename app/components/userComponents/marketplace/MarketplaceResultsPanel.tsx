@@ -1,23 +1,20 @@
+
 "use client";
 
 import {
     ArrowLeft,
     ArrowRight,
     CarFront,
-    ChevronDown,
     RotateCcw,
     X,
     SlidersHorizontal,
-    Search,
 } from "lucide-react";
 
 import {
-    SORT_OPTIONS,
     getActiveMarketplaceFilters,
     type MarketplaceFilterKey,
     type MarketplaceFilterState,
     type MarketplaceVehicleFilterLabels,
-    type SortOption,
 } from "@/app/lib/user/marketplace/marketplace-search";
 
 import type {
@@ -34,12 +31,10 @@ interface MarketplaceResultsPanelProps {
     results: MarketplaceSearchResult[];
     pagination: MarketplacePagination | null;
     page: number;
-    sort: SortOption;
     filters: MarketplaceFilterState;
     vehicleLabels?: MarketplaceVehicleFilterLabels;
     loading: boolean;
     error: string;
-    onSortChange: (sort: SortOption) => void;
     onPageChange: (page: number) => void;
     onRemoveFilter: (key: MarketplaceFilterKey) => void;
     onClearFilters: () => void;
@@ -53,12 +48,10 @@ export function MarketplaceResultsPanel({
     results,
     pagination,
     page,
-    sort,
     filters,
     vehicleLabels,
     loading,
     error,
-    onSortChange,
     onPageChange,
     onRemoveFilter,
     onClearFilters,
@@ -83,97 +76,6 @@ export function MarketplaceResultsPanel({
             aria-busy={loading}
             className="min-w-0 space-y-4 sm:space-y-5"
         >
-            {/* Results toolbar */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                            <h2 className="text-base font-semibold tracking-tight text-slate-950 sm:text-lg">
-                                {loading
-                                    ? "Finding vehicles"
-                                    : `${formatCount(totalResults)} ${
-                                          totalResults === 1
-                                              ? "vehicle"
-                                              : "vehicles"
-                                      }`}
-                            </h2>
-
-                            {!loading && !error && (
-                                <span className="inline-flex items-center rounded-full bg-[#1491FF]/10 px-2.5 py-1 text-[10px] font-semibold text-[#0876D1] sm:text-xs">
-                                    {activeFilters.length > 0
-                                        ? "Filtered results"
-                                        : "Marketplace"}
-                                </span>
-                            )}
-                        </div>
-
-                        <p className="mt-1.5 text-xs leading-5 text-slate-500 sm:text-sm">
-                            {loading
-                                ? "Please wait while we update your results."
-                                : error
-                                  ? "Your search results couldn't be updated."
-                                  : activeFilters.length > 0
-                                    ? "Vehicles matching your selected preferences."
-                                    : "Explore cars available from sellers across Nigeria."}
-                        </p>
-                    </div>
-
-                    <label className="flex w-full items-center justify-between gap-3 sm:w-auto sm:justify-start">
-                        <span className="shrink-0 text-xs font-medium text-slate-500">
-                            Sort by
-                        </span>
-
-                        <span className="relative min-w-0 flex-1 sm:flex-none">
-                            <select
-                                value={sort}
-                                onChange={(event) =>
-                                    onSortChange(
-                                        event.target.value as SortOption,
-                                    )
-                                }
-                                aria-label="Sort vehicle listings"
-                                className="min-h-11 w-full appearance-none rounded-xl border border-slate-200 bg-white py-2.5 pl-3.5 pr-10 text-sm font-medium text-slate-800 outline-none transition hover:border-slate-300 focus:border-[#1491FF] focus:ring-4 focus:ring-[#1491FF]/10 sm:min-w-44"
-                            >
-                                {SORT_OPTIONS.map((option) => (
-                                    <option
-                                        key={option.value}
-                                        value={option.value}
-                                    >
-                                        {option.label}
-                                    </option>
-                                ))}
-                            </select>
-
-                            <ChevronDown
-                                size={16}
-                                aria-hidden="true"
-                                className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-                            />
-                        </span>
-                    </label>
-                </div>
-
-                {!loading && !error && totalResults > 0 && (
-                    <div className="mt-4 flex items-center gap-2 border-t border-slate-100 pt-3.5">
-                        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
-                            <div
-                                className="h-full rounded-full bg-[#1491FF] transition-all duration-300"
-                                style={{
-                                    width: `${Math.min(
-                                        100,
-                                        (page / totalPages) * 100,
-                                    )}%`,
-                                }}
-                            />
-                        </div>
-
-                        <span className="shrink-0 text-[11px] font-medium text-slate-400">
-                            Page {page} of {totalPages}
-                        </span>
-                    </div>
-                )}
-            </div>
-
             {/* Active filters */}
             {activeFilters.length > 0 && (
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
@@ -262,8 +164,8 @@ export function MarketplaceResultsPanel({
 
             {/* Loading state */}
             {loading && (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 2xl:grid-cols-3">
-                    {Array.from({ length: 6 }).map((_, index) => (
+                <div className="grid grid-cols-[minmax(0,1fr)] gap-x-3 gap-y-4 sm:grid-cols-[repeat(auto-fill,minmax(min(100%,250px),280px))]">
+                    {Array.from({ length: 8 }).map((_, index) => (
                         <MarketplaceListingSkeleton key={index} />
                     ))}
                 </div>
@@ -299,7 +201,7 @@ export function MarketplaceResultsPanel({
             {/* Listing grid and pagination */}
             {!loading && !error && hasResults && (
                 <>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 2xl:grid-cols-3">
+                   <div className="grid grid-cols-[minmax(0,1fr)] gap-x-3 gap-y-4 sm:grid-cols-[repeat(auto-fill,minmax(min(100%,250px),280px))]">
                         {results.map((result) => (
                             <MarketplaceListingCard
                                 key={result.listing.id}
@@ -311,50 +213,33 @@ export function MarketplaceResultsPanel({
                     {/* Pagination */}
                     <nav
                         aria-label="Vehicle listing pages"
-                        className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:px-5"
+                        className="flex items-center justify-center gap-3 py-3"
                     >
-                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                            <div className="text-center sm:text-left">
-                                <p className="text-sm font-medium text-slate-800">
-                                    Page {page}{" "}
-                                    <span className="font-normal text-slate-400">
-                                        of
-                                    </span>{" "}
-                                    {totalPages}
-                                </p>
+                        <button
+                            type="button"
+                            onClick={() => onPageChange(Math.max(1, page - 1))}
+                            disabled={!hasPreviousPage || loading}
+                            aria-label="Previous page"
+                            className="inline-flex size-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1491FF]/30 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                            <ArrowLeft size={17} />
+                        </button>
 
-                                <p className="mt-1 text-xs text-slate-500">
-                                    {formatCount(totalResults)}{" "}
-                                    {totalResults === 1
-                                        ? "vehicle available"
-                                        : "vehicles available"}
-                                </p>
-                            </div>
+                        <span className="text-sm font-medium text-slate-600">
+                            <span className="text-slate-950">{page}</span>
+                            <span className="mx-1.5 text-slate-400">/</span>
+                            {totalPages}
+                        </span>
 
-                            <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        onPageChange(Math.max(1, page - 1))
-                                    }
-                                    disabled={!hasPreviousPage || loading}
-                                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#1491FF]/10 disabled:cursor-not-allowed disabled:opacity-40 sm:px-4"
-                                >
-                                    <ArrowLeft size={15} />
-                                    Previous
-                                </button>
-
-                                <button
-                                    type="button"
-                                    onClick={() => onPageChange(page + 1)}
-                                    disabled={!hasNextPage || loading}
-                                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#1491FF] px-3.5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0876D1] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#1491FF]/20 disabled:cursor-not-allowed disabled:opacity-40 sm:px-4"
-                                >
-                                    Next
-                                    <ArrowRight size={15} />
-                                </button>
-                            </div>
-                        </div>
+                        <button
+                            type="button"
+                            onClick={() => onPageChange(page + 1)}
+                            disabled={!hasNextPage || loading}
+                            aria-label="Next page"
+                            className="inline-flex size-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1491FF]/30 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                            <ArrowRight size={17} />
+                        </button>
                     </nav>
                 </>
             )}

@@ -360,7 +360,10 @@ function MobileImageVerification({
                             image.imageCheckStatus,
                         );
 
-                        const src = imageUrl(image.objectKey);
+                        const src = imageUrl(
+                            item.listing.id,
+                            image.id,
+                        );
 
                         return (
                             <article

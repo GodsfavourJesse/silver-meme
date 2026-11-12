@@ -172,7 +172,7 @@ export function MobileHome({
 
                     {/* SELL BUTTON */}
                     <Link
-                        href="/sell"
+                        href="/register"
                         className="inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-lg bg-white px-3 text-[11px] font-bold text-[#0877D9] shadow-sm transition-colors hover:bg-[#EAF5FF] active:scale-[0.98]"
                     >
                         <CarFront size={15} />

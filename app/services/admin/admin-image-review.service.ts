@@ -23,7 +23,7 @@ interface ApiResponse<T> {
 // ============================================================
 
 class AdminImageReviewService {
-    private readonly endpoint = "/api/v1/admin/image-review";
+    private readonly endpoint = "/admin/image-review";
 
     /**
      * Get paginated image review queue.

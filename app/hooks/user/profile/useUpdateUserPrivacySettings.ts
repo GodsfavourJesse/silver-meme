@@ -1,6 +1,6 @@
 import { queryKeys } from "@/app/lib/query/query-keys";
 import { profileService } from "@/app/services/user/profile/profile.service";
-import { UpdateUserPrivacyInput } from "@/app/types/user/profile/profile.types";
+import type { UpdateUserPrivacyInput } from "@/app/types/user/profile/profile.types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 /**

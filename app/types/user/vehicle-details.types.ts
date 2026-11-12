@@ -13,7 +13,33 @@ export interface VehicleDetailsImage {
 export interface VehicleDetailsListing {
     id: string;
     sellerId: string;
-    vehicleVariantId: string;
+    vehicleVariantId: string | null;
+
+    // Vehicle identity snapshots
+    makeName: string | null;
+    modelName: string | null;
+    year: number | null;
+    generationName: string | null;
+    variantName: string | null;
+
+    // Vehicle specifications
+    bodyStyle: string | null;
+    fuelType: string | null;
+    transmission: string | null;
+    driveType: string | null;
+    engineCapacity: string | null;
+    horsepower: number | null;
+    exteriorColor: string | null;
+    interiorColor: string | null;
+    seats: number | null;
+    doors: number | null;
+
+    specifications: Record<
+        string,
+        string | number | boolean | null
+    >;
+
+    // Listing information
     title: string;
     description: string | null;
     price: string | number;

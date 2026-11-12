@@ -1,15 +1,31 @@
+
 "use client";
 
+import {
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+} from "react";
+
+import { createPortal } from "react-dom";
 import Link from "next/link";
 
 import {
-    ArrowLeft,
     ArrowRight,
     Search,
+    SlidersHorizontal,
     X,
+    ChevronDown,
 } from "lucide-react";
 
 import { useSharedMarketplaceSearch } from "@/app/context/user/MarketplaceSearchProvider";
+
+import {
+    countActiveFilters,
+    SORT_OPTIONS,
+    type SortOption,
+} from "@/app/lib/user/marketplace/marketplace-search";
 
 import { MarketplaceFilters } from "../MarketplaceFilters";
 import { MarketplaceResultsPanel } from "../MarketplaceResultsPanel";
@@ -36,136 +52,332 @@ export function DesktopMarketplace() {
         vehicleLabels,
     } = useSharedMarketplaceSearch();
 
+    const [filtersOpen, setFiltersOpen] = useState(false);
+    const [mounted, setMounted] = useState(false);
+
+    const filterTriggerRef = useRef<HTMLButtonElement>(null);
+    const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+    const activeFilterCount = countActiveFilters(filters);
+    const totalVehicles = pagination?.total ?? 0;
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    const openFilters = useCallback(() => {
+        setFiltersOpen(true);
+    }, []);
+
+    const closeFilters = useCallback(() => {
+        setFiltersOpen(false);
+    }, []);
+
+    // Handle modal keyboard interaction and body scrolling.
+    useEffect(() => {
+        if (!filtersOpen) return;
+
+        const previousOverflow = document.body.style.overflow;
+
+        document.body.style.overflow = "hidden";
+
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === "Escape") {
+                closeFilters();
+            }
+        };
+
+        document.addEventListener("keydown", handleKeyDown);
+
+        closeButtonRef.current?.focus();
+
+        return () => {
+            document.body.style.overflow = previousOverflow;
+            document.removeEventListener("keydown", handleKeyDown);
+
+            filterTriggerRef.current?.focus();
+        };
+    }, [filtersOpen, closeFilters]);
+
+    const clearSearch = () => {
+        setQuery("");
+    };
+
     return (
         <main className="min-h-screen bg-[#F8FAFC] text-slate-900">
-            {/* Marketplace header */}
-            {/* <DesktopNavbar /> */}
 
-            {/* Marketplace content */}
-            <div className="mx-auto max-w-[1440px] px-4 pb-12 pt-5 sm:px-6 sm:pt-7 lg:px-10 lg:pt-9">
-                {/* Breadcrumb */}
-                <nav aria-label="Breadcrumb">
-                    <Link
-                        href="/"
-                        className="inline-flex min-h-8 items-center gap-2 rounded-lg text-sm font-medium text-slate-500 transition-colors hover:text-[#0876D1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1491FF] focus-visible:ring-offset-2"
-                    >
-                        <ArrowLeft
-                            size={15}
-                            aria-hidden="true"
-                        />
-                        Home
-                    </Link>
-                </nav>
+            {/* BLUE MARKETPLACE HEADER */}
+            <header className="relative z-30 bg-[#1491FF] text-white shadow-[0_5px_20px_rgba(0,95,185,0.12)]">
 
-                {/* Page introduction and search */}
-                <section className="mt-5 flex flex-col gap-6 border-b border-slate-200 pb-7 sm:mt-6 sm:pb-8 xl:flex-row xl:items-end xl:justify-between">
-                    <div className="max-w-2xl">
-                        <div className="inline-flex items-center gap-2 rounded-full border border-[#1491FF]/15 bg-[#1491FF]/[0.06] px-3 py-1.5">
-                            <span
-                                className="h-1.5 w-1.5 rounded-full bg-[#1491FF]"
-                                aria-hidden="true"
-                            />
+                <div className="mx-auto max-w-[1440px]">
 
-                            <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#0876D1] sm:text-[11px]">
-                                The KARMASS marketplace
+                    {/* TOP NAVIGATION */}
+                    <div className="flex items-center justify-between gap-3 px-5 pb-3 pt-[max(13px,env(safe-area-inset-top))] lg:px-10">
+
+                        <Link
+                            href="/"
+                            aria-label="KARMASS home"
+                            className="group flex min-w-0 items-center gap-2.5"
+                        >
+                            <span className="
+                                flex h-10 w-10 shrink-0
+                                items-center justify-center
+                                rounded-[13px] bg-white
+                                text-[17px] font-extrabold
+                                tracking-[-0.08em] text-[#1491FF]
+                                shadow-[0_5px_14px_rgba(0,65,130,0.16)]
+                                transition-transform group-hover:scale-[1.03]
+                            ">
+                                K.
                             </span>
-                        </div>
 
-                        <h1 className="mt-4 text-[2rem] font-bold leading-[1.12] tracking-tight text-slate-950 sm:text-4xl lg:text-[2.75rem]">
-                            Find a car that{" "}
-                            <span className="text-[#1491FF]">
-                                feels right.
+                            <span className="min-w-0">
+                                <span className="block text-[14px] font-extrabold leading-5 tracking-[0.13em] text-white">
+                                    KARMASS
+                                </span>
+
+                                <span className="mt-0.5 block text-[8px] font-semibold uppercase tracking-[0.16em] text-white/75">
+                                    Find your drive
+                                </span>
                             </span>
-                        </h1>
+                        </Link>
 
-                        <p className="mt-3 max-w-xl text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
-                            From everyday drives to something special, explore
-                            cars for sale from sellers across Nigeria.
-                        </p>
+                        <Link
+                            href="/register"
+                            className="
+                                inline-flex min-h-10 shrink-0 items-center
+                                justify-center rounded-xl
+                                border border-white/25 bg-white/10
+                                px-3.5 text-[11px] font-bold text-white
+                                transition hover:bg-white/20
+                                active:scale-[0.98]
+                            "
+                        >
+                            Sell a car
+                        </Link>
                     </div>
 
-                    {/* Search */}
-                    <form
-                        onSubmit={handleSearch}
-                        role="search"
-                        className="w-full xl:max-w-[520px]"
-                    >
-                        <label
-                            htmlFor="marketplace-search"
-                            className="mb-2 block text-sm font-semibold text-slate-700"
-                        >
-                            What are you looking for?
-                        </label>
+                    {/* SEARCH + FILTER BAR */}
+                    <div className="flex items-center gap-2 px-4 pb-5 pt-4 lg:px-10">
 
-                        <div className="flex min-h-[54px] items-center gap-2 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm transition-all focus-within:border-[#1491FF] focus-within:ring-4 focus-within:ring-[#1491FF]/10">
+                        {/* FILTER BUTTON */}
+                        <button
+                            ref={filterTriggerRef}
+                            type="button"
+                            onClick={openFilters}
+                            aria-label={
+                                activeFilterCount > 0
+                                    ? `Open filters, ${activeFilterCount} active`
+                                    : "Open vehicle filters"
+                            }
+                            aria-haspopup="dialog"
+                            aria-expanded={filtersOpen}
+                            className="
+                                relative inline-flex h-[54px] shrink-0
+                                items-center justify-center gap-2
+                                rounded-[15px] border border-white/20
+                                bg-white/15 px-3
+                                text-[11px] font-bold text-white
+                                transition-all duration-200
+                                hover:bg-white/25
+                                active:scale-[0.97]
+                                focus-visible:outline-none
+                                focus-visible:ring-2 focus-visible:ring-white/50
+                            "
+                        >
+                            <SlidersHorizontal size={17} strokeWidth={2.2} />
+
+                            <span>Filters</span>
+
+                            {activeFilterCount > 0 && (
+                                <span className="
+                                    grid size-[17px] shrink-0 place-items-center
+                                    rounded-full bg-white
+                                    text-[9px] font-extrabold text-[#0876D1]
+                                ">
+                                    {activeFilterCount}
+                                </span>
+                            )}
+                        </button>
+
+                        {/* SEARCH BOX */}
+                        <form
+                            onSubmit={handleSearch}
+                            role="search"
+                            className="
+                                flex min-h-[54px] min-w-0 flex-1
+                                items-center gap-2
+                                rounded-[15px] bg-white
+                                p-1.5 pl-3
+                                shadow-[0_6px_20px_rgba(0,50,110,0.13)]
+                                transition-all
+                                focus-within:ring-2 focus-within:ring-white/30
+                            "
+                        >
                             <Search
-                                size={19}
-                                className="ml-2 shrink-0 text-slate-400"
-                                aria-hidden="true"
+                                size={18}
+                                className="shrink-0 text-[#8292A6]"
                             />
 
                             <input
-                                id="marketplace-search"
-                                type="search"
                                 value={query}
                                 onChange={(event) =>
                                     setQuery(event.target.value)
                                 }
-                                placeholder="Try Toyota Camry or Honda Accord"
+                                placeholder="Make, model or location"
+                                aria-label="Search vehicles"
                                 autoComplete="off"
-                                aria-label="Search cars by make, model, or keyword"
-                                className="h-10 min-w-0 flex-1 bg-transparent px-1 text-sm text-slate-900 outline-none placeholder:text-slate-400"
+                                enterKeyHint="search"
+                                className="
+                                    min-w-0 flex-1 bg-transparent
+                                    py-2 text-[11px] font-medium
+                                    text-[#243247] outline-none
+                                    placeholder:text-[#9AA5B4]
+                                "
                             />
 
                             {query && (
                                 <button
                                     type="button"
+                                    onClick={clearSearch}
                                     aria-label="Clear search"
-                                    onClick={() => setQuery("")}
-                                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1491FF]"
+                                    className="
+                                        flex size-7 shrink-0
+                                        items-center justify-center
+                                        rounded-full text-[#8491A3]
+                                        transition hover:bg-gray-100
+                                    "
                                 >
-                                    <X
-                                        size={16}
-                                        aria-hidden="true"
-                                    />
+                                    <X size={14} />
                                 </button>
                             )}
 
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#1491FF] px-3.5 text-sm font-semibold text-white transition-colors hover:bg-[#0876D1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1491FF] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:px-5"
+                                aria-label="Search vehicles"
+                                className="
+                                    flex size-10 shrink-0
+                                    items-center justify-center
+                                    rounded-xl bg-[#1491FF]
+                                    text-white shadow-sm
+                                    transition hover:bg-[#0877D9]
+                                    active:scale-95
+                                    disabled:cursor-not-allowed disabled:opacity-60
+                                "
                             >
-                                <Search
-                                    size={16}
-                                    aria-hidden="true"
-                                />
-
-                                <span className="hidden sm:inline">
-                                    Search cars
-                                </span>
-
-                                <span className="sm:hidden">
-                                    Search
-                                </span>
+                                <Search size={17} strokeWidth={2.2} />
                             </button>
-                        </div>
+                        </form>
+                    </div>
+                </div>
+            </header>
 
-                        <p className="mt-2 px-1 text-xs leading-5 text-slate-500">
-                            Search by make, model, or any detail you have in
-                            mind.
-                        </p>
-                    </form>
-                </section>
+            {/* MARKETPLACE CONTENT */}
+            <div className="mx-auto max-w-[1440px] px-4 pb-12 pt-6 sm:px-6 sm:pt-8 lg:px-10 lg:pt-9">
 
-                {/* Filters and results */}
+                {/* FILTERS AND RESULTS */}
                 <section
                     aria-label="Vehicle listings"
-                    className="mt-6 sm:mt-8"
                 >
+                        {/* RESULTS */}
+                        <div className="min-w-0">
+
+                            {/* RESULTS HEADING + SORT */}
+                            <div className="mb-5 flex items-center justify-between gap-4">
+
+                                <div className="min-w-0">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <h2 className="text-base font-semibold tracking-tight text-slate-950 sm:text-lg">
+                                            Explore vehicles
+                                        </h2>
+
+                                        {!loading && !error && (
+                                            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-medium tabular-nums text-slate-500 sm:text-xs">
+                                                {totalVehicles.toLocaleString("en-NG")}
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    <p
+                                        aria-live="polite"
+                                        className="mt-1 text-xs text-slate-500"
+                                    >
+                                        {loading
+                                            ? "Finding vehicles..."
+                                            : error
+                                              ? "Unable to update results."
+                                              : `${totalVehicles.toLocaleString("en-NG")} ${
+                                                    totalVehicles === 1
+                                                        ? "car"
+                                                        : "cars"
+                                                } available`}
+                                    </p>
+                                </div>
+
+                                <label className="flex shrink-0 items-center gap-2">
+                                    <span className="text-xs font-medium text-slate-500">
+                                        Sort by
+                                    </span>
+
+                                    <span className="relative">
+                                        <select
+                                            value={sort}
+                                            onChange={(event) =>
+                                                handleSortChange(
+                                                    event.target.value as SortOption,
+                                                )
+                                            }
+                                            aria-label="Sort vehicle listings"
+                                            className="
+                                                h-9 min-w-[112px] max-w-[145px]
+                                                appearance-none rounded-lg
+                                                border border-slate-200
+                                                bg-white pl-2.5 pr-7
+                                                text-xs font-semibold
+                                                text-slate-700 outline-none
+                                                transition hover:border-slate-300
+                                                focus:border-[#1491FF]
+                                                focus:ring-2 focus:ring-[#1491FF]/10
+                                            "
+                                        >
+                                            {SORT_OPTIONS.map((option) => (
+                                                <option
+                                                    key={option.value}
+                                                    value={option.value}
+                                                >
+                                                    {option.label}
+                                                </option>
+                                            ))}
+                                        </select>
+
+                                        <ChevronDown
+                                            size={14}
+                                            aria-hidden="true"
+                                            className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400"
+                                        />
+                                    </span>
+                                </label>
+                            </div>
+
+                            <MarketplaceResultsPanel
+                                results={results}
+                                pagination={pagination}
+                                page={page}
+                                filters={filters}
+                                vehicleLabels={vehicleLabels}
+                                loading={loading}
+                                error={error}
+                                onPageChange={setPage}
+                                onRemoveFilter={removeFilter}
+                                onRetry={retry}
+                                onClearFilters={clearFilters}
+                            />
+                        </div>
                     <div className="grid items-start gap-5 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-6 xl:grid-cols-[280px_minmax(0,1fr)] xl:gap-8">
-                        {/* Desktop filters */}
-                        <aside className="hidden min-w-0 lg:block">
+
+                        {/* DESKTOP FILTER SIDEBAR */}
+                        {/* <aside className="hidden min-w-0 lg:block">
                             <div className="sticky top-[88px]">
                                 <MarketplaceFilters
                                     filters={filters}
@@ -174,30 +386,12 @@ export function DesktopMarketplace() {
                                     onApply={() => setPage(1)}
                                 />
                             </div>
-                        </aside>
+                        </aside> */}
 
-                        {/* Results */}
-                        <div className="min-w-0">
-                            <MarketplaceResultsPanel
-                                results={results}
-                                pagination={pagination}
-                                page={page}
-                                sort={sort}
-                                filters={filters}
-                                vehicleLabels={vehicleLabels}
-                                loading={loading}
-                                error={error}
-                                onSortChange={handleSortChange}
-                                onPageChange={setPage}
-                                onRemoveFilter={removeFilter}
-                                onRetry={retry}
-                                onClearFilters={clearFilters}
-                            />
-                        </div>
                     </div>
                 </section>
 
-                {/* Footer */}
+                {/* FOOTER */}
                 <footer className="mt-12 border-t border-slate-200 pt-5 sm:mt-16 sm:pt-6">
                     <div className="flex flex-col gap-3 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
                         <p>
@@ -213,14 +407,52 @@ export function DesktopMarketplace() {
                             <span className="text-[#1491FF]">
                                 Get started
                             </span>
-                            <ArrowRight
-                                size={13}
-                                aria-hidden="true"
-                            />
+                            <ArrowRight size={13} aria-hidden="true" />
                         </Link>
                     </div>
                 </footer>
             </div>
+
+            {/* FILTER DIALOG */}
+            {mounted && filtersOpen && createPortal(
+                <div
+                    className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-950/45 backdrop-blur-[2px] sm:items-center sm:p-5"
+                    onMouseDown={(event) => {
+                        if (event.target === event.currentTarget) {
+                            closeFilters();
+                        }
+                    }}
+                >
+                    <div
+                        id="desktop-marketplace-filter-dialog"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="desktop-marketplace-filter-title"
+                        className="
+                            relative z-10 flex
+                            h-[min(88dvh,780px)] w-full
+                            flex-col overflow-hidden
+                            rounded-t-[26px] bg-white
+                            shadow-2xl
+                            sm:max-w-lg sm:rounded-[26px]
+                        "
+                    >
+                        <MarketplaceFilters
+                            variant="modal"
+                            filters={filters}
+                            onFilterChange={updateFilter}
+                            onClear={clearFilters}
+                            onApply={() => {
+                                setPage(1);
+                                closeFilters();
+                            }}
+                            onClose={closeFilters}
+                            closeButtonRef={closeButtonRef}
+                        />
+                    </div>
+                </div>,
+                document.body,
+            )}
         </main>
     );
 }

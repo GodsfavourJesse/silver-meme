@@ -214,26 +214,65 @@ export function buildCreateListingPayload(
     const mileage = values.mileage.trim();
     const state = values.state.trim();
     const city = values.city.trim();
+
     const makeName = values.makeName.trim();
     const modelName = values.modelName.trim();
     const year = values.year.trim();
+
     const generationName = values.generationName.trim();
     const variantName = values.variantName.trim();
     const vehicleVariantId = values.vehicleVariantId.trim();
 
+    const bodyStyle = values.bodyStyle.trim();
+    const fuelType = values.fuelType.trim();
+    const transmission = values.transmission.trim();
+    const driveType = values.driveType.trim();
+
+    const engineCapacity = values.engineCapacity.trim();
+    const horsepower = values.horsepower.trim();
+
+    const exteriorColor = values.exteriorColor.trim();
+    const interiorColor = values.interiorColor.trim();
+
+    const seats = values.seats.trim();
+    const doors = values.doors.trim();
+
     return {
         ...(vehicleVariantId ? { vehicleVariantId } : {}),
+
+        // Vehicle identity
         makeName,
         modelName,
         year: Number(year),
+
         ...(generationName ? { generationName } : {}),
         ...(variantName ? { variantName } : {}),
+
+        // Vehicle specifications
+        ...(bodyStyle ? { bodyStyle } : {}),
+        ...(fuelType ? { fuelType } : {}),
+        ...(transmission ? { transmission } : {}),
+        ...(driveType ? { driveType } : {}),
+
+        ...(engineCapacity ? { engineCapacity } : {}),
+        ...(horsepower ? { horsepower: Number(horsepower) } : {}),
+
+        ...(exteriorColor ? { exteriorColor } : {}),
+        ...(interiorColor ? { interiorColor } : {}),
+
+        ...(seats ? { seats: Number(seats) } : {}),
+        ...(doors ? { doors: Number(doors) } : {}),
+
+        // Listing details
         title: values.title.trim(),
         description: values.description.trim(),
+
         price: Number(values.price),
         currency: "NGN",
+
         condition: values.condition,
         country: values.country.trim(),
+
         ...(mileage !== "" ? { mileage: Number(mileage) } : {}),
         ...(state ? { state } : {}),
         ...(city ? { city } : {}),

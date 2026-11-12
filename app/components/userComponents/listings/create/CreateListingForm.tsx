@@ -30,9 +30,11 @@ import {
     ArrowRight,
     CheckCircle2,
     ChevronDown,
+    ChevronUp,
     LoaderCircle,
     MapPin,
     PackageCheck,
+    SlidersHorizontal,
     Tag,
 } from "lucide-react";
 
@@ -558,6 +560,54 @@ type ListingCreditConsumption = NonNullable<
 
 /*
 |--------------------------------------------------------------------------
+| VEHICLE SPECIFICATION OPTIONS
+|--------------------------------------------------------------------------
+*/
+
+const BODY_STYLE_OPTIONS = [
+    "Sedan",
+    "SUV",
+    "Coupe",
+    "Hatchback",
+    "Convertible",
+    "Wagon",
+    "Pickup",
+    "Van",
+    "Minivan",
+];
+
+const FUEL_TYPE_OPTIONS = [
+    "Petrol",
+    "Diesel",
+    "Hybrid",
+    "Plug-in Hybrid",
+    "Electric",
+    "CNG",
+];
+
+const TRANSMISSION_OPTIONS = [
+    "Automatic",
+    "Manual",
+    "CVT",
+    "Semi-Automatic",
+];
+
+const DRIVE_TYPE_OPTIONS = [
+    "FWD",
+    "RWD",
+    "AWD",
+    "4WD",
+];
+
+const SEAT_OPTIONS = Array.from(
+    { length: 8 },
+    (_, index) => String(index + 2),
+);
+
+const DOOR_OPTIONS = ["2", "3", "4", "5"];
+
+/*
+|--------------------------------------------------------------------------
 | MAIN FORM
 |--------------------------------------------------------------------------
 */
@@ -593,6 +643,11 @@ export default function CreateListingForm() {
         pendingListingId,
         setPendingListingId,
     ] = useState<string | null>(null);
+
+    const [
+        showSpecifications,
+        setShowSpecifications,
+    ] = useState(false);
 
     /*
     |--------------------------------------------------------------------------
@@ -660,6 +715,17 @@ export default function CreateListingForm() {
 
     const isBusy =
         isSubmitting || isCreatingDraft;
+
+    const bodyStyle = watch("bodyStyle");
+    const fuelType = watch("fuelType");
+    const transmission = watch("transmission");
+    const driveType = watch("driveType");
+
+    const engineCapacity = watch("engineCapacity");
+    const horsepower = watch("horsepower");
+
+    const seats = watch("seats");
+    const doors = watch("doors");
 
     /*
     |--------------------------------------------------------------------------
@@ -786,6 +852,24 @@ export default function CreateListingForm() {
             generatedTitleRef.current = null;
         }
 
+        setValue(field, value, {
+            shouldDirty: true,
+            shouldValidate: true,
+        });
+    };
+
+    const setSpecificationField = (
+        field:
+            | "bodyStyle"
+            | "fuelType"
+            | "transmission"
+            | "driveType"
+            | "engineCapacity"
+            | "horsepower"
+            | "seats"
+            | "doors",
+        value: string,
+    ) => {
         setValue(field, value, {
             shouldDirty: true,
             shouldValidate: true,
@@ -1249,6 +1333,9 @@ export default function CreateListingForm() {
                         />
 
                         <div className="space-y-5">
+
+                            {/* LISTING TITLE */}
+
                             <TextInput
                                 label="Listing title"
                                 name="title"
@@ -1266,6 +1353,8 @@ export default function CreateListingForm() {
                                 )}
                             />
 
+                            {/* DESCRIPTION */}
+
                             <TextArea
                                 label="Description"
                                 name="description"
@@ -1280,6 +1369,288 @@ export default function CreateListingForm() {
                                 rows={4}
                                 required
                             />
+
+                            {/* VEHICLE SPECIFICATIONS */}
+
+                            <div className="overflow-hidden rounded-xl border border-slate-200">
+
+                                {/* COLLAPSIBLE HEADER */}
+
+                                <button
+                                    type="button"
+                                    disabled={isBusy}
+                                    aria-expanded={showSpecifications}
+                                    aria-controls="vehicle-specifications"
+                                    onClick={() =>
+                                        setShowSpecifications((previous) => !previous)
+                                    }
+                                    className="flex min-h-[64px] w-full items-center justify-between gap-3 px-3.5 py-3 text-left transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 sm:px-4"
+                                >
+                                    <div className="flex min-w-0 items-center gap-3">
+
+                                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#EAF5FF] text-[#0877D9]">
+                                            <SlidersHorizontal size={17} />
+                                        </div>
+
+                                        <div className="min-w-0">
+                                            <p className="text-[13px] font-semibold text-slate-800">
+                                                Vehicle specifications
+                                            </p>
+
+                                            <p className="mt-0.5 text-[11px] text-slate-500">
+                                                Optional details about your vehicle
+                                            </p>
+                                        </div>
+
+                                    </div>
+
+                                    <div className="flex shrink-0 items-center gap-2">
+
+                                        <span className="hidden text-[11px] font-medium text-[#0877D9] sm:inline">
+                                            {showSpecifications
+                                                ? "Hide"
+                                                : "Add details"}
+                                        </span>
+
+                                        <motion.div
+                                            animate={{
+                                                rotate: showSpecifications ? 180 : 0,
+                                            }}
+                                            transition={{
+                                                duration: shouldReduceMotion ? 0 : 0.2,
+                                            }}
+                                            className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-500"
+                                        >
+                                            <ChevronDown size={15} />
+                                        </motion.div>
+
+                                    </div>
+                                </button>
+
+                                {/* EXPANDABLE CONTENT */}
+
+                                <AnimatePresence initial={false}>
+                                    {showSpecifications && (
+                                        <motion.div
+                                            id="vehicle-specifications"
+                                            key="vehicle-specifications"
+                                            initial={
+                                                shouldReduceMotion
+                                                    ? false
+                                                    : {
+                                                        height: 0,
+                                                        opacity: 0,
+                                                    }
+                                            }
+                                            animate={{
+                                                height: "auto",
+                                                opacity: 1,
+                                            }}
+                                            exit={{
+                                                height: 0,
+                                                opacity: 0,
+                                            }}
+                                            transition={{
+                                                duration: shouldReduceMotion ? 0 : 0.25,
+                                                ease: [0.22, 1, 0.36, 1],
+                                            }}
+                                            className="overflow-hidden"
+                                        >
+                                            <div className="border-t border-slate-100 px-3.5 py-4 sm:px-4">
+
+                                                <div className="mb-4 flex items-center justify-between gap-3">
+                                                    <p className="text-[11px] text-slate-500">
+                                                        Add what you know. You can leave the rest blank.
+                                                    </p>
+
+                                                    <span className="shrink-0 rounded-md bg-slate-100 px-2 py-1 text-[10px] font-medium text-slate-500">
+                                                        Optional
+                                                    </span>
+                                                </div>
+
+                                                <div className="grid grid-cols-2 gap-x-3 gap-y-4">
+
+                                                    {/* BODY STYLE */}
+
+                                                    <SelectField
+                                                        label="Body style"
+                                                        name="bodyStyle"
+                                                        value={bodyStyle}
+                                                        onChange={(value) =>
+                                                            setSpecificationField(
+                                                                "bodyStyle",
+                                                                value,
+                                                            )
+                                                        }
+                                                        options={BODY_STYLE_OPTIONS.map(
+                                                            (item) => ({
+                                                                label: item,
+                                                                value: item,
+                                                            }),
+                                                        )}
+                                                        placeholder="Select"
+                                                        disabled={isBusy}
+                                                        error={errors.bodyStyle?.message}
+                                                    />
+
+                                                    {/* FUEL TYPE */}
+
+                                                    <SelectField
+                                                        label="Fuel type"
+                                                        name="fuelType"
+                                                        value={fuelType}
+                                                        onChange={(value) =>
+                                                            setSpecificationField(
+                                                                "fuelType",
+                                                                value,
+                                                            )
+                                                        }
+                                                        options={FUEL_TYPE_OPTIONS.map(
+                                                            (item) => ({
+                                                                label: item,
+                                                                value: item,
+                                                            }),
+                                                        )}
+                                                        placeholder="Select"
+                                                        disabled={isBusy}
+                                                        error={errors.fuelType?.message}
+                                                    />
+
+                                                    {/* TRANSMISSION */}
+
+                                                    <SelectField
+                                                        label="Transmission"
+                                                        name="transmission"
+                                                        value={transmission}
+                                                        onChange={(value) =>
+                                                            setSpecificationField(
+                                                                "transmission",
+                                                                value,
+                                                            )
+                                                        }
+                                                        options={TRANSMISSION_OPTIONS.map(
+                                                            (item) => ({
+                                                                label: item,
+                                                                value: item,
+                                                            }),
+                                                        )}
+                                                        placeholder="Select"
+                                                        disabled={isBusy}
+                                                        error={errors.transmission?.message}
+                                                    />
+
+                                                    {/* DRIVE TYPE */}
+
+                                                    <SelectField
+                                                        label="Drive type"
+                                                        name="driveType"
+                                                        value={driveType}
+                                                        onChange={(value) =>
+                                                            setSpecificationField(
+                                                                "driveType",
+                                                                value,
+                                                            )
+                                                        }
+                                                        options={DRIVE_TYPE_OPTIONS.map(
+                                                            (item) => ({
+                                                                label: item,
+                                                                value: item,
+                                                            }),
+                                                        )}
+                                                        placeholder="Select"
+                                                        disabled={isBusy}
+                                                        error={errors.driveType?.message}
+                                                    />
+
+                                                    {/* ENGINE CAPACITY */}
+
+                                                    <TextInput
+                                                        label="Engine capacity"
+                                                        name="engineCapacity"
+                                                        value={engineCapacity}
+                                                        onChange={(value) =>
+                                                            setSpecificationField(
+                                                                "engineCapacity",
+                                                                value,
+                                                            )
+                                                        }
+                                                        placeholder="e.g. 2.0L"
+                                                        disabled={isBusy}
+                                                        error={errors.engineCapacity?.message}
+                                                    />
+
+                                                    {/* HORSEPOWER */}
+
+                                                    <TextInput
+                                                        label="Horsepower (HP)"
+                                                        name="horsepower"
+                                                        value={horsepower}
+                                                        onChange={(value) =>
+                                                            setSpecificationField(
+                                                                "horsepower",
+                                                                value,
+                                                            )
+                                                        }
+                                                        type="number"
+                                                        min="0"
+                                                        placeholder="e.g. 180"
+                                                        disabled={isBusy}
+                                                        error={errors.horsepower?.message}
+                                                    />
+
+                                                    {/* SEATS */}
+
+                                                    <SelectField
+                                                        label="Seats"
+                                                        name="seats"
+                                                        value={seats}
+                                                        onChange={(value) =>
+                                                            setSpecificationField(
+                                                                "seats",
+                                                                value,
+                                                            )
+                                                        }
+                                                        options={SEAT_OPTIONS.map(
+                                                            (item) => ({
+                                                                label: `${item} seats`,
+                                                                value: item,
+                                                            }),
+                                                        )}
+                                                        placeholder="Select"
+                                                        disabled={isBusy}
+                                                        error={errors.seats?.message}
+                                                    />
+
+                                                    {/* DOORS */}
+
+                                                    <SelectField
+                                                        label="Doors"
+                                                        name="doors"
+                                                        value={doors}
+                                                        onChange={(value) =>
+                                                            setSpecificationField(
+                                                                "doors",
+                                                                value,
+                                                            )
+                                                        }
+                                                        options={DOOR_OPTIONS.map(
+                                                            (item) => ({
+                                                                label: `${item} doors`,
+                                                                value: item,
+                                                            }),
+                                                        )}
+                                                        placeholder="Select"
+                                                        disabled={isBusy}
+                                                        error={errors.doors?.message}
+                                                    />
+
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+
+                            </div>
                         </div>
                     </motion.section>
 

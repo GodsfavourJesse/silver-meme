@@ -69,13 +69,17 @@ export function getLocation(details: VehicleDetailsResponse): string {
         .join(", ");
 }
 
-export function getVehicleTitle(details: VehicleDetailsResponse): string {
-    const title = [
-        details.variant?.year,
-        details.make?.name,
-        details.model?.name,
-        details.generation?.name,
-        details.variant?.name,
+export function getVehicleTitle(
+    details: VehicleDetailsResponse,
+): string {
+    const { listing, make, model, generation, variant } = details;
+
+    return [
+        variant?.year ?? listing.year,
+        make?.name ?? listing.makeName,
+        model?.name ?? listing.modelName,
+        generation?.name ?? listing.generationName,
+        variant?.name ?? listing.variantName,
     ]
         .filter(
             (value) =>
@@ -83,9 +87,7 @@ export function getVehicleTitle(details: VehicleDetailsResponse): string {
                 value !== undefined &&
                 String(value).trim().length > 0,
         )
-        .join(" ");
-
-    return title || "Vehicle details unavailable";
+        .join(" ") || "Vehicle details unavailable";
 }
 
 export function getErrorMessage(error: unknown): string {

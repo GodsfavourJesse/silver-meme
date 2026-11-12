@@ -6,6 +6,20 @@ const optionalText = (maxLength: number, message: string) =>
         .trim()
         .max(maxLength, message);
 
+const optionalIntegerText = (
+    maxLength: number,
+    message: string,
+) =>
+    z
+        .string()
+        .trim()
+        .max(maxLength, message)
+        .refine(
+            (value) =>
+                value === "" || /^\d+$/.test(value),
+            "Enter a valid whole number.",
+        );
+
 const optionalNumericText = (
     maxLength: number,
     message: string,
@@ -103,22 +117,22 @@ export const listingFormSchema = z
             "Drive type cannot exceed 50 characters.",
         ),
 
-        engineCapacity: optionalNumericText(
+        engineCapacity: optionalText(
             30,
             "Engine capacity cannot exceed 30 characters.",
         ),
 
-        horsepower: optionalNumericText(
+        horsepower: optionalIntegerText(
             30,
             "Horsepower cannot exceed 30 characters.",
         ),
 
-        exteriorColor: optionalText(
+        exteriorColor: optionalIntegerText(
             50,
             "Exterior color cannot exceed 50 characters.",
         ),
 
-        interiorColor: optionalText(
+        interiorColor: optionalIntegerText(
             50,
             "Interior color cannot exceed 50 characters.",
         ),

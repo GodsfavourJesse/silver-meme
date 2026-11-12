@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import {
+    AnimatePresence,
+    motion,
+    useReducedMotion,
+} from "framer-motion";
 
 import {
     ArrowLeft,
@@ -10,10 +14,10 @@ import {
     ExternalLink,
     LoaderCircle,
     MessageCircle,
+    MessageSquare,
     Phone,
     Send,
     Smartphone,
-    MessageSquare,
 } from "lucide-react";
 
 import type {
@@ -65,19 +69,22 @@ export function ContactSellerModal({
 
     const [method, setMethod] = useState<ContactMethod>("options");
 
-    const hasPhone = Boolean(sellerPhone?.trim());
-    const hasWhatsapp = Boolean(sellerWhatsappPhone?.trim());
+    const normalizedPhone = sellerPhone?.trim() ?? "";
+    const normalizedWhatsappPhone = sellerWhatsappPhone?.trim() ?? "";
+
+    const hasPhone = Boolean(normalizedPhone);
+    const hasWhatsapp = Boolean(normalizedWhatsappPhone);
 
     const handleCall = () => {
-        if (!sellerPhone) return;
+        if (!hasPhone) return;
 
-        window.location.href = `tel:${normalizePhoneNumber(sellerPhone)}`;
+        window.location.href = `tel:${normalizePhoneNumber(normalizedPhone)}`;
     };
 
     const handleWhatsapp = () => {
-        if (!sellerWhatsappPhone) return;
+        if (!hasWhatsapp) return;
 
-        const number = normalizeWhatsappNumber(sellerWhatsappPhone);
+        const number = normalizeWhatsappNumber(normalizedWhatsappPhone);
 
         if (!number) return;
 
@@ -156,7 +163,7 @@ export function ContactSellerModal({
                         <button
                             type="button"
                             onClick={handleCall}
-                            disabled={!hasPhone}
+                            // disabled={!hasPhone}
                             className="group flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 text-left transition hover:border-[#1491FF] hover:bg-blue-50/40 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-slate-200 disabled:hover:bg-white"
                         >
                             <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#1491FF]">
@@ -168,24 +175,26 @@ export function ContactSellerModal({
                                     Call seller
                                 </span>
 
-                                <span className="mt-1 block text-xs text-slate-500">
+                                <span className="mt-1 block break-all text-xs text-slate-500">
                                     {hasPhone
-                                        ? "Speak directly with the seller."
+                                        ? normalizedPhone
                                         : "Phone contact is unavailable."}
                                 </span>
                             </span>
 
-                            <ExternalLink
-                                size={17}
-                                className="shrink-0 text-slate-400 transition group-hover:text-[#1491FF]"
-                            />
+                            {hasPhone && (
+                                <ExternalLink
+                                    size={17}
+                                    className="shrink-0 text-slate-400 transition group-hover:text-[#1491FF]"
+                                />
+                            )}
                         </button>
 
                         {/* WhatsApp */}
                         <button
                             type="button"
                             onClick={handleWhatsapp}
-                            disabled={!hasWhatsapp}
+                            // disabled={!hasWhatsapp}
                             className="group flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 text-left transition hover:border-emerald-500 hover:bg-emerald-50/40 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-100 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-slate-200 disabled:hover:bg-white"
                         >
                             <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
@@ -197,17 +206,19 @@ export function ContactSellerModal({
                                     WhatsApp
                                 </span>
 
-                                <span className="mt-1 block text-xs text-slate-500">
+                                <span className="mt-1 block break-all text-xs text-slate-500">
                                     {hasWhatsapp
-                                        ? "Continue the conversation on WhatsApp."
+                                        ? normalizedWhatsappPhone
                                         : "WhatsApp contact is unavailable."}
                                 </span>
                             </span>
 
-                            <ExternalLink
-                                size={17}
-                                className="shrink-0 text-slate-400 transition group-hover:text-emerald-600"
-                            />
+                            {hasWhatsapp && (
+                                <ExternalLink
+                                    size={17}
+                                    className="shrink-0 text-slate-400 transition group-hover:text-emerald-600"
+                                />
+                            )}
                         </button>
 
                         {/* In-app message */}

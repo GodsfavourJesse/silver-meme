@@ -30,6 +30,15 @@ function buildSpecifications(
 ): SpecificationItem[] {
     const { listing, variant } = details;
 
+    const engine =
+        variant?.engineName ||
+        listing.engineCapacity ||
+        (
+            variant?.engineDisplacementCc != null
+                ? `${variant.engineDisplacementCc.toLocaleString("en-NG")} cc`
+                : null
+        );
+
     const specifications: Array<SpecificationItem | null> = [
         listing.mileage != null
             ? {
@@ -39,53 +48,58 @@ function buildSpecifications(
               }
             : null,
 
-        variant?.engineName ||
-        variant?.engineDisplacementCc != null
+        engine
             ? {
                   label: "Engine",
-                  value:
-                      variant.engineName ||
-                      `${variant.engineDisplacementCc?.toLocaleString("en-NG")} cc`,
+                  value: engine,
                   icon: <Settings2 size={18} />,
               }
             : null,
 
-        formatEnum(variant?.fuelType)
+        formatEnum(listing.fuelType ?? variant?.fuelType)
             ? {
                   label: "Fuel type",
-                  value: formatEnum(variant?.fuelType)!,
+                  value: formatEnum(
+                      listing.fuelType ?? variant?.fuelType,
+                  )!,
                   icon: <Fuel size={18} />,
               }
             : null,
 
-        formatEnum(variant?.transmission)
+        formatEnum(listing.transmission ?? variant?.transmission)
             ? {
                   label: "Transmission",
-                  value: formatEnum(variant?.transmission)!,
+                  value: formatEnum(
+                      listing.transmission ?? variant?.transmission,
+                  )!,
                   icon: <Settings2 size={18} />,
               }
             : null,
 
-        formatEnum(variant?.driveType)
+        formatEnum(listing.driveType ?? variant?.driveType)
             ? {
                   label: "Drive type",
-                  value: formatEnum(variant?.driveType)!,
+                  value: formatEnum(
+                      listing.driveType ?? variant?.driveType,
+                  )!,
                   icon: <CarFront size={18} />,
               }
             : null,
 
-        formatEnum(variant?.bodyStyle)
+        formatEnum(listing.bodyStyle ?? variant?.bodyStyle)
             ? {
                   label: "Body style",
-                  value: formatEnum(variant?.bodyStyle)!,
+                  value: formatEnum(
+                      listing.bodyStyle ?? variant?.bodyStyle,
+                  )!,
                   icon: <CarFront size={18} />,
               }
             : null,
 
-        variant?.seats != null
+        (listing.seats ?? variant?.seats) != null
             ? {
                   label: "Seats",
-                  value: String(variant.seats),
+                  value: String(listing.seats ?? variant?.seats),
                   icon: <Users size={18} />,
               }
             : null,

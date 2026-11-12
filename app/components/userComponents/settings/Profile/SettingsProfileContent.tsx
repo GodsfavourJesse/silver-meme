@@ -1003,6 +1003,8 @@ export default function SettingsProfileContent({
     const [deleteConfirmation, setDeleteConfirmation] = useState("");
     const [deleteError, setDeleteError] = useState("");
 
+    const profileFormId = `profile-form-${variant}`;
+
     useEffect(() => {
         if (!user) return;
 
@@ -1441,7 +1443,7 @@ export default function SettingsProfileContent({
                                     />
                                 ) : user ? (
                                     <form
-                                        id="profile-form"
+                                        id={profileFormId}
                                         onSubmit={handleProfileSubmit}
                                         className="space-y-5"
                                     >
@@ -1923,11 +1925,11 @@ export default function SettingsProfileContent({
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 20 }}
                             transition={transition}
-                            className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-md"
+                            className="border-t border-slate-200 bg-white/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-md"
                         >
                             <button
                                 type="submit"
-                                form="profile-form"
+                                form={profileFormId}
                                 disabled={updateProfile.isPending}
                                 className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#0876D1] disabled:opacity-60"
                                 style={{ backgroundColor: BRAND }}

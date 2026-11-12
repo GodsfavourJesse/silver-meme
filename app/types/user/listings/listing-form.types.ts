@@ -194,7 +194,7 @@ export interface CreateListingPayload {
     transmission?: string;
     driveType?: string;
 
-    engineCapacity?: number;
+    engineCapacity?: string;
     horsepower?: number;
 
     exteriorColor?: string;

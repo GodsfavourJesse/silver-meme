@@ -7,14 +7,14 @@ const footerLinks = [
         heading: "Marketplace",
         links: [
             { label: "Browse vehicles", href: "/marketplace" },
-            { label: "Sell your car", href: "/sell" },
+            { label: "Sell your car", href: "/register" },
             { label: "Find dealers", href: "/dealers" },
         ],
     },
     {
         heading: "Account",
         links: [
-            { label: "Sign in", href: "/sign-in" },
+            { label: "Sign in", href: "/login" },
             { label: "Create account", href: "/register" },
         ],
     },
