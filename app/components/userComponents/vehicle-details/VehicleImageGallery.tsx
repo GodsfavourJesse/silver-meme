@@ -177,7 +177,7 @@ export function VehicleImageGallery({
                             </p>
                         </div>
 
-                        <div className="mt-3 flex gap-2.5 overflow-x-auto pb-1">
+                        <div className="mt-3 flex gap-2.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                             {images.map((image, index) => {
                                 const isActive = index === activeIndex;
 

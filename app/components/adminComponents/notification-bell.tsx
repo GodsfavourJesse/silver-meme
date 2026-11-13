@@ -68,12 +68,12 @@ export function NotificationBell() {
                 aria-haspopup="dialog"
                 aria-expanded={open}
                 onClick={() => setOpen((current) => !current)}
-                className="relative flex h-11 w-11 items-center justify-center rounded-full border border-kar-border bg-kar-surface text-kar-muted transition hover:border-kar-accent/50 hover:text-kar-text"
+                className="relative flex size-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-[#0B4F86]/30 hover:bg-slate-50 hover:text-[#0B4F86] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#0B4F86]/10"
             >
                 <Bell size={19} />
 
                 {unreadCount > 0 ? (
-                    <span className="absolute -right-1 -top-1 flex min-w-5 items-center justify-center rounded-full bg-kar-royal px-1.5 text-[10px] font-bold text-white ring-2 ring-kar-bg">
+                    <span className="absolute -right-1 -top-1 flex min-w-5 items-center justify-center rounded-full bg-[#0B4F86] px-1.5 text-[10px] font-bold text-white ring-2 ring-white">
                         {unreadCount > 99 ? "99+" : unreadCount}
                     </span>
                 ) : null}
@@ -83,16 +83,16 @@ export function NotificationBell() {
                 <div
                     role="dialog"
                     aria-label="Notifications"
-                    className="absolute right-0 z-30 mt-3 w-[22rem] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-kar-border bg-kar-surface shadow-2xl shadow-black/50"
+                    className="absolute right-0 z-30 mt-3 w-[22rem] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-xl shadow-slate-900/10"
                 >
-                    <div className="flex items-center justify-between border-b border-kar-border px-4 py-3">
-                        <p className="text-sm font-semibold">Notifications</p>
+                    <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3.5">
+                        <p className="text-sm font-bold">Notifications</p>
 
                         <button
                             type="button"
                             onClick={() => markAllRead.mutate()}
                             disabled={unreadCount === 0 || markAllRead.isPending}
-                            className="flex items-center gap-1.5 text-xs text-kar-accent transition hover:text-kar-text disabled:opacity-40"
+                            className="flex items-center gap-1.5 text-xs font-semibold text-[#0B4F86] transition hover:text-[#083C67] disabled:opacity-40"
                         >
                             <CheckCheck size={14} />
                             Mark all read
@@ -101,7 +101,7 @@ export function NotificationBell() {
 
                     <ul className="max-h-[26rem] overflow-y-auto">
                         {notifications.length === 0 ? (
-                            <li className="px-4 py-10 text-center text-sm text-kar-muted">
+                            <li className="px-4 py-10 text-center text-sm text-slate-500">
                                 You are all caught up.
                             </li>
                         ) : (
@@ -116,8 +116,8 @@ export function NotificationBell() {
                                         <span
                                             className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
                                                 notification.read
-                                                    ? "bg-kar-surface-raised text-kar-muted"
-                                                    : "bg-kar-royal/20 text-kar-accent"
+                                                    ? "bg-slate-100 text-slate-500"
+                                                    : "bg-[#EAF4FC] text-[#0B4F86]"
                                             }`}
                                         >
                                             <Icon size={16} />
@@ -128,23 +128,23 @@ export function NotificationBell() {
                                                 {notification.title}
                                             </span>
 
-                                            <span className="mt-0.5 block text-xs leading-5 text-kar-muted">
+                                            <span className="mt-0.5 block text-xs leading-5 text-slate-500">
                                                 {notification.message}
                                             </span>
 
-                                            <span className="mt-1 block text-[11px] text-kar-muted/70">
+                                            <span className="mt-1 block text-[11px] text-slate-400">
                                                 {timeAgo(notification.createdAt)}
                                             </span>
                                         </span>
 
                                         {!notification.read ? (
-                                            <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-kar-accent" />
+                                            <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-[#0B4F86]" />
                                         ) : null}
                                     </div>
                                 );
 
                                 const itemClass =
-                                    "block w-full border-b border-kar-border/60 px-4 py-3 text-left transition last:border-b-0 hover:bg-kar-surface-raised";
+                                    "block w-full border-b border-slate-100 px-4 py-3.5 text-left transition last:border-b-0 hover:bg-slate-50";
 
                                 return (
                                     <li key={notification.id}>

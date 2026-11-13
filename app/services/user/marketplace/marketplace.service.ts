@@ -4,6 +4,14 @@ import type {
     MarketplaceSearchParams,
     MarketplaceSearchResponse,
 } from "@/app/types/user/marketplace.types";
+import type {
+    FavoriteListResponse,
+    SavedSearchInput,
+    SavedSearchListResponse,
+    SavedSearchMutationResponse,
+    SavedSearchRecord,
+    SavedSearchResponse,
+} from "@/app/types/user/saved-items.types";
 
 import type {
     VehicleDetailsApiResponse,
@@ -21,6 +29,7 @@ const MARKETPLACE_FEATURED_ENDPOINT = "/marketplace/featured";
 
 const MARKETPLACE_LISTING_DETAILS_ENDPOINT = "/marketplace/listings";
 const LISTINGS_ENDPOINT = "/listings";
+const SAVED_SEARCHES_ENDPOINT = "/marketplace/saved-searches";
 
 function getListingEndpoint(listingId: string): string {
     if (!listingId.trim()) {
@@ -97,6 +106,47 @@ export async function getFeaturedMarketplaceListings(
             method: "GET",
         },
     );
+}
+
+export async function getSavedSearches(signal?: AbortSignal): Promise<SavedSearchListResponse> {
+    return apiRequest<SavedSearchListResponse>(SAVED_SEARCHES_ENDPOINT, { method: "GET", signal });
+}
+
+export async function createSavedSearch(input: SavedSearchInput): Promise<SavedSearchResponse> {
+    const csrfToken = await getUserCsrfToken();
+    return apiRequest<SavedSearchResponse>(SAVED_SEARCHES_ENDPOINT, {
+        method: "POST",
+        csrfToken,
+        body: input,
+    });
+}
+
+export async function updateSavedSearch(id: string, input: Partial<SavedSearchInput>): Promise<SavedSearchResponse> {
+    const csrfToken = await getUserCsrfToken();
+    return apiRequest<SavedSearchResponse>(`${SAVED_SEARCHES_ENDPOINT}/${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        csrfToken,
+        body: input,
+    });
+}
+
+export async function deleteSavedSearch(id: string): Promise<SavedSearchMutationResponse> {
+    const csrfToken = await getUserCsrfToken();
+    return apiRequest<SavedSearchMutationResponse>(`${SAVED_SEARCHES_ENDPOINT}/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        csrfToken,
+    });
+}
+
+export async function getListingFavorites(options: { page?: number; limit?: number } = {}, signal?: AbortSignal): Promise<FavoriteListResponse> {
+    const query = new URLSearchParams({
+        page: String(options.page ?? 1),
+        limit: String(options.limit ?? 24),
+    });
+    return apiRequest<FavoriteListResponse>(`${LISTINGS_ENDPOINT}/favorites?${query.toString()}`, {
+        method: "GET",
+        signal,
+    });
 }
 
 /**

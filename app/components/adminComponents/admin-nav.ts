@@ -1,105 +1,95 @@
-// import {
-//     Car,
-//     CreditCard,
-//     Crown,
-//     LayoutDashboard,
-//     MessagesSquare,
-//     Rocket,
-//     ScanEye,
-//     Settings,
-//     Store,
-//     Users,
-//     type LucideIcon,
-// } from "lucide-react";
-// import type { AdminDashboardData } from "@/app/types/admin/admin-dashboard.types";
-// import { ADMIN_BASE_PATH } from "@/app/lib/admin/path";
+import {
+    Building2,
+    CarFront,
+    CreditCard,
+    Layers3,
+    LayoutDashboard,
+    Rocket,
+    ScanEye,
+    Users,
+    type LucideIcon,
+} from "lucide-react";
 
-// export interface AdminNavItem {
-//     label: string;
-//     href: string;
-//     icon: LucideIcon;
-//     badge?: (data: AdminDashboardData) => number;
-// }
+import { ADMIN_DASHBOARD_PATH } from "@/app/lib/admin/path";
 
-// export interface AdminNavGroup {
-//     title: string;
-//     items: AdminNavItem[];
-// }
+export interface AdminNavItem {
+    label: string;
+    shortLabel?: string;
+    href: string;
+    icon: LucideIcon;
+    exact?: boolean;
+}
 
-// export const ADMIN_NAV: AdminNavGroup[] = [
-//     {
-//         title: "Overview",
-//         items: [
-//             {
-//                 label: "Dashboard",
-//                 href: `${ADMIN_BASE_PATH}/dashboard`,
-//                 icon: LayoutDashboard,
-//             },
-//             {
-//                 label: "Users",
-//                 href: `${ADMIN_BASE_PATH}/users`,
-//                 icon: Users,
-//             },
-//         ],
-//     },
-//     {
-//         title: "Marketplace",
-//         items: [
-//             {
-//                 label: "Listings",
-//                 href: `${ADMIN_BASE_PATH}/listings`,
-//                 icon: Car,
-//                 badge: (data) => data.moderation.pendingListings,
-//             },
-//             {
-//                 label: "Dealers",
-//                 href: `${ADMIN_BASE_PATH}/dealers`,
-//                 icon: Store,
-//                 badge: (data) => data.dealers.pendingApplications,
-//             },
-//             {
-//                 label: "Boosts",
-//                 href: `${ADMIN_BASE_PATH}/boosts`,
-//                 icon: Rocket,
-//                 badge: (data) => data.boosts.pendingApproval,
-//             },
-//             {
-//                 label: "Image review",
-//                 href: `${ADMIN_BASE_PATH}/image-review`,
-//                 icon: ScanEye,
-//                 badge: (data) => data.moderation.pendingOrReviewImages,
-//             },
-//         ],
-//     },
-//     {
-//         title: "Revenue",
-//         items: [
-//             {
-//                 label: "Payments",
-//                 href: `${ADMIN_BASE_PATH}/payments`,
-//                 icon: CreditCard,
-//                 badge: (data) => data.refunds.pendingOrProcessing,
-//             },
-//             {
-//                 label: "Subscriptions",
-//                 href: `${ADMIN_BASE_PATH}/subscriptions`,
-//                 icon: Crown,
-//             },
-//         ],
-//     },
-//     {
-//         title: "System",
-//         items: [
-//             {
-//                 label: "Messaging",
-//                 href: `${ADMIN_BASE_PATH}/messaging`,
-//                 icon: MessagesSquare,
-//             },
-//             {
-//                 label: "Settings",
-//                 href: `${ADMIN_BASE_PATH}/settings`,
-//                 icon: Settings,
-//             },
-//         ],
-//     },
-// ];
+export interface AdminNavGroup {
+    title: string;
+    items: AdminNavItem[];
+}
+
+export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
+    {
+        title: "Workspace",
+        items: [
+            {
+                label: "Overview",
+                shortLabel: "Home",
+                href: ADMIN_DASHBOARD_PATH,
+                icon: LayoutDashboard,
+                exact: true,
+            },
+            {
+                label: "Users",
+                href: `${ADMIN_DASHBOARD_PATH}/users`,
+                icon: Users,
+            },
+        ],
+    },
+    {
+        title: "Marketplace",
+        items: [
+            {
+                label: "Listings",
+                href: `${ADMIN_DASHBOARD_PATH}/listings`,
+                icon: CarFront,
+            },
+            {
+                label: "Image review",
+                shortLabel: "Review",
+                href: `${ADMIN_DASHBOARD_PATH}/image-review`,
+                icon: ScanEye,
+            },
+            {
+                label: "Dealers",
+                href: `${ADMIN_DASHBOARD_PATH}/dealers`,
+                icon: Building2,
+            },
+            {
+                label: "Boosts",
+                href: `${ADMIN_DASHBOARD_PATH}/boosts`,
+                icon: Rocket,
+            },
+        ],
+    },
+    {
+        title: "Revenue",
+        items: [
+            {
+                label: "Subscriptions",
+                href: `${ADMIN_DASHBOARD_PATH}/subscriptions`,
+                icon: CreditCard,
+                exact: true,
+            },
+            {
+                label: "Subscription plans",
+                href: `${ADMIN_DASHBOARD_PATH}/subscriptions/plans`,
+                icon: Layers3,
+            },
+        ],
+    },
+];
+
+export const ADMIN_MOBILE_PRIMARY = [
+    ADMIN_NAV_GROUPS[0].items[0],
+    ADMIN_NAV_GROUPS[0].items[1],
+    ADMIN_NAV_GROUPS[1].items[0],
+    ADMIN_NAV_GROUPS[1].items[1],
+];

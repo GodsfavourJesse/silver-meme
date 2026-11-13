@@ -150,7 +150,7 @@ export default function AdminSubscriptionsPage() {
     };
 
     return (
-        <div className="space-y-7 py-6 px-6 md:px-28">
+        <div className="space-y-6 px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
             {/* Page heading */}
             <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                 <div>

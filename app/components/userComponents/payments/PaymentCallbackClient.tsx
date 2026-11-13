@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -12,25 +12,10 @@ import {
     ShieldCheck,
     XCircle,
 } from "lucide-react";
-import { apiRequest } from "@/app/lib/api/api-client";
-import { ApiError } from "@/app/lib/api/api-error";
-import { getUserCsrfToken } from "@/app/services/user/auth/csrf.service";
+import { useVerifyPayment } from "@/app/hooks/user/payments/useVerifyPayment";
+import type { FulfilledPaymentResult } from "@/app/types/user/subscription/subscription.types";
 
-type PaymentVerificationData = {
-    payment?: {
-        id?: string;
-        status?: string;
-        reference?: string;
-    };
-
-    boost?: {
-        id?: string;
-        status?: string;
-    };
-
-    status?: string;
-    reference?: string;
-};
+type PaymentVerificationData = FulfilledPaymentResult;
 
 type VerificationState =
     | "verifying"
@@ -44,6 +29,20 @@ type VerificationResult = {
     reference: string;
     data?: PaymentVerificationData;
 };
+
+function formatCurrency(amount: string | number, currency: string) {
+    const value = Number(amount);
+    if (!Number.isFinite(value)) return "the confirmed amount";
+    try {
+        return new Intl.NumberFormat("en-NG", {
+            style: "currency",
+            currency: currency || "NGN",
+            maximumFractionDigits: 2,
+        }).format(value);
+    } catch {
+        return `${currency || "NGN"} ${value.toLocaleString("en-NG")}`;
+    }
+}
 
 export default function PaymentCallbackClient() {
     const searchParams = useSearchParams();
@@ -61,7 +60,7 @@ export default function PaymentCallbackClient() {
 
     const [retryCount, setRetryCount] = useState(0);
 
-    const verificationStarted = useRef(false);
+    const { mutateAsync: runVerification } = useVerifyPayment();
 
     useEffect(() => {
         if (!reference) {
@@ -75,12 +74,6 @@ export default function PaymentCallbackClient() {
             return;
         }
 
-        if (verificationStarted.current) {
-            return;
-        }
-
-        verificationStarted.current = true;
-
         let cancelled = false;
 
         async function verifyPayment() {
@@ -91,44 +84,19 @@ export default function PaymentCallbackClient() {
             });
 
             try {
-                const csrfToken = await getUserCsrfToken();
-
-                const response =
-                    await apiRequest<{
-                        success: boolean;
-                        message?: string;
-                        data?: PaymentVerificationData;
-                    }>("/payments/verify", {
-                        method: "POST",
-                        csrfToken,
-                        body: {
-                            reference,
-                        },
-                    });
+                const data = await runVerification(reference);
 
                 if (cancelled) return;
-
-                const data = response?.data;
 
                 const paymentStatus =
                     data?.payment?.status?.toUpperCase();
 
-                const boostStatus =
-                    data?.boost?.status?.toUpperCase();
-
-                const verified =
-                    response?.success === true &&
-                    (
-                        paymentStatus === "SUCCESS" ||
-                        paymentStatus === "SUCCESSFUL"
-                    );
+                const verified = paymentStatus === "SUCCESS";
 
                 if (!verified) {
                     setResult({
                         state: "pending",
-                        message:
-                            response?.message ??
-                            "Your payment is being processed. Please check again shortly.",
+                        message: "Your payment is being processed. Please check again shortly.",
                         reference,
                         data,
                     });
@@ -136,14 +104,11 @@ export default function PaymentCallbackClient() {
                     return;
                 }
 
-                if (
-                    boostStatus === "AWAITING_APPROVAL" ||
-                    boostStatus === "PENDING_APPROVAL"
-                ) {
+                if (data.payment.purpose === "BOOST") {
                     setResult({
                         state: "success",
                         message:
-                            "Your payment has been verified successfully. Your boost is now awaiting administrator approval.",
+                            "Your payment has been verified successfully. Your vehicle boost is awaiting administrator approval.",
                         reference,
                         data,
                     });
@@ -153,20 +118,16 @@ export default function PaymentCallbackClient() {
 
                 setResult({
                     state: "success",
-                    message:
-                        "Your payment has been verified successfully.",
+                    message: "Your subscription payment is confirmed. Your plan and listing credits are ready to use.",
                     reference,
                     data,
                 });
             } catch (error) {
                 if (cancelled) return;
 
-                const message =
-                    error instanceof ApiError
-                        ? error.message
-                        : error instanceof Error
-                            ? error.message
-                            : "We could not reach the payment verification service.";
+                const message = error instanceof Error
+                    ? error.message
+                    : "We could not reach the payment verification service.";
 
                 setResult({
                     state: "pending",
@@ -183,10 +144,9 @@ export default function PaymentCallbackClient() {
         return () => {
             cancelled = true;
         };
-    }, [reference, retryCount]);
+    }, [reference, retryCount, runVerification]);
 
     function retryVerification() {
-        verificationStarted.current = false;
         setRetryCount((count) => count + 1);
     }
 
@@ -316,7 +276,7 @@ export default function PaymentCallbackClient() {
                         </div>
                     </div>
 
-                    {/* Boost information */}
+                    {/* Successful payment information */}
                     {isSuccessful && (
                         <div className="mx-7 mt-5 rounded-2xl border border-emerald-100 bg-emerald-50/70 p-5 sm:mx-10">
                             <div className="flex items-start gap-3">
@@ -330,7 +290,11 @@ export default function PaymentCallbackClient() {
                                     </h2>
 
                                     <p className="mt-1 text-sm leading-6 text-emerald-800">
-                                        Your payment has been received. Your vehicle boost will become active after administrator approval.
+                                        {result.data?.payment.purpose === "BOOST"
+                                            ? "Your payment has been received. Your vehicle boost is awaiting administrator approval."
+                                            : result.data?.subscription
+                                                ? <>Your subscription is active. A {Number(result.data.subscription.appliedDiscountPercent)}% discount was applied, and your total is {formatCurrency(result.data.subscription.effectivePrice, result.data.subscription.currency)}.</>
+                                                : "Your subscription has been activated and its listing credits are available in your dashboard."}
                                     </p>
                                 </div>
                             </div>
@@ -397,7 +361,7 @@ export default function PaymentCallbackClient() {
 
                         {isSuccessful && (
                             <Link
-                                href="/dashboard"
+                                href={result.data?.payment.purpose === "BOOST" ? "/dashboard/my-listings" : "/dashboard/subscriptions"}
                                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#1491FF] px-5 py-4 text-sm font-bold text-white shadow-lg shadow-[#1491FF]/20 transition hover:bg-[#0877D9]"
                             >
                                 Continue to dashboard

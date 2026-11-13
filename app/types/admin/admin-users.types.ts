@@ -132,6 +132,7 @@ export interface AdminUserSubscription {
 
     originalPrice: string | number;
     dealerDiscountPercent: string | number | null;
+    appliedDiscountPercent: string | number;
     effectivePrice: string | number;
     currency: string;
 

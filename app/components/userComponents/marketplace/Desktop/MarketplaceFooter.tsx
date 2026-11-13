@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PublicAccountLink } from "@/app/components/auth/PublicAccountLink";
 import { CarFront, FaceAngry, Mail, Table } from "lucide-react";
 import { CurrentYear } from "@/app/utils/current-year";
 
@@ -92,12 +93,21 @@ export function MarketplaceFooter() {
                             <ul className="mt-4 space-y-3">
                                 {group.links.map((item) => (
                                     <li key={item.label}>
-                                        <Link
-                                            href={item.href}
-                                            className="text-sm text-slate-500 transition hover:text-violet-700"
-                                        >
-                                            {item.label}
-                                        </Link>
+                                        {item.href === "/login" || item.href === "/register" ? (
+                                            <PublicAccountLink
+                                                href={item.href}
+                                                className="text-sm text-slate-500 transition hover:text-violet-700"
+                                            >
+                                                {item.label}
+                                            </PublicAccountLink>
+                                        ) : (
+                                            <Link
+                                                href={item.href}
+                                                className="text-sm text-slate-500 transition hover:text-violet-700"
+                                            >
+                                                {item.label}
+                                            </Link>
+                                        )}
                                     </li>
                                 ))}
                             </ul>

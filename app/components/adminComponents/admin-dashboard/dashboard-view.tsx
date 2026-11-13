@@ -21,7 +21,6 @@ import { ApiError } from "@/app/lib/api/api-error";
 import { timeAgo } from "@/app/lib/admin/format";
 
 import { UserBreakdown } from "./user-breakdown";
-import { AdminAuthGuard } from "../admin-auth-guard";
 import { DashboardSkeleton } from "./dashboard-skeleton";
 import { AttentionQueue } from "./attention-queue";
 import { SystemHealthCard } from "./system-health-card";
@@ -130,13 +129,13 @@ export function DashboardView() {
     }
 
     return (
-        <AdminAuthGuard>
+        <>
             <KarmassLoadingOverlay
                 open={logout.isPending}
                 message="Signing out of the admin portal"
                 detail="Closing your secure administrator session."
             />
-            <main className="min-w-0 space-y-6 p-6 md:px-20 md:10 sm:space-y-7">
+            <main className="min-w-0 space-y-6 p-4 sm:p-6 sm:space-y-7 lg:p-8">
                 {/* Dashboard header */}
                 <header className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                     <div className="relative p-5 sm:p-7 lg:p-8">
@@ -482,6 +481,6 @@ export function DashboardView() {
                     </div>
                 )}
             </main>
-        </AdminAuthGuard>
+        </>
     );
 }

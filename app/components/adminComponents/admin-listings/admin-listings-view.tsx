@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AdminAuthGuard } from "@/app/components/adminComponents/admin-auth-guard";
 import { AdminListingsDesktop } from "./admin-listings-desktop";
 import { AdminListingsMobile } from "./admin-listings-mobile";
 import { PendingListing } from "./admin-listings.types";
@@ -234,16 +233,14 @@ export function AdminListingsView() {
      */
 
     return (
-        <AdminAuthGuard>
-            <div className="min-w-0 md:px-20">
-                <div className="hidden lg:block">
-                    <AdminListingsDesktop {...props} />
-                </div>
-                <div className="lg:hidden">
-                    <AdminListingsMobile {...props} />
-                </div>
+        <div className="min-w-0">
+            <div className="hidden lg:block">
+                <AdminListingsDesktop {...props} />
             </div>
-        </AdminAuthGuard>
+            <div className="lg:hidden">
+                <AdminListingsMobile {...props} />
+            </div>
+        </div>
     );
 }
 

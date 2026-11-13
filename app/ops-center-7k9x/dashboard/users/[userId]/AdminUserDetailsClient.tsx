@@ -524,9 +524,9 @@ function SubscriptionHistorySection({
                                 />
                             </div>
 
-                            {Number(subscription.dealerDiscountPercent ?? 0) > 0 && (
+                            {Number(subscription.appliedDiscountPercent ?? 0) > 0 && (
                                 <p className="mt-4 text-xs font-medium text-emerald-700">
-                                    Dealer discount: {subscription.dealerDiscountPercent}%
+                                    Discount applied: {subscription.appliedDiscountPercent}%
                                 </p>
                             )}
 

@@ -234,7 +234,14 @@ export interface VerifyPaymentPayload {
 }
 
 export interface FulfilledPaymentResult {
-    payment: unknown;
+    payment: {
+        id: string;
+        status: PaymentStatus;
+        reference: string;
+        purpose: "SUBSCRIPTION" | "BOOST";
+        subscriptionId: string | null;
+        listingBoostId: string | null;
+    };
     subscription: UserSubscription | null;
 }
 

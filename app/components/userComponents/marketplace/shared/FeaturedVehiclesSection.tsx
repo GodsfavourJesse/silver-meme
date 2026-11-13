@@ -8,7 +8,6 @@ import {
     ArrowRight,
     CarFront,
     MapPin,
-    Sparkles,
 } from "lucide-react";
 
 import type {
@@ -98,14 +97,13 @@ function FeaturedVehicleSkeleton({
         <div
             className={
                 mobile
-                    ? "w-[280px] shrink-0 overflow-hidden rounded-2xl border border-slate-200 bg-white"
-                    : "overflow-hidden rounded-2xl border border-slate-200 bg-white"
+                    ? "w-full overflow-hidden rounded-2xl border border-slate-200 bg-white"
+                    : "w-[266px] overflow-hidden rounded-2xl border border-slate-200 bg-white"
             }
         >
-            <div className="aspect-[16/10] animate-pulse bg-slate-100" />
+            <div className="aspect-[4/3] animate-pulse bg-slate-100 sm:aspect-[16/10]" />
 
-            <div className="space-y-4 p-4">
-                <div className="h-3 w-24 animate-pulse rounded-full bg-slate-100" />
+            <div className="space-y-3 p-4 sm:p-5">
                 <div className="h-4 w-4/5 animate-pulse rounded bg-slate-200" />
                 <div className="h-6 w-2/3 animate-pulse rounded bg-slate-200" />
                 <div className="h-3 w-1/2 animate-pulse rounded bg-slate-100" />
@@ -136,14 +134,13 @@ function FeaturedVehicleCard({
             aria-label={`View sponsored vehicle: ${title}`}
             className={
                 mobile
-                    ? "group w-[280px] shrink-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:border-[#1491FF]/40 hover:shadow-xl hover:shadow-blue-900/[0.07]"
-                    : "group min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:border-[#1491FF]/40 hover:shadow-xl hover:shadow-blue-900/[0.07]"
+                    ? "group w-full min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-300 hover:border-[#1491FF]/40 hover:shadow-lg"
+                    : "group w-[266px] min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:border-[#1491FF]/40 hover:shadow-xl hover:shadow-blue-900/[0.07]"
             }
         >
             {/* VEHICLE IMAGE */}
 
-            <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
-
+            <div className="relative aspect-[4/3] overflow-hidden bg-slate-50 sm:aspect-[16/10]">
                 {image ? (
                     <Image
                         src={image}
@@ -151,10 +148,10 @@ function FeaturedVehicleCard({
                         fill
                         sizes={
                             mobile
-                                ? "280px"
+                        ? "(max-width: 640px) 100vw, 400px"
                                 : "(max-width: 768px) 100vw, 400px"
                         }
-                        className="object-cover transition-transform duration-700 group-hover:scale-[1.05]"
+                        className="object-cover"
                     />
                 ) : (
                     <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#EDF6FF] to-[#DCEEFF]">
@@ -166,75 +163,35 @@ function FeaturedVehicleCard({
                     </div>
                 )}
 
-                {/* IMAGE OVERLAY */}
-
-                <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/45 to-transparent" />
-
-                {/* SPONSORED LABEL */}
-
-                <div className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-md border border-white/20 bg-[#0876D1] px-2.5 py-1.5 text-[9px] font-bold uppercase tracking-[0.09em] text-white shadow-lg">
-                    <Sparkles size={11} fill="currentColor" />
-                    Sponsored
-                </div>
-
-                {/* PROMOTION INDICATOR */}
-
-                <span className="absolute bottom-3 left-3 text-[10px] font-semibold tracking-wide text-white">
-                    Boosted listing
-                </span>
-
-                {/* VIEW ARROW */}
-
-                <span className="absolute bottom-3 right-3 grid size-8 place-items-center rounded-full bg-white text-[#0876D1] shadow-md transition-all duration-300 group-hover:bg-[#1491FF] group-hover:text-white">
-                    <ArrowRight
-                        size={15}
-                        className="transition-transform duration-300 group-hover:translate-x-0.5"
-                    />
-                </span>
             </div>
 
             {/* VEHICLE INFORMATION */}
 
-            <div className="p-4">
+            <div className="p-4 sm:p-5">
+                <div className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-[#0876D1]">
+                    <span className="size-1.5 rounded-full bg-[#0876D1]" />
+                    Boosted
+                </div>
 
-                {/* TITLE */}
-
-                <h3 className="line-clamp-2 min-h-[40px] text-[14px] font-bold leading-5 text-[#172337] transition-colors group-hover:text-[#0876D1]">
+                <h3 className="line-clamp-2 min-h-[40px] text-sm font-semibold leading-5 text-slate-900 transition-colors group-hover:text-[#0876D1]">
                     {title}
                 </h3>
 
-                {/* PRICE */}
-
-                <p className="mt-2 text-[20px] font-extrabold tracking-tight text-[#172337]">
+                <p className="mt-2 text-lg font-bold tracking-tight text-slate-950">
                     {formatPrice(
                         vehicle.listing.price,
                         vehicle.listing.currency,
                     )}
                 </p>
 
-                {/* LOCATION */}
-
-                <div className="mt-3 flex min-w-0 items-center gap-2 border-t border-slate-100 pt-3">
+                <div className="mt-3 flex min-w-0 items-center gap-1.5 text-xs text-slate-500">
                     <MapPin
-                        size={14}
-                        className="shrink-0 text-[#1491FF]"
+                        size={13}
+                        className="shrink-0 text-slate-400"
                     />
 
-                    <span className="truncate text-[11px] font-medium text-slate-500">
+                    <span className="truncate">
                         {getLocation(vehicle)}
-                    </span>
-                </div>
-
-                {/* CARD FOOTER */}
-
-                <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3">
-                    <span className="text-[10px] font-semibold text-slate-400">
-                        Promoted by seller
-                    </span>
-
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#0876D1] transition-all group-hover:gap-2">
-                        View vehicle
-                        <ArrowRight size={13} />
                     </span>
                 </div>
             </div>
@@ -286,18 +243,13 @@ export function FeaturedVehiclesSection({
 
                         {/* EYEBROW */}
 
-                        <div className="mb-2 inline-flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.15em] text-[#0876D1]">
-                            <Sparkles size={12} />
-                            KARMASS promotions
-                        </div>
-
                         {/* TITLE */}
 
                         <h2
                             className={
                                 mobile
-                                    ? "text-[19px] font-extrabold tracking-tight text-[#172337]"
-                                    : "text-2xl font-extrabold tracking-tight text-[#172337] lg:text-[28px]"
+                                    ? "text-lg font-semibold tracking-tight text-slate-900"
+                                    : "text-2xl font-semibold tracking-tight text-slate-900 lg:text-[28px]"
                             }
                         >
                             Boosted vehicles
@@ -308,23 +260,14 @@ export function FeaturedVehiclesSection({
                         <p
                             className={
                                 mobile
-                                    ? "mt-1.5 max-w-[270px] text-[11px] leading-5 text-slate-500"
+                                    ? "mt-1 max-w-[300px] text-xs leading-5 text-slate-500"
                                     : "mt-2 text-sm leading-6 text-slate-500"
                             }
                         >
-                            Vehicles promoted by sellers for greater visibility.
+                            Sellers pay to give these vehicles extra visibility.
                         </p>
                     </div>
 
-                    {/* PROMOTED INDICATOR */}
-
-                    <div className="mb-1 inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#B9DEFF] bg-[#EAF5FF] px-3 py-1.5">
-                        <span className="size-1.5 rounded-full bg-[#1491FF]" />
-
-                        <span className="text-[9px] font-bold uppercase tracking-wide text-[#0876D1]">
-                            Sponsored
-                        </span>
-                    </div>
                 </div>
 
                 {/* LOADING */}
@@ -333,8 +276,8 @@ export function FeaturedVehiclesSection({
                     <div
                         className={
                             mobile
-                                ? "mt-5 flex gap-3 overflow-hidden"
-                                : "mt-7 grid gap-5 sm:grid-cols-2 xl:grid-cols-3"
+                                ? "mt-5 flex flex-col gap-4"
+                                : "mt-7 grid grid-cols-[repeat(auto-fill,minmax(min(100%,266px),266px))] gap-5"
                         }
                     >
                         {Array.from({ length: 3 }).map((_, index) => (
@@ -375,8 +318,8 @@ export function FeaturedVehiclesSection({
                     <div
                         className={
                             mobile
-                                ? "mt-5 flex gap-3 overflow-x-auto pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-                                : "mt-7 grid gap-5 sm:grid-cols-2 xl:grid-cols-3"
+                                ? "mt-5 flex flex-col gap-4"
+                                : "mt-7 grid grid-cols-[repeat(auto-fill,minmax(min(100%,266px),266px))] gap-5"
                         }
                     >
                         {vehicles.map((vehicle) => (

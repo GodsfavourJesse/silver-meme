@@ -21,6 +21,11 @@ export const metadata: Metadata = {
     description:
         "Discover cars, compare vehicles, and connect with sellers on KARMASS, your automotive marketplace.",
     applicationName: "KARMASS",
+    appleWebApp: {
+        capable: true,
+        statusBarStyle: "default",
+        title: "KARMASS",
+    },
     keywords: [
         "KARMASS",
         "cars for sale in Nigeria",
@@ -62,3 +67,4 @@ export default function RootLayout({
         </html>
     );
 }
+

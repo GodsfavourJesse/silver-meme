@@ -60,8 +60,7 @@ export default function AdminImageReviewPage() {
     return (
         <main className="
             min-h-screen bg-[#F7F9FC]
-            px-3 py-5 sm:px-5
-            md:px-20
+            px-4 py-5 sm:px-6 lg:px-8 lg:py-8
         ">
             <div className="
                 mx-auto w-full max-w-[1600px]

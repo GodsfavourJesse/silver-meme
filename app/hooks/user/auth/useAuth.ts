@@ -15,6 +15,8 @@ export function useAuth() {
 
         isLoading: query.isPending,
 
+        isFetching: query.isFetching,
+
         isError: query.isError,
 
         error: query.error,

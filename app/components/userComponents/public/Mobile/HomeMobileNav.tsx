@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { PublicAccountLink } from "@/app/components/auth/PublicAccountLink";
 
 import {
     Home,
@@ -83,12 +84,13 @@ export default function HomeMobileNav() {
                     const active = isActive(item.href);
                     const Icon = item.icon;
 
-                    return (
-                        <Link
-                            key={item.label}
-                            href={item.href}
-                            aria-current={active ? "page" : undefined}
-                            className={`
+                    return item.href === "/register" ? (
+                            <PublicAccountLink
+                                key={item.label}
+                                href="/register"
+                                aria-label={item.label}
+                                aria-current={active ? "page" : undefined}
+                                className={`
                                 group relative flex min-w-0
                                 flex-col items-center justify-center
                                 gap-1.5 rounded-[16px]
@@ -100,43 +102,25 @@ export default function HomeMobileNav() {
                                         ? "bg-white text-[#0877D9] shadow-[0_3px_12px_rgba(0,50,110,0.14)]"
                                         : "text-white/85 hover:bg-white/10 hover:text-white"
                                 }
-                            `}
-                        >
-                            <Icon
-                                size={22}
-                                strokeWidth={active ? 2.3 : 1.8}
-                                className="
-                                    shrink-0
-                                    transition-transform duration-200
-                                    group-hover:-translate-y-0.5
-                                "
-                            />
-
-                            <span
-                                className={`
-                                    whitespace-nowrap text-[11px]
-                                    tracking-wide
-                                    ${
-                                        active
-                                            ? "font-bold"
-                                            : "font-medium"
-                                    }
                                 `}
                             >
-                                {item.label}
-                            </span>
-
-                            {active && (
-                                <span
-                                    aria-hidden="true"
-                                    className="
-                                        absolute -bottom-0.5
-                                        h-1 w-6 rounded-full
-                                        bg-[#1491FF]
-                                    "
-                                />
-                            )}
-                        </Link>
+                                <Icon size={22} strokeWidth={active ? 2.3 : 1.8} className="shrink-0 transition-transform duration-200 group-hover:-translate-y-0.5" />
+                                <span className={`whitespace-nowrap text-[11px] tracking-wide ${active ? "font-bold" : "font-medium"}`}>
+                                    {item.label}
+                                </span>
+                                {active && <span aria-hidden="true" className="absolute -bottom-0.5 h-1 w-6 rounded-full bg-[#1491FF]" />}
+                            </PublicAccountLink>
+                    ) : (
+                            <Link
+                                key={item.label}
+                                href={item.href}
+                                aria-current={active ? "page" : undefined}
+                                className={`group relative flex min-w-0 flex-col items-center justify-center gap-1.5 rounded-[16px] px-2 py-3 transition-all duration-200 active:scale-[0.97] ${active ? "bg-white text-[#0877D9] shadow-[0_3px_12px_rgba(0,50,110,0.14)]" : "text-white/85 hover:bg-white/10 hover:text-white"}`}
+                            >
+                                <Icon size={22} strokeWidth={active ? 2.3 : 1.8} />
+                                <span className={`whitespace-nowrap text-[11px] tracking-wide ${active ? "font-bold" : "font-medium"}`}>{item.label}</span>
+                                {active && <span aria-hidden="true" className="absolute -bottom-0.5 h-1 w-6 rounded-full bg-[#1491FF]" />}
+                            </Link>
                     );
                 })}
             </div>

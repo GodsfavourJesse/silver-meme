@@ -419,9 +419,9 @@ function MobileActionGrid({
                   icon: Search,
               },
               {
-                  label: "Saved cars",
-                  description: "Your favourite vehicles",
-                  href: "/saved-vehicles",
+                  label: "Saved searches & favorites",
+                  description: "Your saved searches and favorite vehicles",
+                  href: "/dashboard/saved-searches",
                   icon: Bookmark,
               },
               {
@@ -439,7 +439,7 @@ function MobileActionGrid({
               {
                   label: "Subscriptions",
                   description: "Plans and billing",
-                  href: "/subscriptions",
+                  href: "/dashboard/subscriptions",
                   icon: CreditCard,
               },
               {
@@ -635,13 +635,13 @@ function MobileAccountLinks({
         {
             label: "Account settings",
             description: "Your profile and preferences",
-            href: "/settings",
+            href: "/dashboard/settings",
             icon: Settings2,
         },
         {
             label: "Subscriptions",
             description: "Your plans and billing",
-            href: "/subscriptions",
+            href: "/dashboard/subscriptions",
             icon: CreditCard,
         },
         {
@@ -663,7 +663,7 @@ function MobileAccountLinks({
                   {
                       label: "Become a dealer",
                       description: "Explore dealer access",
-                      href: "/dealer-registration",
+                      href: "/dashboard/dealer",
                       icon: ShieldCheck,
                   },
               ]),

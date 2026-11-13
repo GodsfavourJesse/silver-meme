@@ -138,8 +138,8 @@ export default function MobileBottomNav() {
     const secondaryItems = useMemo<NavigationItem[]>(
         () => [
             {
-                label: "Saved vehicles",
-                href: "/dashboard/saved-vehicles",
+                label: "Saved searches & favorites",
+                href: "/dashboard/saved-searches",
                 icon: Bookmark,
             },
             {

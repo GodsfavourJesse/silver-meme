@@ -145,7 +145,7 @@ export default function AdminSubscriptionPlansPage() {
     }
 
     return (
-        <main className="mx-auto w-full max-w-[1600px] space-y-7 px-4 py-7 sm:px-6 md:px-28">
+        <main className="mx-auto w-full max-w-[1600px] space-y-7 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
             {/* Header */}
             <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
                 <div>

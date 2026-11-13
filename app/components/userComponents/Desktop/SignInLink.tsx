@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { PublicAccountLink } from "@/app/components/auth/PublicAccountLink";
 
 interface SignInLinkProps {
     message: string;
@@ -13,11 +13,11 @@ export function SignInLink({ message }: SignInLinkProps) {
     }
 
     return (
-        <Link
+        <PublicAccountLink
             href="/login"
             className="ml-1 inline-flex items-center font-semibold text-[#1491FF] underline decoration-[#1491FF]/40 underline-offset-4 transition-colors hover:text-[#0875D1] hover:decoration-[#0875D1] focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1491FF]/40"
         >
             Sign in
-        </Link>
+        </PublicAccountLink>
     );
 }

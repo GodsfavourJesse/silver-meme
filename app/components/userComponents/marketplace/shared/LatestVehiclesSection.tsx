@@ -258,7 +258,7 @@ export function LatestVehiclesSection({
                                                         ? "(max-width: 640px) 48vw, 300px"
                                                         : "266px"
                                                 }
-                                                className="object-cover transition-transform duration-700 group-hover:scale-105"
+                                                className="object-cover"
                                             />
                                         ) : (
                                             <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#F0F7FF] to-[#DCEEFF]">
@@ -360,3 +360,4 @@ export function LatestVehiclesSection({
         </section>
     );
 }
+

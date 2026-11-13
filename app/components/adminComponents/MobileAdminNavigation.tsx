@@ -1,69 +1,34 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { ChevronRight, Menu, X } from "lucide-react";
 
 import {
-    Home,
-    Users,
-    CarFront,
-    Menu,
-    X,
-    Building2,
-    CreditCard,
-    ChevronRight,
-    Rocket,
-} from "lucide-react";
+    ADMIN_MOBILE_PRIMARY,
+    ADMIN_NAV_GROUPS,
+    type AdminNavItem,
+} from "./admin-nav";
 
-import { ADMIN_BASE_PATH } from "@/app/lib/admin/path";
-
-const ADMIN_BASE = `${ADMIN_BASE_PATH}/dashboard`;
-
-const primaryLinks = [
-    {
-        label: "Home",
-        href: ADMIN_BASE,
-        icon: Home,
-        exact: true,
-    },
-    {
-        label: "Users",
-        href: `${ADMIN_BASE}/users`,
-        icon: Users,
-    },
-    {
-        label: "Listings",
-        href: `${ADMIN_BASE}/listings`,
-        icon: CarFront,
-    },
-];
-
-const moreLinks = [
-    {
-        label: "Boost Management",
-        href: `${ADMIN_BASE}/boosts`,
-        icon: Rocket,
-        description: "Manage promotions, requests and approvals",
-    },
-    {
-        label: "Dealers",
-        href: `${ADMIN_BASE}/dealers`,
-        icon: Building2,
-        description: "Manage dealer accounts",
-    },
-    {
-        label: "Subscriptions",
-        href: `${ADMIN_BASE}/subscriptions`,
-        icon: CreditCard,
-        description: "Manage plans and subscriptions",
-    },
-];
+function isActive(pathname: string, item: AdminNavItem): boolean {
+    if (item.exact) return pathname === item.href;
+    return pathname === item.href || pathname.startsWith(`${item.href}/`);
+}
 
 export function MobileAdminNavigation() {
     const pathname = usePathname();
-    const router = useRouter();
-
     const [menuOpen, setMenuOpen] = useState(false);
+
+    const moreGroups = ADMIN_NAV_GROUPS.map((group) => ({
+        ...group,
+        items: group.items.filter(
+            (item) => !ADMIN_MOBILE_PRIMARY.some((primary) => primary.href === item.href),
+        ),
+    })).filter((group) => group.items.length > 0);
+    const moreActive = moreGroups.some((group) =>
+        group.items.some((item) => isActive(pathname, item)),
+    );
 
     useEffect(() => {
         setMenuOpen(false);
@@ -72,183 +37,125 @@ export function MobileAdminNavigation() {
     useEffect(() => {
         if (!menuOpen) return;
 
-        function handleEscape(event: KeyboardEvent) {
-            if (event.key === "Escape") {
-                setMenuOpen(false);
-            }
-        }
+        const previousOverflow = document.body.style.overflow;
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (event.key === "Escape") setMenuOpen(false);
+        };
 
-        document.addEventListener("keydown", handleEscape);
         document.body.style.overflow = "hidden";
+        document.addEventListener("keydown", onKeyDown);
 
         return () => {
-            document.removeEventListener("keydown", handleEscape);
-            document.body.style.overflow = "";
+            document.body.style.overflow = previousOverflow;
+            document.removeEventListener("keydown", onKeyDown);
         };
     }, [menuOpen]);
 
-    function navigate(href: string) {
-        setMenuOpen(false);
-        router.push(href);
-    }
-
-    function isActive(href: string, exact = false) {
-        return exact
-            ? pathname === href
-            : pathname === href || pathname.startsWith(`${href}/`);
-    }
-
     return (
         <>
-            {/* Mobile Bottom Navigation */}
             <nav
-                aria-label="Admin mobile navigation"
-                className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_30px_rgba(15,23,42,0.07)] backdrop-blur-xl md:hidden"
+                aria-label="Administrator navigation"
+                className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/80 bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-12px_36px_rgba(15,23,42,0.10)] backdrop-blur-xl lg:hidden"
             >
-                <div className="mx-auto grid h-[68px] max-w-lg grid-cols-4">
-                    {primaryLinks.map((item) => {
+                <div className="mx-auto grid h-[68px] max-w-xl grid-cols-5 px-1">
+                    {ADMIN_MOBILE_PRIMARY.map((item) => {
                         const Icon = item.icon;
-                        const active = isActive(item.href, item.exact);
+                        const active = isActive(pathname, item);
 
                         return (
-                            <button
-                                key={item.label}
-                                type="button"
-                                onClick={() => navigate(item.href)}
+                            <Link
+                                key={item.href}
+                                href={item.href}
                                 aria-current={active ? "page" : undefined}
-                                className={`flex flex-col items-center justify-center gap-1 transition ${
-                                    active
-                                        ? "text-[#1491FF]"
-                                        : "text-slate-500"
+                                className={`relative flex flex-col items-center justify-center gap-1 transition-colors ${
+                                    active ? "text-[#0B4F86]" : "text-slate-500 hover:text-slate-900"
                                 }`}
                             >
-                                <Icon
-                                    size={21}
-                                    strokeWidth={active ? 2.5 : 2}
-                                />
-
-                                <span
-                                    className={`text-[10px] ${
-                                        active
-                                            ? "font-bold"
-                                            : "font-medium"
-                                    }`}
-                                >
-                                    {item.label}
+                                <span className={`grid size-8 place-items-center rounded-xl transition-colors ${active ? "bg-[#EAF4FC]" : ""}`}>
+                                    <Icon size={19} strokeWidth={active ? 2.5 : 2} />
                                 </span>
-                            </button>
+                                <span className={`text-[10px] ${active ? "font-bold" : "font-medium"}`}>
+                                    {item.shortLabel || item.label}
+                                </span>
+                                {active && <span aria-hidden="true" className="absolute top-0 h-[3px] w-7 rounded-b-full bg-[#0B4F86]" />}
+                            </Link>
                         );
                     })}
 
                     <button
                         type="button"
                         onClick={() => setMenuOpen(true)}
+                        aria-label="Open more administrator pages"
                         aria-expanded={menuOpen}
                         aria-haspopup="dialog"
-                        className={`flex flex-col items-center justify-center gap-1 transition ${
-                            menuOpen
-                                ? "text-[#1491FF]"
-                                : "text-slate-500"
-                        }`}
+                        className={`flex flex-col items-center justify-center gap-1 transition-colors ${menuOpen || moreActive ? "text-[#0B4F86]" : "text-slate-500 hover:text-slate-900"}`}
                     >
-                        <Menu size={22} strokeWidth={2.2} />
-
-                        <span className="text-[10px] font-medium">
-                            More
+                        <span className={`grid size-8 place-items-center rounded-xl ${menuOpen || moreActive ? "bg-[#EAF4FC]" : ""}`}>
+                            <Menu size={20} strokeWidth={2.2} />
                         </span>
+                        <span className={`text-[10px] ${moreActive ? "font-bold" : "font-medium"}`}>More</span>
                     </button>
                 </div>
             </nav>
 
-            {/* More Menu Bottom Sheet */}
             {menuOpen && (
                 <div
-                    className="fixed inset-0 z-50 flex items-end bg-slate-950/45 backdrop-blur-[2px] md:hidden"
+                    className="fixed inset-0 z-50 flex items-end bg-slate-950/45 backdrop-blur-sm lg:hidden"
                     onClick={() => setMenuOpen(false)}
                 >
                     <section
                         role="dialog"
                         aria-modal="true"
-                        aria-labelledby="admin-mobile-menu-title"
+                        aria-labelledby="admin-menu-title"
                         onClick={(event) => event.stopPropagation()}
-                        className="max-h-[85dvh] w-full overflow-hidden rounded-t-[28px] border-t border-white/70 bg-white shadow-2xl animate-in slide-in-from-bottom duration-300"
+                        className="max-h-[84dvh] w-full overflow-hidden rounded-t-[28px] border-t border-white/70 bg-white shadow-2xl animate-in slide-in-from-bottom duration-300"
                     >
-                        {/* Header */}
                         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-5">
                             <div>
-                                <h2
-                                    id="admin-mobile-menu-title"
-                                    className="text-lg font-bold tracking-tight text-slate-900"
-                                >
-                                    Admin Menu
+                                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#0B4F86]">KARMASS Admin</p>
+                                <h2 id="admin-menu-title" className="mt-1 text-lg font-bold tracking-tight text-slate-950">
+                                    Management pages
                                 </h2>
-
-                                <p className="mt-0.5 text-xs text-slate-500">
-                                    Manage your KARMASS platform
-                                </p>
                             </div>
-
                             <button
                                 type="button"
                                 onClick={() => setMenuOpen(false)}
-                                aria-label="Close menu"
-                                className="flex size-10 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200"
+                                aria-label="Close administrator menu"
+                                className="grid size-10 place-items-center rounded-xl bg-slate-100 text-slate-600 transition hover:bg-slate-200"
                             >
                                 <X size={19} />
                             </button>
                         </div>
 
-                        {/* Links */}
-                        <div className="overflow-y-auto overscroll-contain px-4 pb-8 pt-4">
-                            <p className="mb-3 px-2 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
-                                Management
-                            </p>
-
-                            <div className="space-y-1">
-                                {moreLinks.map((item) => {
-                                    const Icon = item.icon;
-                                    const active = isActive(item.href);
-
-                                    return (
-                                        <button
-                                            key={item.label}
-                                            type="button"
-                                            onClick={() => navigate(item.href)}
-                                            aria-current={active ? "page" : undefined}
-                                            className={`flex w-full items-center gap-3 rounded-2xl p-3 text-left transition ${
-                                                active
-                                                    ? "bg-[#EAF5FF] text-[#0877D9]"
-                                                    : "text-slate-700 hover:bg-slate-50"
-                                            }`}
-                                        >
-                                            <span
-                                                className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${
-                                                    active
-                                                        ? "bg-white text-[#1491FF]"
-                                                        : "bg-slate-100 text-slate-600"
-                                                }`}
-                                            >
-                                                <Icon size={19} />
-                                            </span>
-
-                                            <span className="min-w-0 flex-1">
-                                                <span className="block text-sm font-semibold">
-                                                    {item.label}
-                                                </span>
-
-                                                <span className="mt-0.5 block text-xs text-slate-400">
-                                                    {item.description}
-                                                </span>
-                                            </span>
-
-                                            <ChevronRight
-                                                size={17}
-                                                className="shrink-0 text-slate-400"
-                                            />
-                                        </button>
-                                    );
-                                })}
-                            </div>
+                        <div className="max-h-[calc(84dvh-82px)] overflow-y-auto overscroll-contain px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-4">
+                            {moreGroups.map((group) => (
+                                <div key={group.title} className="mb-5 last:mb-0">
+                                    <p className="mb-2 px-2 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+                                        {group.title}
+                                    </p>
+                                    <div className="space-y-1">
+                                        {group.items.map((item) => {
+                                            const Icon = item.icon;
+                                            const active = isActive(pathname, item);
+                                            return (
+                                                <Link
+                                                    key={item.href}
+                                                    href={item.href}
+                                                    aria-current={active ? "page" : undefined}
+                                                    onClick={() => setMenuOpen(false)}
+                                                    className={`flex items-center gap-3 rounded-2xl p-3 transition ${active ? "bg-[#EAF4FC] text-[#0B4F86]" : "text-slate-700 hover:bg-slate-50"}`}
+                                                >
+                                                    <span className={`grid size-10 shrink-0 place-items-center rounded-xl ${active ? "bg-white text-[#0B4F86]" : "bg-slate-100 text-slate-600"}`}>
+                                                        <Icon size={19} />
+                                                    </span>
+                                                    <span className="min-w-0 flex-1 text-sm font-semibold">{item.label}</span>
+                                                    <ChevronRight size={17} className="shrink-0 text-slate-400" />
+                                                </Link>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </section>
                 </div>

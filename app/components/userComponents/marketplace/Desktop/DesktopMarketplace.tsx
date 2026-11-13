@@ -10,6 +10,7 @@ import {
 
 import { createPortal } from "react-dom";
 import Link from "next/link";
+import { PublicAccountLink } from "@/app/components/auth/PublicAccountLink";
 
 import {
     ArrowRight,
@@ -29,6 +30,7 @@ import {
 
 import { MarketplaceFilters } from "../MarketplaceFilters";
 import { MarketplaceResultsPanel } from "../MarketplaceResultsPanel";
+import { SaveSearchButton } from "@/app/components/userComponents/marketplace/SaveSearchButton";
 import { CurrentYear } from "@/app/utils/current-year";
 
 export function DesktopMarketplace() {
@@ -36,6 +38,7 @@ export function DesktopMarketplace() {
         query,
         setQuery,
         handleSearch,
+        submittedQuery,
         filters,
         updateFilter,
         removeFilter,
@@ -142,7 +145,7 @@ export function DesktopMarketplace() {
                             </span>
                         </Link>
 
-                        <Link
+                        <PublicAccountLink
                             href="/register"
                             className="
                                 inline-flex min-h-10 shrink-0 items-center
@@ -154,7 +157,7 @@ export function DesktopMarketplace() {
                             "
                         >
                             Sell a car
-                        </Link>
+                        </PublicAccountLink>
                     </div>
 
                     {/* SEARCH + FILTER BAR */}
@@ -315,6 +318,8 @@ export function DesktopMarketplace() {
                                     </p>
                                 </div>
 
+                                <div className="flex shrink-0 items-center gap-2">
+                                <SaveSearchButton query={submittedQuery} filters={filters} sort={sort} />
                                 <label className="flex shrink-0 items-center gap-2">
                                     <span className="text-xs font-medium text-slate-500">
                                         Sort by
@@ -358,6 +363,7 @@ export function DesktopMarketplace() {
                                         />
                                     </span>
                                 </label>
+                                </div>
                             </div>
 
                             <MarketplaceResultsPanel
@@ -399,8 +405,8 @@ export function DesktopMarketplace() {
                             next drive.
                         </p>
 
-                        <Link
-                            href="/sell"
+                        <PublicAccountLink
+                            href="/register"
                             className="inline-flex min-h-9 items-center gap-1.5 font-semibold text-slate-600 transition-colors hover:text-[#0876D1]"
                         >
                             Have a car to sell?
@@ -408,7 +414,7 @@ export function DesktopMarketplace() {
                                 Get started
                             </span>
                             <ArrowRight size={13} aria-hidden="true" />
-                        </Link>
+                        </PublicAccountLink>
                     </div>
                 </footer>
             </div>

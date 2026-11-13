@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { CurrentYear } from "@/app/utils/current-year";
+import { PublicAccountLink } from "@/app/components/auth/PublicAccountLink";
 
 const BRAND = "#1491FF";
 
@@ -20,14 +21,14 @@ const footerLinks = [
         heading: "Marketplace",
         links: [
             { label: "Browse vehicles", href: "/marketplace" },
-            { label: "Sell your car", href: "/sell" },
+            { label: "Sell your car", href: "/register" },
             { label: "Find dealers", href: "/dealers" },
         ],
     },
     {
         heading: "Your account",
         links: [
-            { label: "Sign in", href: "/sign-in" },
+            { label: "Sign in", href: "/login" },
             { label: "Create account", href: "/register" },
         ],
     },
@@ -215,17 +216,23 @@ export function PublicFooter() {
                                 <ul className="mt-5 space-y-3.5">
                                     {group.links.map((item) => (
                                         <li key={item.label}>
-                                            <Link
-                                                href={item.href}
-                                                className="group inline-flex items-center gap-1.5 text-sm text-slate-500 transition-colors duration-200 hover:text-[#1491FF]"
-                                            >
-                                                <span>{item.label}</span>
-
-                                                <MoveUpRight
-                                                    size={13}
-                                                    className="translate-y-0.5 opacity-0 transition-all duration-200 group-hover:translate-x-0.5 group-hover:translate-y-0 group-hover:opacity-100"
-                                                />
-                                            </Link>
+                                            {item.href === "/login" || item.href === "/register" ? (
+                                                <PublicAccountLink
+                                                    href={item.href}
+                                                    className="group inline-flex items-center gap-1.5 text-sm text-slate-500 transition-colors duration-200 hover:text-[#1491FF]"
+                                                >
+                                                    <span>{item.label}</span>
+                                                    <MoveUpRight size={13} className="translate-y-0.5 opacity-0 transition-all duration-200 group-hover:translate-x-0.5 group-hover:translate-y-0 group-hover:opacity-100" />
+                                                </PublicAccountLink>
+                                            ) : (
+                                                <Link
+                                                    href={item.href}
+                                                    className="group inline-flex items-center gap-1.5 text-sm text-slate-500 transition-colors duration-200 hover:text-[#1491FF]"
+                                                >
+                                                    <span>{item.label}</span>
+                                                    <MoveUpRight size={13} className="translate-y-0.5 opacity-0 transition-all duration-200 group-hover:translate-x-0.5 group-hover:translate-y-0 group-hover:opacity-100" />
+                                                </Link>
+                                            )}
                                         </li>
                                     ))}
                                 </ul>

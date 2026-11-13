@@ -7,6 +7,7 @@ import {
     useState,
 } from "react";
 
+import { PublicAccountLink } from "@/app/components/auth/PublicAccountLink";
 import Link from "next/link";
 import { createPortal } from "react-dom";
 
@@ -27,6 +28,7 @@ import {
 
 import { MarketplaceFilters } from "../../marketplace/MarketplaceFilters";
 import { MarketplaceResultsPanel } from "../../marketplace/MarketplaceResultsPanel";
+import { SaveSearchButton } from "@/app/components/userComponents/marketplace/SaveSearchButton";
 
 const BRAND_BLUE = "#1491FF";
 const BRAND_BLUE_DARK = "#0876D1";
@@ -36,6 +38,7 @@ export function MobileMarketplace() {
         query,
         setQuery,
         handleSearch,
+        submittedQuery,
         filters,
         updateFilter,
         removeFilter,
@@ -241,7 +244,7 @@ export function MobileMarketplace() {
                         </span>
                     </Link>
 
-                    <Link
+                    <PublicAccountLink
                         href="/register"
                         className="
                             inline-flex min-h-10 shrink-0 items-center
@@ -253,7 +256,7 @@ export function MobileMarketplace() {
                         "
                     >
                         Sell a car
-                    </Link>
+                    </PublicAccountLink>
                 </div>
 
                 {/* SEARCH + FILTER BAR */}
@@ -410,6 +413,8 @@ export function MobileMarketplace() {
                         </div>
 
                         {/* RIGHT: SORT CONTROL */}
+                        <div className="flex shrink-0 items-center gap-1.5">
+                        <SaveSearchButton query={submittedQuery} filters={filters} sort={sort} compact />
                         <label className="flex shrink-0 items-center gap-1.5">
                             <span className="text-[10px] font-semibold text-slate-500">
                                 Sort by
@@ -459,6 +464,7 @@ export function MobileMarketplace() {
                                 />
                             </span>
                         </label>
+                        </div>
                     </div>
 
                     {/* RESULTS */}

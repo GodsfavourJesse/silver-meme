@@ -66,7 +66,7 @@ export function UserMenu({ admin }: { admin: AdminSession }) {
                 aria-haspopup="menu"
                 aria-expanded={open}
                 onClick={() => setOpen((current) => !current)}
-                className="flex h-11 w-11 items-center justify-center rounded-full bg-kar-royal text-sm font-semibold text-white shadow-lg shadow-kar-royal/25 transition hover:bg-kar-royal-hover"
+                className="flex size-10 items-center justify-center rounded-full bg-[#0B4F86] text-xs font-bold text-white shadow-sm shadow-[#0B4F86]/20 transition hover:bg-[#083C67] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#0B4F86]/15"
             >
                 {initialsOf(admin.firstName, admin.lastName)}
             </button>
@@ -74,14 +74,14 @@ export function UserMenu({ admin }: { admin: AdminSession }) {
             {open ? (
                 <div
                     role="menu"
-                    className="absolute right-0 mt-3 w-64 overflow-hidden rounded-2xl border border-kar-border bg-kar-surface shadow-2xl shadow-black/50"
+                    className="absolute right-0 mt-3 w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-xl shadow-slate-900/10"
                 >
-                    <div className="border-b border-kar-border px-4 py-3">
-                        <p className="truncate text-sm font-medium">
+                    <div className="border-b border-slate-100 px-4 py-3.5">
+                        <p className="truncate text-sm font-bold">
                             {fullName(admin.firstName, admin.lastName)}
                         </p>
 
-                        <p className="truncate text-xs text-kar-muted">
+                        <p className="mt-0.5 truncate text-xs text-slate-500">
                             {admin.email}
                         </p>
                     </div>
@@ -94,7 +94,7 @@ export function UserMenu({ admin }: { admin: AdminSession }) {
                             setShowLogoutDialog(true);
                         }}
                         disabled={loggingOut}
-                        className="flex w-full items-center gap-3 px-4 py-3 text-sm text-kar-muted transition hover:bg-kar-surface-raised hover:text-kar-text disabled:opacity-60"
+                        className="flex w-full items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-rose-50 hover:text-rose-700 disabled:opacity-60"
                     >
                         <LogOut size={17} />
                         Sign out

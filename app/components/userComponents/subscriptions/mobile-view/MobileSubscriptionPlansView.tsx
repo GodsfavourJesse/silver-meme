@@ -98,7 +98,7 @@ export default function MobileSubscriptionPlansView({
                     </div>
                 </header>
 
-                {/* Dealer benefit */}
+                {/* Account-specific discount information */}
                 <AnimatePresence>
                     {showDealerNotice && (
                         <motion.div
@@ -115,12 +115,14 @@ export default function MobileSubscriptionPlansView({
 
                             <div className="min-w-0 flex-1">
                                 <p className="text-sm font-semibold text-gray-900">
-                                    Verified dealer benefit
+                                    Subscription discounts
                                 </p>
 
                                 <p className="mt-0.5 text-xs leading-5 text-gray-500">
-                                    Eligible dealers get discounted subscription pricing
-                                    automatically.
+                                    Regular users and verified dealers have separate
+                                    discounts. Your eligible rate is applied before
+                                    payment; unverified dealers are not eligible for
+                                    the dealer discount.
                                 </p>
                             </div>
 

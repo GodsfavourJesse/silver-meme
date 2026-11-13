@@ -13,22 +13,16 @@ import {
     Bell,
     Bookmark,
     CarFront,
-    Check,
     CheckCircle2,
     ChevronRight,
-    CircleHelp,
     CircleUserRound,
-    CreditCard,
     LogOut,
     MessageCircle,
     Plus,
     Search,
-    Settings2,
-    ShieldCheck,
     Sparkles,
     Store,
     UserRound,
-    WalletCards,
     type LucideIcon,
 } from "lucide-react";
 
@@ -64,10 +58,10 @@ const primaryActions: DashboardAction[] = [
         icon: CarFront,
     },
     {
-        title: "Saved vehicles",
+        title: "Saved searches & favorites",
         shortLabel: "Saved",
         description: "Return to vehicles you have bookmarked.",
-        href: "/dashboard/saved-vehicles",
+        href: "/dashboard/saved-searches",
         icon: Bookmark,
     },
     {
@@ -83,23 +77,6 @@ const primaryActions: DashboardAction[] = [
         description: "Review updates about your account.",
         href: "/dashboard/notifications",
         icon: Bell,
-    },
-];
-
-const accountActions: DashboardAction[] = [
-    {
-        title: "Subscriptions",
-        shortLabel: "Subscriptions",
-        description: "Review your subscription and billing details.",
-        href: "/dashboard/subscriptions",
-        icon: CreditCard,
-    },
-    {
-        title: "Account settings",
-        shortLabel: "Settings",
-        description: "Manage your personal information and preferences.",
-        href: "/dashboard/settings",
-        icon: Settings2,
     },
 ];
 
@@ -169,7 +146,7 @@ function DashboardHeader({ onLogout }: { onLogout: () => void }) {
 
                 <div className="flex shrink-0 items-center gap-3">
                     <Link
-                        href="/notifications"
+                        href="/dashboard/notifications"
                         aria-label="View notifications"
                         className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#D6EBFF] bg-white text-[#1491FF] shadow-sm transition hover:bg-[#EFF7FF] hover:border-[#1491FF]"
                     >
@@ -241,7 +218,7 @@ function DashboardHeader({ onLogout }: { onLogout: () => void }) {
 
                     <div className="flex shrink-0 items-center gap-2">
                         <Link
-                            href="/notifications"
+                            href="/dashboard/notifications"
                             aria-label="Notifications"
                             className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-[#D6EBFF] bg-white text-[#1491FF] shadow-sm transition hover:bg-[#EFF7FF] hover:border-[#1491FF]"
                         >
@@ -326,24 +303,12 @@ function DesktopWelcomeCard() {
                         style={{ borderColor: BRAND_BORDER }}
                     >
                         {isDealer ? (
-                            <Store
-                                size={14}
-                                style={{ color: BRAND_HOVER }}
-                            />
+                            <Store size={14} style={{ color: BRAND_HOVER }} />
                         ) : (
-                            <Sparkles
-                                size={14}
-                                style={{ color: BRAND_HOVER }}
-                            />
+                            <Sparkles size={14} style={{ color: BRAND_HOVER }} />
                         )}
-
-                        <span
-                            className="text-[10px] font-bold uppercase tracking-[0.15em]"
-                            style={{ color: BRAND_HOVER }}
-                        >
-                            {isDealer
-                                ? "Welcome to your dealership"
-                                : "Your journey, your way"}
+                        <span className="text-[10px] font-bold uppercase tracking-[0.15em]" style={{ color: BRAND_HOVER }}>
+                            {isDealer ? "Welcome to your dealership" : "Your journey, your way"}
                         </span>
                     </div>
 
@@ -352,16 +317,12 @@ function DesktopWelcomeCard() {
                             <>
                                 Your dealership,
                                 <br />
-                                <span style={{ color: BRAND_HOVER }}>
-                                    ready for business.
-                                </span>
+                                <span style={{ color: BRAND_HOVER }}>ready for business.</span>
                             </>
                         ) : (
                             <>
                                 Your next great drive starts{" "}
-                                <span style={{ color: BRAND_HOVER }}>
-                                    with a choice.
-                                </span>
+                                <span style={{ color: BRAND_HOVER }}>with a choice.</span>
                             </>
                         )}
                     </h2>
@@ -374,36 +335,15 @@ function DesktopWelcomeCard() {
 
                     <div className="mt-7 flex flex-wrap gap-3">
                         <Link
-                            href={
-                                isDealer
-                                    ? "/dashboard/dealer"
-                                    : "/marketplace"
-                            }
+                            href={isDealer ? "/dashboard/dealer" : "/marketplace"}
                             className="group inline-flex min-h-12 items-center justify-center gap-2.5 rounded-2xl px-5 text-sm font-semibold text-white shadow-[0_8px_22px_rgba(20,145,255,0.2)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_26px_rgba(20,145,255,0.26)] active:translate-y-0"
                             style={{ backgroundColor: BRAND }}
-                            onMouseEnter={(event) => {
-                                event.currentTarget.style.backgroundColor =
-                                    BRAND_HOVER;
-                            }}
-                            onMouseLeave={(event) => {
-                                event.currentTarget.style.backgroundColor =
-                                    BRAND;
-                            }}
+                            onMouseEnter={(event) => { event.currentTarget.style.backgroundColor = BRAND_HOVER; }}
+                            onMouseLeave={(event) => { event.currentTarget.style.backgroundColor = BRAND; }}
                         >
-                            {isDealer ? (
-                                <Store size={17} />
-                            ) : (
-                                <Search size={17} />
-                            )}
-
-                            {isDealer
-                                ? "Open dealership"
-                                : "Explore marketplace"}
-
-                            <ArrowUpRight
-                                size={16}
-                                className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-                            />
+                            {isDealer ? <Store size={17} /> : <Search size={17} />}
+                            {isDealer ? "Open dealership" : "Explore marketplace"}
+                            <ArrowUpRight size={16} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                         </Link>
 
                         <Link
@@ -417,53 +357,26 @@ function DesktopWelcomeCard() {
                     </div>
                 </div>
 
-                <div
-                    aria-hidden="true"
-                    className="relative hidden h-[210px] items-center justify-center lg:flex"
-                >
-                    <div
-                        className="absolute h-[200px] w-[200px] rounded-full border"
-                        style={{ borderColor: `${BRAND}35` }}
-                    />
-
-                    <div
-                        className="absolute h-[155px] w-[155px] rounded-full border"
-                        style={{ borderColor: `${BRAND}35` }}
-                    />
-
+                <div aria-hidden="true" className="relative hidden h-[210px] items-center justify-center lg:flex">
+                    <div className="absolute h-[200px] w-[200px] rounded-full border" style={{ borderColor: `${BRAND}35` }} />
+                    <div className="absolute h-[155px] w-[155px] rounded-full border" style={{ borderColor: `${BRAND}35` }} />
                     <div
                         className="absolute h-[110px] w-[110px] rounded-[35px] shadow-[0_18px_45px_rgba(20,145,255,0.25)] transition-transform duration-500 hover:scale-105"
-                        style={{
-                            background: `linear-gradient(135deg, ${BRAND}, ${BRAND_HOVER})`,
-                        }}
+                        style={{ background: `linear-gradient(135deg, ${BRAND}, ${BRAND_HOVER})` }}
                     >
                         <div className="flex h-full items-center justify-center text-white">
-                            {isDealer ? (
-                                <Store size={45} strokeWidth={1.4} />
-                            ) : (
-                                <CarFront size={49} strokeWidth={1.4} />
-                            )}
+                            {isDealer ? <Store size={45} strokeWidth={1.4} /> : <CarFront size={49} strokeWidth={1.4} />}
                         </div>
                     </div>
-
                     <div className="absolute right-0 top-5 rounded-2xl border border-white/80 bg-white/90 px-3 py-2.5 shadow-[0_8px_25px_rgba(20,70,110,0.07)] backdrop-blur-xl">
                         <div className="flex items-center gap-2">
-                            <span
-                                className="flex h-7 w-7 items-center justify-center rounded-lg"
-                                style={{
-                                    backgroundColor: BRAND_LIGHT,
-                                    color: BRAND_HOVER,
-                                }}
-                            >
+                            <span className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ backgroundColor: BRAND_LIGHT, color: BRAND_HOVER }}>
                                 <CheckCircle2 size={15} />
                             </span>
-
                             <span className="text-[10px] font-semibold text-slate-700">
                                 {isDealer ? "Dealer account" : "Your account"}
                                 <span className="mt-0.5 block text-slate-400">
-                                    {isDealer
-                                        ? "Dealer access enabled"
-                                        : "All in one place"}
+                                    {isDealer ? "Dealer access enabled" : "All in one place"}
                                 </span>
                             </span>
                         </div>
@@ -472,7 +385,6 @@ function DesktopWelcomeCard() {
             </div>
         </section>
     );
-
 }
 
 function MobileWelcomeCard() {
@@ -584,7 +496,7 @@ function DesktopActionCard({
     return (
         <Link
             href={action.href}
-            className="group flex min-h-[164px] flex-col rounded-[23px] border border-slate-200 bg-white p-5 shadow-[0_3px_12px_rgba(20,70,110,0.02)] transition duration-200 hover:-translate-y-1 hover:shadow-[0_14px_32px_rgba(20,70,110,0.08)] active:translate-y-0"
+            className="group flex min-h-[136px] flex-col rounded-xl border border-slate-200 bg-white p-4 transition duration-200 hover:border-[#B9DEFF] hover:shadow-md active:translate-y-0"
             onMouseEnter={(event) => {
                 event.currentTarget.style.borderColor = BRAND_BORDER;
             }}
@@ -594,36 +506,26 @@ function DesktopActionCard({
         >
             <div className="flex items-start justify-between gap-3">
                 <span
-                    className="flex h-12 w-12 items-center justify-center rounded-[16px] transition duration-200 group-hover:scale-105 group-hover:text-white sm:h-12 sm:w-12"
+                    className="flex h-10 w-10 items-center justify-center rounded-lg transition-colors duration-200 group-hover:bg-[#0877D9] group-hover:text-white"
                     style={{
                         backgroundColor: BRAND_LIGHT,
                         color: BRAND_HOVER,
                     }}
-                    onMouseEnter={(event) => {
-                        event.currentTarget.style.backgroundColor = BRAND;
-                    }}
-                    onMouseLeave={(event) => {
-                        event.currentTarget.style.backgroundColor =
-                            BRAND_LIGHT;
-                    }}
                 >
-                    <Icon size={21} strokeWidth={1.8} />
+                    <Icon size={19} strokeWidth={1.8} />
                 </span>
 
-                <span
-                    className="flex h-8 w-8 items-center justify-center rounded-full transition"
-                    style={{ color: "#94a3b8" }}
-                >
+                <span className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition group-hover:text-[#0877D9]">
                     <ArrowUpRight size={17} />
                 </span>
             </div>
 
-            <div className="mt-auto pt-5">
+            <div className="mt-auto pt-4">
                 <h3 className="text-sm font-semibold text-slate-800 transition-colors group-hover:text-[#0877D9]">
                     {action.title}
                 </h3>
 
-                <p className="mt-1.5 text-xs leading-5 text-slate-500">
+                <p className="mt-1 text-xs leading-5 text-slate-500">
                     {action.description}
                 </p>
             </div>
@@ -673,310 +575,6 @@ function MobileActionGrid() {
                             <span className="mt-2.5 w-full break-words text-[10px] font-semibold leading-4 text-slate-600 sm:text-xs">
                                 {action.shortLabel}
                             </span>
-                        </Link>
-                    );
-                })}
-            </div>
-        </section>
-    );
-
-}
-
-function DesktopAccountCard() {
-    return ( 
-        <section className="rounded-[24px] border border-slate-200 bg-white p-5"> 
-            <div className="flex items-start gap-3">
-                <span
-                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[15px]"
-                    style={{
-                        backgroundColor: BRAND_LIGHT,
-                        color: BRAND_HOVER,
-                    }}
-                > 
-                    <ShieldCheck size={21} strokeWidth={1.8} /> 
-                </span>
-
-
-                <div className="min-w-0 flex-1">
-                    <h3 className="text-sm font-semibold text-slate-800">
-                        Account overview
-                    </h3>
-
-                    <p className="mt-1 text-xs leading-5 text-slate-500">
-                        Your account tools are ready when you need them.
-                    </p>
-                </div>
-            </div>
-
-            <div className="mt-5 flex items-center gap-3 rounded-2xl border border-emerald-100 bg-emerald-50/70 px-3.5 py-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-                    <CheckCircle2 size={17} />
-                </span>
-
-                <div className="min-w-0 flex-1">
-                    <p className="text-xs font-semibold text-emerald-800">
-                        Signed in
-                    </p>
-
-                    <p className="mt-0.5 text-[10px] leading-4 text-emerald-700/70">
-                        Your dashboard is available.
-                    </p>
-                </div>
-
-                <Check size={16} className="text-emerald-700" />
-            </div>
-
-            <Link
-                href="/settings"
-                className="mt-4 flex min-h-11 items-center justify-between rounded-xl px-2 text-xs font-semibold text-slate-500 transition hover:text-[#0877D9]"
-            >
-                Manage account
-                <ChevronRight size={16} />
-            </Link>
-        </section>
-    );
-}
-
-function MobileAccountCard() {
-    return ( 
-        <section className="rounded-[22px] border border-slate-200 bg-white p-4 sm:p-5"> 
-            <div className="flex items-center gap-3">
-                <span
-                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[15px]"
-                    style={{
-                        backgroundColor: BRAND_LIGHT,
-                        color: BRAND_HOVER,
-                    }}
-                > 
-                    <ShieldCheck size={20} /> 
-                </span>
-
-                <div className="min-w-0 flex-1">
-                    <h3 className="text-sm font-semibold text-slate-800">
-                        Account status
-                    </h3>
-
-                    <p className="mt-1 text-xs text-slate-500">
-                        You are signed in to KARMASS.
-                    </p>
-                </div>
-
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-                    <Check size={17} />
-                </span>
-            </div>
-
-            <Link
-                href="/settings"
-                className="mt-4 flex min-h-11 items-center justify-between rounded-xl border border-slate-200 px-3 text-xs font-semibold text-slate-600 transition hover:border-[#B9DEFF] hover:text-[#0877D9]"
-            >
-                Manage account settings
-                <ChevronRight size={16} />
-            </Link>
-        </section>
-    );
-}
-
-function DesktopHelpfulLinks() {
-    const links = [
-        {
-            title: "Explore marketplace",
-            href: "/marketplace",
-            icon: Store,
-        },
-        {
-            title: "Manage your listings",
-            href: "/dashboard/my-listings",
-            icon: CarFront,
-        },
-        {
-            title: "Subscriptions and billing",
-            href: "/dashboard/subscriptions",
-            icon: WalletCards,
-        },
-        {
-            title: "Help and support",
-            href: "/support",
-            icon: CircleHelp,
-        },
-    ];
-
-    return (
-        <section className="rounded-[24px] border border-slate-200 bg-white p-5">
-            <SectionHeading
-                title="Useful links"
-                description="Quick access to your account tools."
-            />
-
-            <div className="mt-4 space-y-1">
-                {links.map((link) => {
-                    const Icon = link.icon;
-
-                    return (
-                        <Link
-                            key={link.href}
-                            href={link.href}
-                            className="group flex min-h-[47px] items-center gap-3 rounded-xl px-2 transition hover:bg-[#F3F9FF]"
-                        >
-                            <span
-                                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition group-hover:text-white"
-                                style={{
-                                    backgroundColor: BRAND_LIGHT,
-                                    color: BRAND_HOVER,
-                                }}
-                            >
-                                <Icon size={16} />
-                            </span>
-
-                            <span className="min-w-0 flex-1 text-xs font-medium text-slate-500 transition group-hover:text-[#0877D9]">
-                                {link.title}
-                            </span>
-
-                            <ChevronRight
-                                size={15}
-                                className="shrink-0 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-[#0877D9]"
-                            />
-                        </Link>
-                    );
-                })}
-            </div>
-        </section>
-    );
-
-}
-
-function DealerCallout() {
-    const { user } = useAuth();
-    const isDealer = isDealerAccount(user?.accountType);
-
-    return (
-        <section
-            className="relative isolate overflow-hidden rounded-[24px] border p-5"
-            style={{
-                borderColor: BRAND_BORDER,
-                background: `linear-gradient(135deg, ${BRAND_LIGHT}, #FFFFFF 60%, #F3F9FF)`,
-            }}
-        >
-            <div
-                aria-hidden="true"
-                className="pointer-events-none absolute -right-8 -top-8 -z-10 h-32 w-32 rounded-full blur-2xl"
-                style={{ backgroundColor: `${BRAND}16` }}
-            />
-
-            <span
-                className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-white shadow-sm ring-1"
-                style={{
-                    color: BRAND_HOVER,
-                    ["--tw-ring-color" as string]: BRAND_BORDER,
-                }}
-            >
-                {isDealer ? <ShieldCheck size={19} /> : <Store size={19} />}
-            </span>
-
-            <h3 className="mt-4 text-sm font-semibold text-slate-800">
-                {isDealer ? "Your dealership" : "Ready to become a dealer?"}
-            </h3>
-
-            <p className="mt-2 text-xs leading-6 text-slate-500">
-                {isDealer
-                    ? "Your dealer account is approved. Open your dealership to manage your vehicle inventory and business tools."
-                    : "Apply for dealer access to unlock dealership features and manage your vehicle listings."}
-            </p>
-
-            <Link
-                href={
-                    isDealer
-                        ? "/dashboard/dealer"
-                        : "/dealer-registration"
-                }
-                className="group mt-4 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl px-3 text-xs font-semibold text-white shadow-[0_5px_14px_rgba(20,145,255,0.18)] transition hover:shadow-[0_7px_20px_rgba(20,145,255,0.24)] active:scale-[0.98]"
-                style={{ backgroundColor: BRAND }}
-                onMouseEnter={(event) => {
-                    event.currentTarget.style.backgroundColor = BRAND_HOVER;
-                }}
-                onMouseLeave={(event) => {
-                    event.currentTarget.style.backgroundColor = BRAND;
-                }}
-            >
-                {isDealer ? "Open dealership" : "Become a dealer"}
-
-                <ArrowRight
-                    size={14}
-                    className="transition-transform group-hover:translate-x-0.5"
-                />
-            </Link>
-        </section>
-    );
-
-}
-
-function MobileAccountLinks() {
-    const links = [
-        {
-            title: "Subscriptions",
-            description: "Plans and billing",
-            href: "/subscriptions",
-            icon: CreditCard,
-        },
-        {
-            title: "Account settings",
-            description: "Your personal details",
-            href: "/settings",
-            icon: Settings2,
-        },
-        {
-            title: "Help and support",
-            description: "We're here to help",
-            href: "/support",
-            icon: CircleHelp,
-        },
-    ];
-
-    return (
-        <section>
-            <SectionHeading
-                title="Account & support"
-                description="Keep your account organised."
-            />
-
-            <div className="mt-3 overflow-hidden rounded-[22px] border border-slate-200 bg-white px-3">
-                {links.map((link, index) => {
-                    const Icon = link.icon;
-
-                    return (
-                        <Link
-                            key={link.href}
-                            href={link.href}
-                            className={`group flex min-h-[69px] items-center gap-3 px-1 transition hover:bg-[#F7FBFF] ${
-                                index !== links.length - 1
-                                    ? "border-b border-slate-100"
-                                    : ""
-                            }`}
-                        >
-                            <span
-                                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px]"
-                                style={{
-                                    backgroundColor: BRAND_LIGHT,
-                                    color: BRAND_HOVER,
-                                }}
-                            >
-                                <Icon size={18} />
-                            </span>
-
-                            <span className="min-w-0 flex-1">
-                                <span className="block text-sm font-semibold text-slate-700">
-                                    {link.title}
-                                </span>
-
-                                <span className="mt-1 block text-xs text-slate-400">
-                                    {link.description}
-                                </span>
-                            </span>
-
-                            <ChevronRight
-                                size={17}
-                                className="shrink-0 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-[#0877D9]"
-                            />
                         </Link>
                     );
                 })}
@@ -1075,64 +673,35 @@ function SignInPrompt() {
 }
 
 function DashboardDesktop({ onLogout }: { onLogout: () => void }) {
-    return ( 
-        <div className="hidden min-h-screen bg-[#F7FAFE] text-slate-800 xl:block"> 
-            <div className="mx-auto max-w-[1440px] px-8 py-8 2xl:px-12"> 
+    return (
+        <div className="hidden min-h-screen bg-slate-50 text-slate-800 xl:block">
+            <div className="mx-auto max-w-[1440px] px-8 py-7 2xl:px-12">
                 <DashboardHeader onLogout={onLogout} />
-                <main className="mt-9 space-y-9">
+                <main className="mt-8 space-y-8">
                     <DesktopWelcomeCard />
-
-                    <div className="grid grid-cols-1 items-start gap-6 2xl:grid-cols-[minmax(0,1fr)_320px]">
-                        <div className="min-w-0 space-y-8">
-                            <section>
-                                <SectionHeading
-                                    eyebrow="Quick access"
-                                    title="Your shortcuts"
-                                    description="Everything you need to manage your automotive journey."
-                                />
-
-                                <div className="mt-5 grid grid-cols-2 gap-4 2xl:grid-cols-4">
-                                    {primaryActions.map((action) => (
-                                        <DesktopActionCard
-                                            key={action.href}
-                                            action={action}
-                                        />
-                                    ))}
-                                </div>
-                            </section>
-
-                            <section>
-                                <SectionHeading
-                                    eyebrow="Your account"
-                                    title="Account tools"
-                                    description="Manage your profile, plans, and preferences."
-                                />
-
-                                <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
-                                    {accountActions.map((action) => (
-                                        <DesktopActionCard
-                                            key={action.href}
-                                            action={action}
-                                        />
-                                    ))}
-                                </div>
-                            </section>
+                    <section>
+                        <div className="mb-4 flex items-end justify-between gap-4">
+                            <div>
+                                <h2 className="text-lg font-semibold tracking-tight text-slate-900">
+                                    Quick links
+                                </h2>
+                                <p className="mt-1 text-sm text-slate-500">
+                                    Go straight to the pages you use most.
+                                </p>
+                            </div>
                         </div>
-
-                        <aside className="space-y-5">
-                            <DesktopAccountCard />
-                            <DealerCallout />
-                            <DesktopHelpfulLinks />
-                        </aside>
-                    </div>
+                        <div className="grid grid-cols-2 gap-3 2xl:grid-cols-4 2xl:gap-4">
+                            {primaryActions.map((action) => (
+                                <DesktopActionCard key={action.href} action={action} />
+                            ))}
+                        </div>
+                    </section>
                 </main>
 
                 <DashboardFooter />
             </div>
         </div>
     );
-
-
 }
 
 export default function DashboardPage() {

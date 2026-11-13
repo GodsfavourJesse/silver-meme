@@ -644,6 +644,7 @@ function CurrentSubscriptionCard({
         status: string;
         originalPrice: string | number;
         dealerDiscountPercent: string | number | null;
+        appliedDiscountPercent: string | number;
         effectivePrice: string | number;
         currency: string;
         durationDays: number;
@@ -732,7 +733,7 @@ function CurrentSubscriptionCard({
             : null;
 
     const discount = Number(
-        subscription.dealerDiscountPercent ?? 0,
+        subscription.appliedDiscountPercent ?? 0,
     );
 
     return (
@@ -833,7 +834,7 @@ function CurrentSubscriptionCard({
                             </span>
 
                             <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
-                                {discount}% discount
+                                {discount}% discount applied
                             </span>
                         </div>
                     )}

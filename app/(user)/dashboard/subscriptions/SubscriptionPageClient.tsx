@@ -469,7 +469,7 @@ function SubscriptionDetails({
     if (!subscription) return null;
 
     const discount = Number(
-        subscription.dealerDiscountPercent,
+        subscription.appliedDiscountPercent,
     );
 
     return (
@@ -561,7 +561,7 @@ function SubscriptionDetails({
 
                     <DetailItem
                         icon={BadgePercent}
-                        label="Dealer discount"
+                        label="Discount applied"
                         value={`${discount.toLocaleString("en-NG")}%`}
                     />
                 </div>
@@ -574,11 +574,11 @@ function SubscriptionDetails({
 
                         <div>
                             <p className="text-sm font-semibold text-emerald-800">
-                                Dealer discount applied
+                                Subscription discount applied
                             </p>
 
                             <p className="mt-1 text-xs leading-5 text-emerald-700">
-                                You received a {discount}% dealer discount on this subscription.
+                                You received a {discount}% discount on this subscription.
                             </p>
                         </div>
                     </div>

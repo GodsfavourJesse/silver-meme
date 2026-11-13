@@ -106,7 +106,7 @@ export default function SubscriptionPlansPage() {
                         )}
                     </motion.header>
 
-                    {/* Dealer benefit */}
+                    {/* Account-specific discount information */}
                     <motion.div
                         variants={shouldReduceMotion ? undefined : itemVariants}
                         className="flex items-start gap-4 rounded-2xl border border-blue-100 bg-gradient-to-r from-[#EAF5FF] to-white p-5"
@@ -117,14 +117,15 @@ export default function SubscriptionPlansPage() {
 
                         <div>
                             <h2 className="text-sm font-bold text-gray-900">
-                                Verified dealer benefits
+                                Subscription discounts
                             </h2>
 
                             <p className="mt-1 max-w-3xl text-sm leading-6 text-gray-600">
-                                Verified KARMASS dealers may qualify for
-                                discounted subscription pricing. Your
-                                eligibility and final price are calculated
-                                securely by our server.
+                                Regular users and verified dealers have
+                                separate discounts. Your eligible rate is
+                                calculated securely by our server before
+                                payment; unverified dealers do not receive
+                                the dealer discount.
                             </p>
                         </div>
                     </motion.div>

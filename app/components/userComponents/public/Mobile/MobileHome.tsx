@@ -17,6 +17,7 @@ import {
 import { useHomepageVehicles } from "@/app/hooks/user/homepage/useHomePageVehicles";
 
 import HomeMobileNav from "./HomeMobileNav";
+import { PublicAccountLink } from "@/app/components/auth/PublicAccountLink";
 
 import { CurrentYear } from "@/app/utils/current-year";
 import { FeaturedVehiclesSection } from "../../marketplace/shared/FeaturedVehiclesSection";
@@ -171,13 +172,13 @@ export function MobileHome({
                     </Link>
 
                     {/* SELL BUTTON */}
-                    <Link
+                    <PublicAccountLink
                         href="/register"
                         className="inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-lg bg-white px-3 text-[11px] font-bold text-[#0877D9] shadow-sm transition-colors hover:bg-[#EAF5FF] active:scale-[0.98]"
                     >
                         <CarFront size={15} />
                         Sell a car
-                    </Link>
+                    </PublicAccountLink>
 
                 </div>
 
@@ -303,13 +304,13 @@ export function MobileHome({
                                 List your vehicle and connect with interested buyers.
                             </p>
 
-                            <Link
-                                href="/sell"
+                            <PublicAccountLink
+                                href="/register"
                                 className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-bold text-[#0877D9] transition hover:gap-2.5"
                             >
                                 Start selling
                                 <ArrowRight size={13} />
-                            </Link>
+                            </PublicAccountLink>
                         </div>
 
                         <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white text-[#1491FF] shadow-sm">

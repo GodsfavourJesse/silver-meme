@@ -94,8 +94,8 @@ export default function DashboardSidebar() {
                     icon: CarFront,
                 },
                 {
-                    label: "Saved vehicles",
-                    href: "/dashboard/saved-vehicles",
+                    label: "Saved searches & favorites",
+                    href: "/dashboard/saved-searches",
                     icon: Bookmark,
                 },
                 {
@@ -110,7 +110,7 @@ export default function DashboardSidebar() {
             items: [
                 {
                     label: "Subscriptions",
-                    href: "/dashbord/subscriptions",
+                    href: "/dashboard/subscriptions",
                     icon: CreditCard,
                 },
                 ...(isDealer
@@ -118,7 +118,7 @@ export default function DashboardSidebar() {
                     : [
                         {
                             label: "Become a dealer",
-                            href: "/dashboard/dealers",
+                            href: "/dashboard/dealer",
                             icon: ShieldCheck,
                         },
                     ]),

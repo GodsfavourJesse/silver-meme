@@ -44,6 +44,7 @@ export interface UserCurrentSubscription {
 
     originalPrice: string | number;
     dealerDiscountPercent: string | number | null;
+    appliedDiscountPercent: string | number;
 
     effectivePrice: string | number;
     currency: string;

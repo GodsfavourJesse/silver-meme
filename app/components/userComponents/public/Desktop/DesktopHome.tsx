@@ -13,6 +13,7 @@ import { DesktopNavbar } from "./DesktopNavbar";
 import PublicFooter from "./PublicFooter";
 import { FeaturedVehiclesSection } from "../../marketplace/shared/FeaturedVehiclesSection";
 import { LatestVehiclesSection } from "../../marketplace/shared/LatestVehiclesSection";
+import { PublicAccountLink } from "@/app/components/auth/PublicAccountLink";
 
 type DesktopHomeProps = {
     homepageVehicles: ReturnType<typeof useHomepageVehicles>;
@@ -88,7 +89,7 @@ export function DesktopHome({
             <DesktopNavbar />
 
             <main>
-                <section className="border-b border-[#0876D1] bg-[#1491FF]">
+                <section className="border-b border-[#0876D1] bg-gradient-to-br from-[#087FE8] via-[#0877D9] to-[#064C9B]">
                     <div className="mx-auto max-w-[1440px] px-6 py-16 lg:px-16 lg:py-24">
                         <div className="mx-auto max-w-4xl text-center">
                             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/85">
@@ -209,12 +210,12 @@ export function DesktopHome({
                                 Create a listing and connect with interested buyers.
                             </p>
                         </div>
-                        <Link
+                        <PublicAccountLink
                             href="/register"
                             className="inline-flex w-fit items-center gap-2 rounded-lg bg-[#075FA8] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#064F8C] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/40"
                         >
                             List your vehicle <ArrowRight size={16} aria-hidden="true" />
-                        </Link>
+                        </PublicAccountLink>
                     </div>
                 </section>
             </main>

@@ -52,4 +52,10 @@ export const queryKeys = {
                 limit,
             ] as const,
     },
+
+    savedItems: {
+        all: ["user", "saved-items"] as const,
+        searches: () => ["user", "saved-items", "searches"] as const,
+        favorites: (page: number, limit: number) => ["user", "saved-items", "favorites", page, limit] as const,
+    },
 } as const;

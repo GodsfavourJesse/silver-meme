@@ -68,6 +68,17 @@ function formatStatus(status: string): string {
     return status.charAt(0) + status.slice(1).toLowerCase();
 }
 
+function getAccountTypeLabel(accountType: string): string {
+    switch (accountType.toUpperCase()) {
+        case "USER":
+            return "Normal user";
+        case "DEALER":
+            return "Dealer";
+        default:
+            return formatStatus(accountType);
+    }
+}
+
 function getStatusAppearance(status: string) {
     switch (status) {
         case "ACTIVE":
@@ -165,6 +176,14 @@ export default function AdminSubscriptionDetailsDrawer({
 
     const status = getStatusAppearance(subscription.status);
     const StatusIcon = status.icon;
+    const accountTypeLabel = getAccountTypeLabel(
+        subscription.user.accountType,
+    );
+    const originalPrice = Number(subscription.originalPrice);
+    const effectivePrice = Number(subscription.effectivePrice);
+    const appliedDiscountAmount = Number.isFinite(originalPrice - effectivePrice)
+        ? Math.max(0, originalPrice - effectivePrice)
+        : 0;
 
     const customerName = [
         subscription.user.firstName,
@@ -290,8 +309,18 @@ export default function AdminSubscriptionDetailsDrawer({
                             />
 
                             <DetailItem
-                                label="Dealer discount"
+                                label="Normal-user discount rate"
+                                value={`${Number(subscription.normalUserDiscountPercent).toLocaleString("en-NG")}%`}
+                            />
+
+                            <DetailItem
+                                label="Dealer discount rate"
                                 value={`${Number(subscription.dealerDiscountPercent).toLocaleString("en-NG")}%`}
+                            />
+
+                            <DetailItem
+                                label="Discount applied"
+                                value={`${Number(subscription.appliedDiscountPercent).toLocaleString("en-NG")}% (${accountTypeLabel})`}
                             />
                         </div>
                     </section>
@@ -314,9 +343,9 @@ export default function AdminSubscriptionDetailsDrawer({
                                     {customerName}
                                 </p>
 
-                                <p className="mt-0.5 text-xs capitalize text-slate-500">
-                                    {subscription.user.accountType}
-                                </p>
+                                <span className={`mt-1 inline-flex w-fit rounded-full px-2.5 py-1 text-[11px] font-semibold ${subscription.user.accountType.toUpperCase() === "DEALER" ? "bg-violet-50 text-violet-700" : "bg-blue-50 text-blue-700"}`}>
+                                    {accountTypeLabel} account
+                                </span>
                             </div>
                         </div>
 
@@ -369,13 +398,29 @@ export default function AdminSubscriptionDetailsDrawer({
 
                             <div className="flex items-center justify-between gap-3">
                                 <span className="text-sm text-slate-500">
-                                    Dealer discount
+                                    Normal-user discount rate (configured)
                                 </span>
+                                <span className="text-sm font-semibold text-slate-700">
+                                    {Number(subscription.normalUserDiscountPercent).toLocaleString("en-NG")}%
+                                </span>
+                            </div>
 
+                            <div className="flex items-center justify-between gap-3">
+                                <span className="text-sm text-slate-500">
+                                    Dealer discount rate (configured)
+                                </span>
+                                <span className="text-sm font-semibold text-slate-700">
+                                    {Number(subscription.dealerDiscountPercent).toLocaleString("en-NG")}%
+                                </span>
+                            </div>
+
+                            <div className="flex items-center justify-between gap-3">
+                                <span className="text-sm text-slate-500">
+                                    Discount applied ({accountTypeLabel})
+                                </span>
                                 <span className="text-sm font-semibold text-emerald-600">
-                                    -{formatMoney(
-                                        Number(subscription.originalPrice) *
-                                            (Number(subscription.dealerDiscountPercent) / 100),
+                                    {Number(subscription.appliedDiscountPercent).toLocaleString("en-NG")}% · -{formatMoney(
+                                        appliedDiscountAmount,
                                         subscription.currency,
                                     )}
                                 </span>

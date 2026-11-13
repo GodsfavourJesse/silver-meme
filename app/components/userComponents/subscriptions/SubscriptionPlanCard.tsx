@@ -57,7 +57,7 @@ function PriceDisplay({
 }) {
     const originalPrice = Number(pricing.originalPrice);
     const effectivePrice = Number(pricing.effectivePrice);
-    const discount = Number(pricing.dealerDiscountPercent);
+    const discount = Number(pricing.appliedDiscountPercent);
 
     if (originalPrice === 0) {
         return (
@@ -93,7 +93,7 @@ function PriceDisplay({
 
                     <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
                         <Tag size={11} />
-                        {discount}% OFF
+                        {discount}% {pricing.isDealer ? "DEALER DISCOUNT" : "CUSTOMER DISCOUNT"}
                     </span>
                 </div>
             )}
@@ -147,7 +147,7 @@ export default function SubscriptionPlanCard({
         isActiveSubscription &&
         currentSubscription?.planId === plan.id;
 
-    const discount = Number(price?.dealerDiscountPercent ?? 0);
+    const discount = Number(price?.appliedDiscountPercent ?? 0);
     const hasDiscount = discount > 0;
 
     const handleSubscribe = async () => {
@@ -350,7 +350,7 @@ export default function SubscriptionPlanCard({
 
                             {hasDiscount && (
                                 <PlanFeature>
-                                    {discount}% verified dealer discount
+                                    {discount}% {price?.isDealer ? "verified dealer discount" : "customer discount"}
                                 </PlanFeature>
                             )}
                         </ul>
@@ -371,7 +371,7 @@ export default function SubscriptionPlanCard({
                     )}
                 </div>
 
-                {/* Dealer discount notice */}
+                {/* Applied discount notice */}
                 {price && hasDiscount && (
                     <div className="mt-6 flex items-start gap-2.5 rounded-xl border border-emerald-100 bg-emerald-50/80 p-3">
                         <Tag
@@ -380,8 +380,9 @@ export default function SubscriptionPlanCard({
                         />
 
                         <p className="text-xs leading-5 text-emerald-800">
-                            Your verified dealer discount has been applied
-                            to this plan.
+                            {price.isDealer
+                                ? "Your verified dealer discount has been applied to this plan."
+                                : "Your customer subscription discount has been applied to this plan."}
                         </p>
                     </div>
                 )}

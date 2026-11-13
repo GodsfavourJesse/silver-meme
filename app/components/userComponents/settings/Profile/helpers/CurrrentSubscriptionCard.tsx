@@ -361,10 +361,10 @@ export function CurrentSubscriptionCard({
                     </div>
                 </div>
 
-                {Number(subscription.dealerDiscountPercent) > 0 && (
+                {Number(subscription.appliedDiscountPercent) > 0 && (
                     <div className="rounded-xl bg-emerald-50 p-3 text-xs font-medium text-emerald-700">
                         You received a{" "}
-                        {Number(subscription.dealerDiscountPercent)}% dealer discount.
+                        {Number(subscription.appliedDiscountPercent)}% subscription discount.
                     </div>
                 )}
             </div>
