@@ -1,16 +1,16 @@
 import type { Metadata, Viewport } from "next";
-import { Outfit } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
 import { QueryProvider } from "./providers/query-provider";
 import { Toaster } from "sonner";
 import GlobalLoadingBar from "./components/GlobalLoadingBar";
 
-const outfit = Outfit({
+const outfit = localFont({
+    src: "./fonts/outfit/Outfit-Variable.woff2",
     variable: "--font-outfit",
-    subsets: ["latin"],
     display: "swap",
-    weight: ["400", "500", "600", "700", "800"],
+    weight: "100 900",
 });
 
 export const metadata: Metadata = {
