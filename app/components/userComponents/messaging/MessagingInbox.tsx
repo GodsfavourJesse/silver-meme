@@ -19,6 +19,7 @@ import { useAuth } from "@/app/hooks/user/auth/useAuth";
 import {
     getMessagingConversations,
     getConversationMessages,
+    getConversationReadReceipts,
     markConversationAsRead,
     sendConversationMessage,
 } from "@/app/services/user/messaging/messaging.service";
@@ -30,6 +31,7 @@ import type {
 
 import { MessagesDesktop } from "./MessagesDesktop";
 import { MessagesMobile } from "./MessagesMobile";
+import { useMessagingMobileChat, useMessagingSocket } from "./MessagingRealtimeProvider";
 
 const MAX_MESSAGE_LENGTH = 5000;
 
@@ -82,6 +84,9 @@ export function MessagesInbox() {
     const searchParams = useSearchParams();
 
     const { user } = useAuth();
+    const socket = useMessagingSocket();
+    const { setMobileChatOpen } = useMessagingMobileChat();
+    const [peerLastReadAt, setPeerLastReadAt] = useState<string | null>(null);
 
     const currentUserId = user?.id ?? null;
 
@@ -240,12 +245,14 @@ export function MessagesInbox() {
 
     useEffect(() => {
         if (!requestedConversationId) {
+            setMobileChatOpen(false);
             return;
         }
 
         setSelectedConversationId(requestedConversationId);
         setMobileConversationOpen(true);
-    }, [requestedConversationId]);
+        setMobileChatOpen(true);
+    }, [requestedConversationId, setMobileChatOpen]);
 
     /*
      * LOAD MESSAGES FOR THE SELECTED CONVERSATION
@@ -287,6 +294,14 @@ export function MessagesInbox() {
                 }
 
                 setMessages(response.data.messages);
+
+                try {
+                    const receiptResponse = await getConversationReadReceipts(conversationId);
+                    const peerReceipt = receiptResponse.data.receipts.find((receipt) => receipt.userId !== currentUserId);
+                    setPeerLastReadAt(peerReceipt?.lastReadAt ?? null);
+                } catch {
+                    setPeerLastReadAt(null);
+                }
 
                 try {
                     await markConversationAsRead(conversationId);
@@ -343,7 +358,59 @@ export function MessagesInbox() {
         return () => {
             cancelled = true;
         };
-    }, [redirectToLogin, selectedConversationId]);
+    }, [currentUserId, redirectToLogin, selectedConversationId]);
+
+    useEffect(() => {
+        if (!socket || !selectedConversationId) return;
+
+        socket.emit("conversation:join", selectedConversationId);
+        return () => {
+            socket.emit("conversation:leave", selectedConversationId);
+        };
+    }, [socket, selectedConversationId]);
+
+    useEffect(() => {
+        if (!socket) return;
+
+        const receiveMessage = (payload: unknown) => {
+            const message = (payload as { message?: MessagingMessage }).message ?? payload as MessagingMessage;
+            if (!message?.conversationId || !message.id) return;
+
+            setConversations((current) => {
+                const existing = current.some((item) => item.id === message.conversationId);
+                if (!existing) {
+                    void loadConversations(selectedConversationId);
+                    return current;
+                }
+                return current.map((item) => item.id === message.conversationId
+                    ? { ...item, lastMessage: message, updatedAt: message.createdAt, unreadCount: message.senderId === currentUserId || item.id === selectedConversationId ? 0 : item.unreadCount + 1 }
+                    : item).sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
+            });
+
+            if (message.conversationId === selectedConversationId) {
+                setMessages((current) => current.some((item) => item.id === message.id) ? current : [...current, message]);
+                if (message.senderId !== currentUserId) {
+                    void markConversationAsRead(message.conversationId).then(() => {
+                        setConversations((current) => current.map((item) => item.id === message.conversationId ? { ...item, unreadCount: 0 } : item));
+                    });
+                }
+            }
+        };
+        const receiveRead = (receipt: { conversationId: string; userId: string; lastReadAt: string | null }) => {
+            if (receipt.conversationId === selectedConversationId && receipt.userId !== currentUserId) {
+                setPeerLastReadAt(receipt.lastReadAt);
+            }
+        };
+
+        socket.on("message:new", receiveMessage);
+        socket.on("message:received", receiveMessage);
+        socket.on("message:read", receiveRead);
+        return () => {
+            socket.off("message:new", receiveMessage);
+            socket.off("message:received", receiveMessage);
+            socket.off("message:read", receiveRead);
+        };
+    }, [currentUserId, loadConversations, selectedConversationId, socket]);
 
 
     /*
@@ -368,6 +435,7 @@ export function MessagesInbox() {
         (conversationId: string) => {
             setSelectedConversationId(conversationId);
             setMobileConversationOpen(true);
+            setMobileChatOpen(true);
             setDraft("");
 
             const params = new URLSearchParams(
@@ -380,7 +448,7 @@ export function MessagesInbox() {
                 scroll: false,
             });
         },
-        [router, searchParams],
+        [router, searchParams, setMobileChatOpen],
     );
 
     /*
@@ -389,6 +457,7 @@ export function MessagesInbox() {
 
     const handleMobileBack = useCallback(() => {
         setMobileConversationOpen(false);
+        setMobileChatOpen(false);
 
         const params = new URLSearchParams(
             searchParams.toString(),
@@ -402,7 +471,7 @@ export function MessagesInbox() {
             query ? `/dashboard/messages?${query}` : "/dashboard/messages",
             { scroll: false },
         );
-    }, [router, searchParams]);
+    }, [router, searchParams, setMobileChatOpen]);
 
     /*
      * SEND A MESSAGE
@@ -537,6 +606,7 @@ export function MessagesInbox() {
                         loadingMessages={loadingMessages}
                         sending={sending}
                         totalUnread={totalUnread}
+                        peerLastReadAt={peerLastReadAt}
                         mobileConversationOpen={mobileConversationOpen}
                         onBack={handleBack}
                         onRefresh={handleRefresh}
@@ -563,6 +633,7 @@ export function MessagesInbox() {
                         loadingMessages={loadingMessages}
                         sending={sending}
                         totalUnread={totalUnread}
+                        peerLastReadAt={peerLastReadAt}
                         mobileConversationOpen={mobileConversationOpen}
                         onRefresh={handleRefresh}
                         onSelect={handleSelectConversation}

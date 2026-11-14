@@ -39,6 +39,7 @@ export interface MessagesViewProps {
     loadingMessages: boolean;
     sending: boolean;
     totalUnread: number;
+    peerLastReadAt: string | null;
 
     onRefresh: () => void;
     onSelect: (conversationId: string) => void;
@@ -251,6 +252,7 @@ export function MessagesDesktop({
     loadingMessages,
     sending,
     totalUnread,
+    peerLastReadAt,
     onRefresh,
     onSelect,
     onSend,
@@ -443,6 +445,12 @@ export function MessagesDesktop({
                                                     "Start a conversation"}
                                             </span>
 
+                                            {conversation.listing && (
+                                                <span className="mt-1 block truncate text-[10px] font-semibold text-[#0B5CAD]">
+                                                    Vehicle · {conversation.listing.title}
+                                                </span>
+                                            )}
+
                                             <span className="mt-2.5 flex items-center justify-between">
                                                 <span
                                                     className={[
@@ -534,6 +542,18 @@ export function MessagesDesktop({
                                 )}
                             </header>
 
+                            {selectedConversation.listing && (
+                                <a href={`/marketplace/${selectedConversation.listing.id}`} className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/80 px-6 py-3 transition hover:bg-blue-50">
+                                    {selectedConversation.listing.imageUrl ? <img src={selectedConversation.listing.imageUrl} alt="" className="h-12 w-16 rounded-lg object-cover" /> : <span className="h-12 w-16 rounded-lg bg-slate-200" />}
+                                    <span className="min-w-0 flex-1">
+                                        <span className="block text-[9px] font-bold uppercase tracking-wider text-[#0B5CAD]">About this vehicle</span>
+                                        <span className="mt-0.5 block truncate text-xs font-semibold text-slate-800">{selectedConversation.listing.title}</span>
+                                        <span className="mt-0.5 block truncate text-[10px] text-slate-500">{selectedConversation.listing.price} {selectedConversation.listing.currency} · {selectedConversation.listing.location || "Location unavailable"}</span>
+                                    </span>
+                                    <ArrowUpRight size={16} className="shrink-0 text-slate-400" />
+                                </a>
+                            )}
+
                             {/* Messages */}
                             <div
                                 className="min-h-0 flex-1 overflow-y-auto bg-[#FCFDFF] px-7 py-6"
@@ -616,12 +636,7 @@ export function MessagesDesktop({
                                                                     {formatMessageTime(message.createdAt)}
                                                                 </span>
 
-                                                                {own && (
-                                                                    <CheckCheck
-                                                                        size={13}
-                                                                        style={{ color: BRAND }}
-                                                                    />
-                                                                )}
+                                                                {own && <CheckCheck size={13} aria-label={peerLastReadAt && Date.parse(peerLastReadAt) >= Date.parse(message.createdAt) ? "Seen" : "Sent"} style={{ color: peerLastReadAt && Date.parse(peerLastReadAt) >= Date.parse(message.createdAt) ? BRAND : "#94A3B8" }} />}
                                                             </div>
                                                         </div>
                                                     </article>

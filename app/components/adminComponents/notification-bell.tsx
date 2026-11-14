@@ -23,7 +23,7 @@ function getTargetHref(notification: AdminNotification): string | null {
     const userId = notification.data?.registeredUserId;
 
     return typeof userId === "string"
-        ? `${ADMIN_BASE_PATH}/users/${userId}`
+        ? `${ADMIN_BASE_PATH}/dashboard/users/${userId}`
         : null;
 }
 

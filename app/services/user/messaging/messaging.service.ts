@@ -5,11 +5,17 @@ import type {
     MessagingConversationListResponse,
     MessagingMessageListResponse,
     MessagingReadResponse,
+    MessagingReadReceiptsResponse,
     MessagingSendResponse,
+    MessagingUnreadCountResponse,
 } from "@/app/types/user/messaging.types";
 import { getUserCsrfToken } from "../auth/csrf.service";
 
 const MESSAGING_ENDPOINT = "/messaging";
+
+export function getMessagingUnreadCount(): Promise<MessagingUnreadCountResponse> {
+    return apiRequest<MessagingUnreadCountResponse>(`${MESSAGING_ENDPOINT}/unread-count`, { method: "GET" });
+}
 
 function getConversationEndpoint(
     conversationId: string,
@@ -112,6 +118,10 @@ export async function markConversationAsRead(
             body: {},
         },
     );
+}
+
+export async function getConversationReadReceipts(conversationId: string): Promise<MessagingReadReceiptsResponse> {
+    return apiRequest<MessagingReadReceiptsResponse>(`${getConversationEndpoint(conversationId)}/read-receipts`, { method: "GET" });
 }
 
 export async function createMessagingConversation(

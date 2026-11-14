@@ -1,11 +1,13 @@
 "use client";
 
 import { useCallback, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 
 import { contactMarketplaceSeller } from "@/app/services/user/marketplace/marketplace.service";
 import { getErrorMessage, isAuthenticationError } from "@/app/lib/user/vehicle/vehicle-details-format";
 
 export function useContactSeller(listingId: string | null) {
+    const router = useRouter();
     const [message, setMessage] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
@@ -39,6 +41,9 @@ export function useContactSeller(listingId: string | null) {
             );
 
             setMessage("");
+            if (response.data?.conversationId) {
+                router.push(`/dashboard/messages?conversationId=${encodeURIComponent(response.data.conversationId)}`);
+            }
         } catch (caught) {
             if (isAuthenticationError(caught)) {
                 setError(

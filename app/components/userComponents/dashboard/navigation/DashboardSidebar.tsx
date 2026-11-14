@@ -22,6 +22,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 
 import { useAuth } from "@/app/hooks/user/auth/useAuth";
+import { useMessagingUnreadCount } from "@/app/hooks/user/messaging/useMessagingUnreadCount";
 
 interface NavigationItem {
     label: string;
@@ -52,6 +53,7 @@ function isActiveRoute(pathname: string, href: string): boolean {
 export default function DashboardSidebar() {
     const pathname = usePathname();
     const { user } = useAuth();
+    const unreadMessages = useMessagingUnreadCount();
 
     const isDealer = user?.accountType === "DEALER";
 
@@ -248,6 +250,12 @@ export default function DashboardSidebar() {
                                         >
                                             {item.label}
                                         </span>
+
+                                        {item.href === "/dashboard/messages" && unreadMessages > 0 && (
+                                            <span className="min-w-5 rounded-full bg-[#0B5CAD] px-1.5 py-0.5 text-center text-[10px] font-bold text-white" aria-label={`${unreadMessages} unread messages`}>
+                                                {unreadMessages > 99 ? "99+" : unreadMessages}
+                                            </span>
+                                        )}
 
                                         {active && (
                                             <ChevronRight

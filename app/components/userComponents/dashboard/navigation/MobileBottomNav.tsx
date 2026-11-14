@@ -34,6 +34,8 @@ import type { LucideIcon } from "lucide-react";
 import { useAuth } from "@/app/hooks/user/auth/useAuth";
 import { useDashboardLogout } from "@/app/hooks/user/auth/useDashboardLogout";
 import MobileLogout from "./MobileLogout";
+import { useMessagingUnreadCount } from "@/app/hooks/user/messaging/useMessagingUnreadCount";
+import { useMessagingMobileChat } from "@/app/components/userComponents/messaging/MessagingRealtimeProvider";
 
 interface NavigationItem {
     label: string;
@@ -124,6 +126,8 @@ const menuItemVariants = {
 
 export default function MobileBottomNav() {
     const pathname = usePathname();
+    const unreadMessages = useMessagingUnreadCount();
+    const { mobileChatOpen } = useMessagingMobileChat();
 
     const { user } = useAuth();
 
@@ -134,6 +138,7 @@ export default function MobileBottomNav() {
     const shouldReduceMotion = useReducedMotion();
 
     const isDealer = user?.accountType === "DEALER";
+    const isOpenMessage = pathname === "/dashboard/messages" && mobileChatOpen;
 
     const secondaryItems = useMemo<NavigationItem[]>(
         () => [
@@ -240,6 +245,8 @@ export default function MobileBottomNav() {
     }, [isMenuOpen]);
 
     const closeMenu = () => setIsMenuOpen(false);
+
+    if (isOpenMessage) return null;
 
     return (
         <>
@@ -589,6 +596,11 @@ export default function MobileBottomNav() {
                                         strokeWidth={active ? 2.2 : 1.8}
                                         aria-hidden="true"
                                     />
+                                    {item.href === "/dashboard/messages" && unreadMessages > 0 && (
+                                        <span className="absolute -right-2 -top-2 flex min-h-4 min-w-4 items-center justify-center rounded-full border-2 border-white bg-[#0B5CAD] px-1 text-[9px] font-bold leading-none text-white" aria-label={`${unreadMessages} unread messages`}>
+                                            {unreadMessages > 9 ? "9+" : unreadMessages}
+                                        </span>
+                                    )}
                                 </motion.span>
 
                                 <span

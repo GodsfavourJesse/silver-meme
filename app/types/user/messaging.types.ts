@@ -16,6 +16,14 @@ export interface MessagingMessagePreview {
 export interface MessagingConversation {
     id: string;
     type: "BUYER_SELLER" | "SUPPORT";
+    listing: {
+        id: string;
+        title: string;
+        price: string | number;
+        currency: string;
+        location: string;
+        imageUrl: string | null;
+    } | null;
     participants: MessagingParticipant[];
     lastMessage: MessagingMessagePreview | null;
     unreadCount: number;
@@ -73,6 +81,17 @@ export interface MessagingReadResponse {
             lastReadAt: string | null;
         };
     };
+    message?: string;
+}
+
+export interface MessagingReadReceiptsResponse {
+    success: boolean;
+    data: { receipts: Array<{ conversationId: string; userId: string; lastReadAt: string | null }> };
+}
+
+export interface MessagingUnreadCountResponse {
+    success: boolean;
+    data: { total: number };
     message?: string;
 }
 
