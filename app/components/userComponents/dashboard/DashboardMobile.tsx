@@ -647,7 +647,7 @@ function MobileAccountLinks({
         {
             label: "Help & support",
             description: "We're here to help",
-            href: "/support",
+            href: "/dashboard/support",
             icon: CircleHelp,
         },
         ...(isDealer

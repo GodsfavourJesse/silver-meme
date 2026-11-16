@@ -101,7 +101,7 @@ function FeaturedVehicleSkeleton({
                     : "w-[266px] overflow-hidden rounded-2xl border border-slate-200 bg-white"
             }
         >
-            <div className="aspect-[4/3] animate-pulse bg-slate-100 sm:aspect-[16/10]" />
+           <div className="aspect-[4/3] animate-pulse bg-slate-100" />
 
             <div className="space-y-3 p-4 sm:p-5">
                 <div className="h-4 w-4/5 animate-pulse rounded bg-slate-200" />
@@ -127,6 +127,11 @@ function FeaturedVehicleCard({
 }) {
     const title = getTitle(vehicle);
     const image = getImage(vehicle);
+    const imageDimensions = vehicle.images?.[0];
+    const imageAspectRatio =
+        imageDimensions?.width && imageDimensions.height
+            ? `${imageDimensions.width} / ${imageDimensions.height}`
+            : "4 / 3";
 
     return (
         <Link
@@ -140,7 +145,10 @@ function FeaturedVehicleCard({
         >
             {/* VEHICLE IMAGE */}
 
-            <div className="relative aspect-[4/3] overflow-hidden bg-slate-50 sm:aspect-[16/10]">
+           <div
+               className="relative w-full overflow-hidden bg-slate-50"
+               style={{ aspectRatio: imageAspectRatio }}
+           >
                 {image ? (
                     <Image
                         src={image}

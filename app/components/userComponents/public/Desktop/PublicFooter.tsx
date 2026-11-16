@@ -35,8 +35,8 @@ const footerLinks = [
     {
         heading: "Help & support",
         links: [
-            { label: "Help centre", href: "/help" },
-            { label: "Contact us", href: "/contact" },
+            { label: "Help centre", href: "/support" },
+            { label: "Contact us", href: "/support" },
         ],
     },
 ];

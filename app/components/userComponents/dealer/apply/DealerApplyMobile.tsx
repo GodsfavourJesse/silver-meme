@@ -130,6 +130,13 @@ export default function DealerApplyMobile() {
             return;
         }
 
+        const businessAddress = (form.businessAddress ?? "").trim();
+
+        if (!businessAddress) {
+            toast.error("Please enter your business address.");
+            return;
+        }
+
         setIsSubmitting(true);
 
         try {
@@ -139,9 +146,7 @@ export default function DealerApplyMobile() {
                 registrationNumber: (
                     form.registrationNumber ?? ""
                 ).trim(),
-                businessAddress: (
-                    form.businessAddress ?? ""
-                ).trim(),
+                businessAddress,
             });
 
             const application = response.data.application;
@@ -484,7 +489,6 @@ export default function DealerApplyMobile() {
                                     <div>
                                         <FormLabel
                                             htmlFor="businessAddress"
-                                            optional
                                         >
                                             Business address
                                         </FormLabel>
@@ -509,6 +513,7 @@ export default function DealerApplyMobile() {
                                                 maxLength={10000}
                                                 rows={3}
                                                 autoComplete="street-address"
+                                                required
                                                 disabled={isSubmitting}
                                                 className="w-full min-w-0 resize-y bg-transparent py-3 text-sm leading-5 text-slate-900 outline-none placeholder:text-slate-400 disabled:cursor-not-allowed"
                                             />

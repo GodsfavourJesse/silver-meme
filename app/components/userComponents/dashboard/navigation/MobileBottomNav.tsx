@@ -198,7 +198,7 @@ export default function MobileBottomNav() {
             },
             {
                 label: "Help & support",
-                href: "/support",
+                href: "/dashboard/support",
                 icon: CircleHelp,
             },
         ],

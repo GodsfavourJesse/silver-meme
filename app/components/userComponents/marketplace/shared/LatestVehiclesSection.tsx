@@ -153,8 +153,8 @@ export function LatestVehiclesSection({
                                 <div
                                     className={
                                         mobile
-                                            ? "aspect-[1.18/1] animate-pulse bg-slate-100"
-                                            : "h-[160px] animate-pulse bg-slate-100"
+                                           ? "aspect-[4/3] animate-pulse bg-slate-100"
+                                           : "aspect-[4/3] animate-pulse bg-slate-100"
                                     }
                                 />
 
@@ -227,6 +227,11 @@ export function LatestVehiclesSection({
                         {vehicles.map((vehicle) => {
                             const title = getTitle(vehicle);
                             const image = getImage(vehicle);
+                            const imageDimensions = vehicle.images?.[0];
+                            const imageAspectRatio =
+                                imageDimensions?.width && imageDimensions.height
+                                    ? `${imageDimensions.width} / ${imageDimensions.height}`
+                                    : "4 / 3";
                             const details = getDetails(vehicle);
 
                             return (
@@ -243,10 +248,9 @@ export function LatestVehiclesSection({
                                         href={`/marketplace/${vehicle.listing.id}`}
                                         aria-label={`View ${title}`}
                                         className={
-                                            mobile
-                                                ? "relative block aspect-[1.18/1] overflow-hidden bg-slate-100"
-                                                : "relative block h-[160px] overflow-hidden bg-slate-100"
+                                            "relative block w-full overflow-hidden bg-slate-100"
                                         }
+                                        style={{ aspectRatio: imageAspectRatio }}
                                     >
                                         {image ? (
                                             <Image

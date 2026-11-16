@@ -186,6 +186,13 @@ export default function DealerApplyDesktop() {
             return;
         }
 
+        const businessAddress = (form.businessAddress ?? "").trim();
+
+        if (!businessAddress) {
+            toast.error("Please enter your business address.");
+            return;
+        }
+
         setIsSubmitting(true);
 
         try {
@@ -195,9 +202,7 @@ export default function DealerApplyDesktop() {
                 registrationNumber: (
                     form.registrationNumber ?? ""
                 ).trim(),
-                businessAddress: (
-                    form.businessAddress ?? ""
-                ).trim(),
+                businessAddress,
             });
 
             const application = response.data.application;
@@ -546,7 +551,6 @@ export default function DealerApplyDesktop() {
                                         <div>
                                             <FormLabel
                                                 htmlFor="businessAddress"
-                                                optional
                                             >
                                                 Business address
                                             </FormLabel>
@@ -569,14 +573,14 @@ export default function DealerApplyDesktop() {
                                                     maxLength={10000}
                                                     rows={4}
                                                     autoComplete="street-address"
+                                                    required
                                                     disabled={isSubmitting}
                                                     className="min-h-[112px] w-full min-w-0 resize-y bg-transparent py-3.5 text-sm leading-6 text-slate-900 outline-none placeholder:text-slate-400 disabled:cursor-not-allowed"
                                                 />
                                             </InputWrapper>
 
                                             <p className="mt-2 text-xs leading-5 text-slate-500">
-                                                Add your business location if
-                                                you have a physical dealership.
+                                                Enter your dealership's physical business address.
                                             </p>
                                         </div>
 

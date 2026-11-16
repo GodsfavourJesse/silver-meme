@@ -106,7 +106,7 @@ export function VehicleImageGallery({
                                         unoptimized
                                         sizes="(max-width: 768px) 100vw, 70vw"
                                         priority={activeIndex === 0}
-                                        className="object-cover"
+                                        className="object-contain"
                                     />
                                 </motion.button>
                             ) : (

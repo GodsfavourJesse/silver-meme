@@ -8,7 +8,8 @@ import { useState } from "react";
 import { useAuth } from "@/app/hooks/user/auth/useAuth";
 
 interface PublicAccountLinkProps {
-    href: "/login" | "/register";
+    href: "/login" | "/register" | "/account";
+    authenticatedHref?: string;
     className?: string;
     children: ReactNode;
     onClick?: () => void;
@@ -19,6 +20,7 @@ interface PublicAccountLinkProps {
 /** Checks the current cookie session before choosing the account destination. */
 export function PublicAccountLink({
     href,
+    authenticatedHref,
     className,
     children,
     onClick,
@@ -48,7 +50,7 @@ export function PublicAccountLink({
 
         try {
             const session = await refetch();
-            router.push(session.data ? "/dashboard" : href);
+            router.push(session.data ? authenticatedHref ?? "/dashboard" : href);
         } catch {
             router.push(href);
         } finally {

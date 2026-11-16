@@ -349,7 +349,7 @@ export default function DashboardSidebar() {
             {/* Help */}
             <div className="border-t border-slate-100 px-4 py-3">
                 <Link
-                    href="/support"
+                    href="/dashboard/support"
                     className="
                         flex min-h-11 items-center gap-3 rounded-xl
                         px-3 text-sm font-medium text-slate-500

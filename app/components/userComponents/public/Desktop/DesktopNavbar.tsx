@@ -15,7 +15,7 @@ export function DesktopNavbar() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     return (
-        <header className="sticky top-0 z-40 border-b border-[#0876D1] bg-gradient-to-br from-[#087FE8] via-[#0877D9] to-[#064C9B]">
+        <header className="sticky top-0 z-40 border-b border-[#0877D9] bg-gradient-to-r from-[#0877D9] via-[#1491FF] to-[#0877D9]">
             <div className="mx-auto flex h-[76px] max-w-[1440px] items-center justify-between px-5 sm:px-8 lg:px-12">
                 <Link
                     href="/"
@@ -84,7 +84,7 @@ export function DesktopNavbar() {
             </div>
 
             {mobileMenuOpen && (
-                <nav aria-label="Mobile navigation" className="border-t border-white/20 bg-[#1491FF] px-5 py-4 md:hidden">
+                <nav aria-label="Mobile navigation" className="border-t border-white/20 bg-gradient-to-r from-[#0877D9] via-[#1491FF] to-[#0877D9] px-5 py-4 md:hidden">
                     <div className="mx-auto flex max-w-[1440px] flex-col gap-1">
                         {navigationLinks.map((item) =>
                             item.href === "/login" ? (

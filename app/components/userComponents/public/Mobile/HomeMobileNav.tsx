@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { PublicAccountLink } from "@/app/components/auth/PublicAccountLink";
 
 import {
     Home,
     Compass,
+    LifeBuoy,
     // Store,
     UserRound,
 } from "lucide-react";
@@ -28,8 +28,13 @@ const NAV_ITEMS = [
     //     icon: Store,
     // },
     {
+        label: "Support",
+        href: "/support",
+        icon: LifeBuoy,
+    },
+    {
         label: "Account",
-        href: "/register",
+        href: "/account",
         icon: UserRound,
     },
 ] as const;
@@ -37,13 +42,18 @@ const NAV_ITEMS = [
 export default function HomeMobileNav() {
     const pathname = usePathname();
 
+    if (pathname === "/account") {
+        return null;
+    }
+
     function isActive(href: string): boolean {
         if (href === "/") {
             return pathname === "/";
         }
 
-        if (href === "/register") {
+        if (href === "/account") {
             return (
+                pathname === "/account" ||
                 pathname === "/register" ||
                 pathname === "/login" ||
                 pathname.startsWith("/dashboard")
@@ -64,19 +74,17 @@ export default function HomeMobileNav() {
                 left-1/2 z-40
                 w-[90%] max-w-[480px]
                 -translate-x-1/2
-                rounded-[22px]
+               rounded-[20px]
                 border border-white/15
                 bg-gradient-to-r from-[#0877D9] via-[#1491FF] to-[#0877D9]
-                p-2
+               p-1.5
                 shadow-[0_10px_35px_rgba(0,101,201,0.28)]
                 md:hidden
             "
         >
             <div
                 className="
-                    grid w-full
-                    grid-flow-col
-                    auto-cols-fr
+                   grid w-full grid-flow-col auto-cols-fr
                     gap-1
                 "
             >
@@ -84,43 +92,17 @@ export default function HomeMobileNav() {
                     const active = isActive(item.href);
                     const Icon = item.icon;
 
-                    return item.href === "/register" ? (
-                            <PublicAccountLink
-                                key={item.label}
-                                href="/register"
-                                aria-label={item.label}
-                                aria-current={active ? "page" : undefined}
-                                className={`
-                                group relative flex min-w-0
-                                flex-col items-center justify-center
-                                gap-1.5 rounded-[16px]
-                                px-2 py-3
-                                transition-all duration-200
-                                active:scale-[0.97]
-                                ${
-                                    active
-                                        ? "bg-white text-[#0877D9] shadow-[0_3px_12px_rgba(0,50,110,0.14)]"
-                                        : "text-white/85 hover:bg-white/10 hover:text-white"
-                                }
-                                `}
-                            >
-                                <Icon size={22} strokeWidth={active ? 2.3 : 1.8} className="shrink-0 transition-transform duration-200 group-hover:-translate-y-0.5" />
-                                <span className={`whitespace-nowrap text-[11px] tracking-wide ${active ? "font-bold" : "font-medium"}`}>
-                                    {item.label}
-                                </span>
-                                {active && <span aria-hidden="true" className="absolute -bottom-0.5 h-1 w-6 rounded-full bg-[#1491FF]" />}
-                            </PublicAccountLink>
-                    ) : (
-                            <Link
-                                key={item.label}
-                                href={item.href}
-                                aria-current={active ? "page" : undefined}
-                                className={`group relative flex min-w-0 flex-col items-center justify-center gap-1.5 rounded-[16px] px-2 py-3 transition-all duration-200 active:scale-[0.97] ${active ? "bg-white text-[#0877D9] shadow-[0_3px_12px_rgba(0,50,110,0.14)]" : "text-white/85 hover:bg-white/10 hover:text-white"}`}
-                            >
-                                <Icon size={22} strokeWidth={active ? 2.3 : 1.8} />
-                                <span className={`whitespace-nowrap text-[11px] tracking-wide ${active ? "font-bold" : "font-medium"}`}>{item.label}</span>
-                                {active && <span aria-hidden="true" className="absolute -bottom-0.5 h-1 w-6 rounded-full bg-[#1491FF]" />}
-                            </Link>
+                    return (
+                        <Link
+                            key={item.label}
+                            href={item.href}
+                            aria-current={active ? "page" : undefined}
+                           className={`group relative flex min-w-0 flex-col items-center justify-center gap-1 rounded-[15px] px-2 py-2 transition-all duration-200 active:scale-[0.97] ${active ? "bg-white text-[#0877D9] shadow-[0_3px_12px_rgba(0,50,110,0.14)]" : "text-white/85 hover:bg-white/10 hover:text-white"}`}
+                        >
+                            <Icon size={20} strokeWidth={active ? 2.3 : 1.8} />
+                            <span className={`whitespace-nowrap text-[10px] tracking-wide ${active ? "font-bold" : "font-medium"}`}>{item.label}</span>
+                            {active && <span aria-hidden="true" className="absolute -bottom-0.5 h-1 w-6 rounded-full bg-[#1491FF]" />}
+                        </Link>
                     );
                 })}
             </div>

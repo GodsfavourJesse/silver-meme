@@ -12,7 +12,7 @@ function MobileNavFallback() {
             className="fixed inset-x-3 bottom-3 z-40 h-[68px] rounded-[22px] border border-[#E6EDF5] bg-white/95 p-2 shadow-[0_8px_32px_rgba(15,23,42,0.10)] md:hidden"
         > 
             <div className="grid h-full grid-cols-4 gap-2">
-                {Array.from({ length: 4 }).map((_, index) => ( 
+                {Array.from({ length: 4 }).map((_, index) => (
                     <div
                         key={index}
                         className="animate-pulse rounded-[15px] bg-slate-100"

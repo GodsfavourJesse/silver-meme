@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 
 import {
     ArrowRight,
-    CarFront,
     Search,
     Sparkles,
     X,
@@ -17,7 +16,7 @@ import {
 import { useHomepageVehicles } from "@/app/hooks/user/homepage/useHomePageVehicles";
 
 import HomeMobileNav from "./HomeMobileNav";
-import { PublicAccountLink } from "@/app/components/auth/PublicAccountLink";
+import { FloatingHomeActions } from "../FloatingHomeActions";
 
 import { CurrentYear } from "@/app/utils/current-year";
 import { FeaturedVehiclesSection } from "../../marketplace/shared/FeaturedVehiclesSection";
@@ -171,15 +170,6 @@ export function MobileHome({
                         </span>
                     </Link>
 
-                    {/* SELL BUTTON */}
-                    <PublicAccountLink
-                        href="/register"
-                        className="inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-lg bg-white px-3 text-[11px] font-bold text-[#0877D9] shadow-sm transition-colors hover:bg-[#EAF5FF] active:scale-[0.98]"
-                    >
-                        <CarFront size={15} />
-                        Sell a car
-                    </PublicAccountLink>
-
                 </div>
 
                 {/* SEARCH BAR */}
@@ -286,41 +276,6 @@ export function MobileHome({
                     variant="mobile"
                 />
 
-                {/* SELLER CTA */}
-                <section className="mx-4 mb-7 overflow-hidden rounded-xl border border-[#DCEBFA] bg-[#EDF6FF] p-4">
-
-                    <div className="flex items-center justify-between gap-3">
-
-                        <div className="min-w-0">
-                            <span className="text-[9px] font-bold uppercase tracking-[0.12em] text-[#0877D9]">
-                                Selling your car?
-                            </span>
-
-                            <h2 className="mt-2 text-[16px] font-bold leading-5 tracking-tight text-[#172337]">
-                                Find your next buyer.
-                            </h2>
-
-                            <p className="mt-1.5 max-w-[210px] text-[10px] leading-5 text-[#64748B]">
-                                List your vehicle and connect with interested buyers.
-                            </p>
-
-                            <PublicAccountLink
-                                href="/register"
-                                className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-bold text-[#0877D9] transition hover:gap-2.5"
-                            >
-                                Start selling
-                                <ArrowRight size={13} />
-                            </PublicAccountLink>
-                        </div>
-
-                        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white text-[#1491FF] shadow-sm">
-                            <CarFront size={30} strokeWidth={1.5} />
-                        </div>
-
-                    </div>
-
-                </section>
-
             </div>
 
             {/* FOOTER */}
@@ -354,6 +309,7 @@ export function MobileHome({
 
             </footer>
 
+            <FloatingHomeActions />
             <HomeMobileNav />
 
         </main>
