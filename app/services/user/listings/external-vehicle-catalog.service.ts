@@ -2,7 +2,10 @@ import { apiRequest } from "@/app/lib/api/api-client";
 
 const ENDPOINT = "/vehicles/external";
 
-export type ExternalVehicleProvider = "carsxe" | "vehiclesdb";
+export type ExternalVehicleProvider =
+    | "auto_dev"
+    | "karmass"
+    | "manual";
 
 export interface ExternalVehicleOption {
     value: string;
@@ -13,41 +16,30 @@ export interface ExternalVehicleOption {
 interface ExternalOptionsResponse<T> {
     success: boolean;
     data: T;
+    message?: string;
 }
 
 interface ExternalOptionsData {
-    options?: ExternalVehicleOption[];
+    years?: ExternalVehicleOption[];
     makes?: ExternalVehicleOption[];
     models?: ExternalVehicleOption[];
 }
 
-async function getOptions(
-    path: string
-): Promise<ExternalVehicleOption[]> {
-    const response = await apiRequest<
-        ExternalOptionsResponse<ExternalOptionsData>
-    >(`${ENDPOINT}/${path}`, {
-        method: "GET",
-    });
-
-    if (!response?.success) {
-        throw new Error(
-            "The external vehicle catalogue could not be loaded."
-        );
-    }
-
-    const data = response.data;
-
-    return data.options ?? data.makes ?? data.models ?? [];
-}
+type OptionCollection =
+    | "years"
+    | "makes"
+    | "models";
 
 function buildQuery(
-    params: Record<string, string | number | undefined>
+    params: Record<string, string | number | undefined>,
 ): string {
     const searchParams = new URLSearchParams();
 
     for (const [key, value] of Object.entries(params)) {
-        if (value !== undefined) {
+        if (
+            value !== undefined &&
+            value !== ""
+        ) {
             searchParams.set(key, String(value));
         }
     }
@@ -55,123 +47,70 @@ function buildQuery(
     return searchParams.toString();
 }
 
+async function getOptions(
+    path: string,
+    collection: OptionCollection,
+): Promise<ExternalVehicleOption[]> {
+    const response = await apiRequest<
+        ExternalOptionsResponse<ExternalOptionsData>
+    >(`${ENDPOINT}/${path}`, {
+        method: "GET",
+    });
+
+    if (!response?.success || !response.data) {
+        throw new Error(
+            response?.message ??
+                "The vehicle catalogue could not be loaded.",
+        );
+    }
+
+    const options = response.data[collection];
+
+    if (!Array.isArray(options)) {
+        throw new Error(
+            `The vehicle provider returned an invalid ${collection} response.`,
+        );
+    }
+
+    return options;
+}
+
 /**
- * Loads vehicle makes.
- *
- * When a provider is supplied, only that provider is queried.
- * Otherwise, CarsXE is attempted first, followed by VehiclesDB.
+ * STEP 1
+ * Load available vehicle years.
+ */
+export async function getExternalVehicleYears(): Promise<
+    ExternalVehicleOption[]
+> {
+    return getOptions("years", "years");
+}
+
+/**
+ * STEP 2
+ * Load vehicle makes.
  */
 export async function getExternalVehicleMakes(
-    provider?: ExternalVehicleProvider
+    year: number,
 ): Promise<ExternalVehicleOption[]> {
-    if (provider) {
-        return getOptions(
-            `makes?${buildQuery({ provider })}`
-        );
-    }
-
-    let carsXeError: unknown;
-
-    try {
-        const options = await getExternalVehicleMakes("carsxe");
-
-        if (options.length > 0) {
-            return options;
-        }
-    } catch (error) {
-        carsXeError = error;
-    }
-
-    try {
-        return await getExternalVehicleMakes("vehiclesdb");
-    } catch {
-        throw carsXeError instanceof Error
-            ? carsXeError
-            : new Error(
-                  "No vehicle make provider is currently available."
-              );
-    }
+    return getOptions(
+        `makes?${buildQuery({ year })}`,
+        "makes",
+    );
 }
 
 /**
- * Loads models for a selected make.
- *
- * Supports explicit provider selection and automatic fallback.
+ * STEP 3
+ * Load models belonging to a selected make.
  */
 export async function getExternalVehicleModels(
+    year: number,
     make: string,
-    provider?: ExternalVehicleProvider
 ): Promise<ExternalVehicleOption[]> {
-    if (provider) {
-        const query = buildQuery({
-            provider,
+    return getOptions(
+        `models?${buildQuery({
+            year,
             make,
-        });
-
-        return getOptions(`models?${query}`);
-    }
-
-    let carsXeError: unknown;
-
-    try {
-        const options = await getExternalVehicleModels(
-            make,
-            "carsxe"
-        );
-
-        if (options.length > 0) {
-            return options;
-        }
-    } catch (error) {
-        carsXeError = error;
-    }
-
-    try {
-        return await getExternalVehicleModels(
-            make,
-            "vehiclesdb"
-        );
-    } catch {
-        throw carsXeError instanceof Error
-            ? carsXeError
-            : new Error(
-                  "No vehicle model provider is currently available."
-              );
-    }
-}
-
-/**
- * Loads available model years.
- */
-export function getExternalVehicleYears(
-    make: string,
-    model: string
-): Promise<ExternalVehicleOption[]> {
-    // VehiclesDB currently supplies makes/models only.
-    // Model years and variants are resolved through CarsXE.
-    const query = buildQuery({
-        dimension: "years",
-        make,
-        model,
-    });
-
-    return getOptions(`options?${query}`);
-}
-
-/**
- * Loads available vehicle variants.
- */
-export function getExternalVehicleVariants(
-    make: string,
-    model: string,
-    year: number
-): Promise<ExternalVehicleOption[]> {
-    const query = buildQuery({
-        dimension: "variants",
-        make,
-        model,
-        year,
-    });
-
-    return getOptions(`options?${query}`);
+        })}`,
+        "models",
+    );
 }

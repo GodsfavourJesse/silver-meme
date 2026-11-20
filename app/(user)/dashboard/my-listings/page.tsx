@@ -15,14 +15,14 @@ export const metadata: Metadata = {
 
 export default function MyListingsPage() {
     return (
-        <>
+        <main>
             <div className="hidden lg:block">
-
                 <MyListingsDashboard />
             </div>
 
-            <MobileMyListingsDashboard />
-        
-        </>
+            <div className="lg:hidden">
+                <MobileMyListingsDashboard />
+            </div>
+        </main>
     );
 }
