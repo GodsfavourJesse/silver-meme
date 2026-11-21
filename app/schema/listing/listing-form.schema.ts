@@ -15,8 +15,7 @@ const optionalIntegerText = (
         .trim()
         .max(maxLength, message)
         .refine(
-            (value) =>
-                value === "" || /^\d+$/.test(value),
+            (value) => value === "" || /^\d+$/.test(value),
             "Enter a valid whole number.",
         );
 
@@ -30,8 +29,7 @@ const optionalNumericText = (
         .max(maxLength, message)
         .refine(
             (value) =>
-                value === "" ||
-                /^\d+(\.\d+)?$/.test(value),
+                value === "" || /^\d+(?:\.\d+)?$/.test(value),
             "Enter a valid number.",
         );
 
@@ -77,8 +75,8 @@ export const listingFormSchema = z
                 (value) =>
                     value === "" ||
                     (
-                        Number(value) >= 1900 &&
-                        Number(value) <= new Date().getFullYear() + 1
+                        Number(value) >= 1886 &&
+                        Number(value) <= 2100
                     ),
                 "Enter a valid vehicle year.",
             ),
@@ -127,22 +125,22 @@ export const listingFormSchema = z
             "Horsepower cannot exceed 30 characters.",
         ),
 
-        exteriorColor: optionalIntegerText(
+        exteriorColor: optionalText(
             50,
             "Exterior color cannot exceed 50 characters.",
         ),
 
-        interiorColor: optionalIntegerText(
+        interiorColor: optionalText(
             50,
             "Interior color cannot exceed 50 characters.",
         ),
 
-        seats: optionalNumericText(
+        seats: optionalIntegerText(
             10,
             "Seats cannot exceed 10 characters.",
         ),
 
-        doors: optionalNumericText(
+        doors: optionalIntegerText(
             10,
             "Doors cannot exceed 10 characters.",
         ),
@@ -234,25 +232,15 @@ export const listingFormSchema = z
             .trim()
             .max(100, "City cannot exceed 100 characters."),
     })
-    .refine(
-        (values) => {
-            const hasCatalogueVariant =
-                values.vehicleVariantId.length > 0;
-
-            const hasManualVehicleIdentity =
-                values.makeName.length > 0 &&
-                values.modelName.length > 0 &&
-                values.year.length > 0;
-
-            return (
-                hasCatalogueVariant ||
-                hasManualVehicleIdentity
-            );
-        },
+        .refine(
+        (values) =>
+            values.makeName.length > 0 &&
+            values.modelName.length > 0 &&
+            values.year.length > 0,
         {
             message:
-                "Select a catalogue vehicle or enter the vehicle make, model and year.",
-            path: ["vehicleVariantId"],
+                "Enter the vehicle make, model and year.",
+            path: ["makeName"],
         },
     );
 

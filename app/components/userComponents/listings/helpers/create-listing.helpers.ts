@@ -134,7 +134,7 @@ export function getErrorMessage(error: unknown): FormError {
     const data = asRecord(candidate.data);
 
     const message = findString([
-        candidate.message,
+        responseData?.message,
         responseData?.message,
         data?.message,
     ]);

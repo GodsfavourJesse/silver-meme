@@ -37,27 +37,20 @@ import type {
     MarketplaceSearchResult,
 } from "@/app/types/user/marketplace.types";
 
-/* -------------------------------------------------------------------------- */
-/* Configuration                                                              */
-/* -------------------------------------------------------------------------- */
-
+// Configuration
 const MARKETPLACE_PAGE_SIZE = 12;
 const FEATURED_PAGE_SIZE = 12;
+const VEHICLE_CATALOG_REFERENCE_YEAR = new Date().getFullYear();
 
 const MARKETPLACE_ERROR =
     "We couldn't load vehicle listings. Please check your connection and try again.";
 
-/* -------------------------------------------------------------------------- */
-/* Hook                                                                       */
-/* -------------------------------------------------------------------------- */
-
+// Hook
 export function useMarketplaceSearch() {
     const router = useRouter();
     const pathname = usePathname();
-    /* ---------------------------------------------------------------------- */
-    /* Search state                                                           */
-    /* ---------------------------------------------------------------------- */
-
+    
+    // Search state
     const [query, setQuery] = useState("");
     const [submittedQuery, setSubmittedQuery] = useState("");
 
@@ -81,10 +74,7 @@ export function useMarketplaceSearch() {
     const [retryCount, setRetryCount] = useState(0);
     const [initialized, setInitialized] = useState(false);
 
-    /* ---------------------------------------------------------------------- */
-    /* Featured listings                                                      */
-    /* ---------------------------------------------------------------------- */
-
+    // Featured listings
     const [featuredVehicles, setFeaturedVehicles] = useState<
         MarketplaceSearchResult[]
     >([]);
@@ -93,10 +83,7 @@ export function useMarketplaceSearch() {
     const [featuredError, setFeaturedError] = useState("");
     const [featuredRetryCount, setFeaturedRetryCount] = useState(0);
 
-    /* ---------------------------------------------------------------------- */
-    /* Vehicle catalog                                                        */
-    /* ---------------------------------------------------------------------- */
-
+    //  Vehicle catalog
     const [makes, setMakes] = useState<ExternalVehicleOption[]>([]);
     const [models, setModels] = useState<ExternalVehicleOption[]>([]);
     const [vehicleModelsLoading, setVehicleModelsLoading] = useState(false);
@@ -109,10 +96,7 @@ export function useMarketplaceSearch() {
     const [vehicleCatalogRetryCount, setVehicleCatalogRetryCount] =
         useState(0);
 
-    /* ---------------------------------------------------------------------- */
-    /* Request coordination                                                   */
-    /* ---------------------------------------------------------------------- */
-
+    // Request coordination
     /**
      * Every marketplace request receives an increasing ID.
      *
@@ -126,10 +110,7 @@ export function useMarketplaceSearch() {
      */
     const loadingMoreRef = useRef(false);
 
-    /* ---------------------------------------------------------------------- */
-    /* Restore state from URL                                                 */
-    /* ---------------------------------------------------------------------- */
-
+    // Restore state from URL
     useEffect(() => {
         const initialState = readFiltersFromUrl();
 
@@ -150,10 +131,7 @@ export function useMarketplaceSearch() {
         setInitialized(true);
     }, []);
 
-    /* ---------------------------------------------------------------------- */
-    /* Load featured listings                                                 */
-    /* ---------------------------------------------------------------------- */
-
+    // Load featured listings
     useEffect(() => {
         let active = true;
 
@@ -193,10 +171,7 @@ export function useMarketplaceSearch() {
         };
     }, [featuredRetryCount]);
 
-    /* ---------------------------------------------------------------------- */
-    /* Load vehicle makes                                                     */
-    /* ---------------------------------------------------------------------- */
-
+    // Load vehicle makes
     useEffect(() => {
         let active = true;
 
@@ -205,7 +180,9 @@ export function useMarketplaceSearch() {
             setVehicleCatalogError("");
 
             try {
-                const data = await getExternalVehicleMakes();
+                const data = await getExternalVehicleMakes(
+                    VEHICLE_CATALOG_REFERENCE_YEAR,
+                );
 
                 if (!active) return;
 
@@ -247,7 +224,10 @@ export function useMarketplaceSearch() {
             setVehicleModelsLoading(true);
             setVehicleCatalogError("");
             try {
-                const data = await getExternalVehicleModels(filters.make);
+                const data = await getExternalVehicleModels(
+                    VEHICLE_CATALOG_REFERENCE_YEAR,
+                    filters.make
+                );
                 if (active) setModels(data);
             } catch {
                 if (active) {

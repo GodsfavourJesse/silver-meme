@@ -905,6 +905,11 @@ export default function CreateListingForm() {
 
     const handleVehicleDetailsChange = useCallback(
         (details: Partial<ManualVehicleValues>) => {
+            setValue("vehicleVariantId", "", {
+                shouldDirty: true,
+                shouldValidate: true,
+            });
+
             for (const [field, value] of Object.entries(details) as [
                 keyof ManualVehicleValues,
                 string

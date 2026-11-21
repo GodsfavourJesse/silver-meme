@@ -23,12 +23,14 @@ interface ExternalOptionsData {
     years?: ExternalVehicleOption[];
     makes?: ExternalVehicleOption[];
     models?: ExternalVehicleOption[];
+    options?: ExternalVehicleOption[];
 }
 
 type OptionCollection =
     | "years"
     | "makes"
-    | "models";
+    | "models"
+    | "options";
 
 function buildQuery(
     params: Record<string, string | number | undefined>,
@@ -112,5 +114,25 @@ export async function getExternalVehicleModels(
             make,
         })}`,
         "models",
+    );
+}
+
+/**
+ * STEP 4
+ * Load variants/trims belonging to a selected vehicle.
+ */
+export async function getExternalVehicleVariants(
+    year: number,
+    make: string,
+    model: string,
+): Promise<ExternalVehicleOption[]> {
+    return getOptions(
+        `options?${buildQuery({
+            dimension: "variants",
+            year,
+            make,
+            model,
+        })}`,
+        "options",
     );
 }
